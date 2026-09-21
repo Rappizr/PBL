@@ -1,0 +1,150 @@
+@import url('https://fonts.googleapis.com/css2?family=Jockey+One&family=Inter:wght@400;500;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: #20242c;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.login-card {
+    background-color: #e5e5e5;
+    width: 100%;
+    max-width: 360px;
+    padding: 35px 28px;
+    border-radius: 16px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.brand-title {
+    font-family: 'Jockey One', sans-serif;
+    font-size: 28px;
+    letter-spacing: 1px;
+    color: #212529;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+}
+
+.brand-subtitle {
+    font-size: 14px;
+    color: #333333;
+    margin-bottom: 24px;
+}
+
+.input-wrapper,
+.input-group {
+    position: relative;
+    margin-bottom: 14px;
+}
+
+.input-icon,
+.input-wrapper i,
+.input-group i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    font-size: 14px;
+    pointer-events: none;
+}
+
+.input-field {
+    width: 100%;
+    padding: 12px 14px 12px 42px;
+    border: 1px solid #d1d5db;
+    background-color: #ededed;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #333333;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input-field:focus {
+    border-color: #2b303a;
+    background-color: #ffffff;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 13px;
+    background-color: #2b303a;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 8px;
+    margin-bottom: 24px;
+    transition: background-color 0.2s;
+}
+
+.btn-submit:hover {
+    background-color: #1a1d23;
+}
+
+.role-section-text {
+    font-size: 14px;
+    color: #222222;
+    text-align: left;
+    margin-bottom: 12px;
+}
+
+.role-section-text strong {
+    font-weight: 700;
+}
+
+.role-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-role {
+    width: 100%;
+    padding: 12px;
+    background-color: #e5e5e5;
+    color: #222222;
+    font-weight: 700;
+    font-size: 14px;
+    border: 1.5px solid #495057;
+    border-radius: 10px;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    transition: all 0.2s ease;
+}
+
+.btn-role:hover {
+    background-color: #dcdcdc;
+}
+
+.btn-role.active,
+.btn-role.btn-role-active {
+    background-color: #2b303a;
+    color: #ffffff;
+    border-color: #2b303a;
+}
+
+.alert-error {
+    background-color: #f8d7da;
+    color: #842029;
+    border: 1px solid #f5c2c7;
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 14px;
+    text-align: left;
+}
