@@ -121,12 +121,17 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
    }
    ```
 
-3. **Akses aplikasi** melalui browser:
+3. **Memulai aplikasi** melalui CLI:
    ```
-   http://localhost/siteman-kos
+   php -S localhost:3000
    ```
 
-4. Login sesuai role masing-masing (Pemilik, PJ, atau Penghuni) untuk mulai menggunakan sistem.
+4. **Akses aplikasi** melalui browser:
+   ```
+   http://localhost:3000/siteman-kos
+   ```
+
+5. Login sesuai role masing-masing (Pemilik, PJ, atau Penghuni) untuk mulai menggunakan sistem.
 
 ---
 
