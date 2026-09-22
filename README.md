@@ -84,7 +84,7 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
 - [ ] Halaman Chat penghuni
 - [ ] Halaman verifikasi pembayaran
 - [ ] Halaman analisis keuangan
-- [ V ] Halaman Login
+- [  ] Halaman Login
 
 ### 8. Pengujian & Deployment
 - [ ] Pengujian fungsional tiap modul
