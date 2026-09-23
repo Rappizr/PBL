@@ -1,17 +1,13 @@
 <?php
-
 if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'penghuni') {
     $_SESSION['login_error'] = 'Anda harus masuk terlebih dahulu!';
     header("Location: index.php?page=login&role=penghuni");
     exit;
 }
 
-$pageTitle = "Dashboard Penghuni - Siteman-Kos";
+$is_pj = !empty($_SESSION['user']['is_pj']);
+$nama_penghuni = $_SESSION['user']['nama'] ?? 'Penghuni';
 
-// Data dummy nama penghuni
-$nama_penghuni = $_SESSION['user']['nama'] ?? header("Location: index.php?page=login&role=penghuni");;
-
-// Data dummy tagihan
 $tagihan = [
     'sewa' => [
         'status' => 'belum_lunas',
@@ -23,12 +19,16 @@ $tagihan = [
     ],
 ];
 
-function formatTanggal(?string $tanggal): string {
+function formatTanggalIndo(?string $tanggal): string {
     if (!$tanggal) return '-';
-    $bulan = [1=>'January',2=>'February',3=>'March',4=>'April',5=>'May',6=>'June',
-              7=>'July',8=>'August',9=>'September',10=>'October',11=>'November',12=>'December'];
+    $hari = ['Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa', 'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu'];
+    $bulan = [1 => 'October', 2 => 'February', 3 => 'March', 4 => 'April', 5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August', 9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'];
+    
     $ts = strtotime($tanggal);
-    return date('D', $ts) . ', ' . date('d', $ts) . ' ' . $bulan[(int)date('n', $ts)] . ' ' . date('Y', $ts);
+    $hariNama = $hari[date('l', $ts)] ?? date('D', $ts);
+    $bulanNama = $bulan[(int)date('n', $ts)] ?? date('F', $ts);
+    
+    return $hariNama . ', ' . date('d', $ts) . ' ' . $bulanNama . ' ' . date('Y', $ts);
 }
 ?>
 <!DOCTYPE html>
@@ -38,50 +38,105 @@ function formatTanggal(?string $tanggal): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Dashboard</title>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/styles.css">
 </head>
 
-<body>
-    <div class="app-shell">
+<body class="dashboard-body">
+    <div class="mobile-container">
+        <div>
+            <!-- Header -->
+            <header class="dashboard-header">
+                <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
+                <span class="badge-role <?= $is_pj ? 'badge-pj' : 'badge-penghuni' ?>">
+                    <?= htmlspecialchars($nama_penghuni) ?>
+                </span>
+            </header>
 
-    <header class="topbar">
-        <span class="brand">SITEMAN&nbsp;-&nbsp;KOS</span>
-        <span class="badge-name"><?= htmlspecialchars($nama_penghuni) ?></span>
-    </header>
+            <main class="page-content">
+                <!-- Cards Tagihan -->
+                <?php foreach (['sewa' => 'Pembayaran Sewa', 'iuran' => 'Pembayaran Iuran'] as $jenis => $label): ?>
+                    <?php $t = $tagihan[$jenis]; ?>
+                    <div class="tagihan-dark-card">
+                        <span class="tagihan-pill-label"><?= $label ?></span>
+                        <div class="tagihan-meta-grid">
+                            <div class="meta-row">
+                                <span class="meta-label">Status Pembayaran</span>
+                                <span class="meta-colon">:</span>
+                                <span class="meta-value">
+                                    <span class="status-badge-yellow">
+                                        <?= ($t && $t['status'] === 'lunas') ? 'Lunas' : 'Belum Lunas'; ?>
+                                    </span>
+                                </span>
+                            </div>
+                            <div class="meta-row">
+                                <span class="meta-label">Tenggat Pembayaran</span>
+                                <span class="meta-colon">:</span>
+                                <span class="meta-value date-text">
+                                    <?= formatTanggalIndo($t['tanggal_jatuh_tempo'] ?? null) ?>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
 
-<div class="page-content">
-     <?php foreach (['sewa' => 'Pembayaran Sewa', 'iuran' => 'Pembayaran Iuran'] as $jenis => $label): ?>
-        <div class="tagihan-card">
-            <span class="label"><?= $label ?></span>
-            <div class="row">
-                <span>Status Pembayaran</span>
-                <?php $t = $tagihan[$jenis]; ?>
-                <?php if ($t && $t['status'] === 'lunas'): ?>
-                    <span class="status-lunas">Lunas</span>
-                <?php else: ?>
-                    <span class="status-belum">Belum Lunas</span>
-                <?php endif; ?>
-            </div>
-            <div class="row">
-                <span>Tenggat Pembayaran</span>
-                <span><?= formatTanggal($t['tanggal_jatuh_tempo'] ?? null) ?></span>
-            </div>
+                <div class="menu-card-container">
+                    <h2 class="menu-heading">Silahkan pilih menu</h2>
+                    <div class="menu-grid">
+                        <!-- Menu 1 -->
+                        <a href="index.php?page=penghuni-tagihan" class="menu-item-box">
+                            <div class="menu-icon-wrapper">
+                                <i class="fa-solid fa-receipt"></i>
+                            </div>
+                            <span class="menu-label">Tagihan &amp; Riwayat</span>
+                        </a>
+
+                        <!-- Menu 2 -->
+                        <a href="index.php?page=penghuni-bayar" class="menu-item-box">
+                            <div class="menu-icon-wrapper">
+                                <i class="fa-solid fa-file-invoice-dollar"></i>
+                            </div>
+                            <span class="menu-label">Pembayaran</span>
+                        </a>
+
+                        <!-- Menu 3 -->
+                        <a href="index.php?page=penghuni-peraturan" class="menu-item-box">
+                            <div class="menu-icon-wrapper">
+                                <i class="fa-solid fa-book-open"></i>
+                            </div>
+                            <span class="menu-label">Peraturan Kos</span>
+                        </a>
+
+                        <!-- Menu 4 -->
+                        <a href="index.php?page=penghuni-chat" class="menu-item-box">
+                            <div class="menu-icon-wrapper">
+                                <i class="fa-solid fa-comment-dots"></i>
+                            </div>
+                            <span class="menu-label">Chat Penghuni</span>
+                        </a>
+
+                        <!-- Menu 5 (Kondisional: Monitor Kas vs Kelola & Monitor Iuran) -->
+                        <?php if (!$is_pj): ?>
+                            <a href="index.php?page=penghuni-kas" class="menu-item-box">
+                                <div class="menu-icon-wrapper">
+                                    <i class="fa-solid fa-wallet"></i>
+                                </div>
+                                <span class="menu-label">Monitor Kas</span>
+                            </a>
+                        <?php else: ?>
+                            <a href="index.php?page=pj-kelola-iuran" class="menu-item-box">
+                                <div class="menu-icon-wrapper">
+                                    <i class="fa-solid fa-wallet"></i>
+                                </div>
+                                <span class="menu-label">Kelola &amp; Monitor<br>Iuran</span>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </main>
         </div>
-    <?php endforeach; ?>
 
-    <div class="menu-grid">
-    <a href="?page=penghuni-tagihan" class="menu-card">
-        <div class="icon">&#128179;</div>
-        <div class="title">Tagihan & Riwayat &amp; Riwayat</div>
-    </a>
-    <a href="?page=penghuni-peraturan" class="menu-card">
-        <div class="icon">&#128220;</div>
-        <div class="title">Peraturan Kos</div>
-    </a>
-    <a href="?page=penghuni-chat" class="menu-card">
-        <div class="icon">&#128172;</div>
-        <div class="title">Chat Penghuni</div>
-    </a>
-</div>
+        <?php require_once __DIR__ . '/../components/footer.php'; ?>
+    </div>
+</body>
+</html>

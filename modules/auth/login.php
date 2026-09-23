@@ -6,9 +6,9 @@ $error = '';
 if(isset($_SESSION['user']) && $_SESSION['user']['role']) {
     // Jika sudah login, redirect ke dashboard sesuai role
     if ($_SESSION['user']['role'] === 'pemilik') {
-        header("Location: index.php?page=dashboard-pemilik");
+        header("Location: index.php?page=dashboard_pemilik");
     } elseif ($_SESSION['user']['role'] === 'penghuni') {
-        header("Location: index.php?page=dashboard-penghuni");
+        header("Location: index.php?page=dashboard_penghuni");
     }
     exit;
 }
@@ -41,7 +41,7 @@ if (isset($_SESSION['login_error'])) {
             <div class="alert-error"><?= htmlspecialchars($error); ?></div>
         <?php endif; ?>
 
-        <form action="../../backend/auth.php" method="POST" id="loginForm">
+        <form action="../backend/auth.php" method="POST" id="loginForm">
             <input type="hidden" name="role" value="<?= htmlspecialchars($role); ?>">
 
             <?php if ($role === 'penghuni'): ?>

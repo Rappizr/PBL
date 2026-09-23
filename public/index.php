@@ -8,7 +8,7 @@ switch ($page) {
         require_once __DIR__ . '/../modules/auth/login.php';
         break;
 
-    case 'dashboard-pemilik':
+    case 'dashboard_pemilik':
         require_once __DIR__ . '/../modules/pemilik/dashboard.php';
         break;
 
