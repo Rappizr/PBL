@@ -1,0 +1,25 @@
+name: Deploy to server
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger update on server
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://dev.sitemankos.dpdns.org/updates.php" \
+            -H "Authorization: Bearer ${{ secrets.UPDATE_SECRET }}")
+          
+          body=$(echo "$response" | head -n -1)
+          code=$(echo "$response" | tail -n 1)
+          
+          echo "$body"
+          
+          if [ "$code" != "200" ]; then
+            echo "Update failed with HTTP $code"
+            exit 1
+          fi
