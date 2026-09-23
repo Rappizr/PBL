@@ -1,12 +1,12 @@
 <?php
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'penghuni') {
-    $_SESSION['login_error'] = 'Anda harus masuk terlebih dahulu!';
-    header("Location: index.php?page=login&role=penghuni");
-    exit;
-}
+// if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'penghuni') {
+//     $_SESSION['login_error'] = 'Anda harus masuk terlebih dahulu!';
+//     header("Location: index.php?page=login&role=penghuni");
+//     exit;
+// }
 
-$is_pj = !empty($_SESSION['user']['is_pj']);
-$nama_penghuni = $_SESSION['user']['nama'] ?? 'Penghuni';
+$is_pj = true;
+$nama_penghuni = 'Mas Dafa';
 
 $tagihan = [
     'sewa' => [

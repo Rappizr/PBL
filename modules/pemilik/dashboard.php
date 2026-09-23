@@ -1,9 +1,9 @@
 <?php
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'pemilik') {
-    $_SESSION['login_error'] = 'Anda harus masuk sebagai pemilik!';
-    header("Location: index.php?page=login&role=pemilik");
-    exit;
-}
+// if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'pemilik') {
+//     $_SESSION['login_error'] = 'Anda harus masuk sebagai pemilik!';
+//     header("Location: index.php?page=login&role=pemilik");
+//     exit;
+// }
 ?>
 <!DOCTYPE html>
 <html lang="id">
