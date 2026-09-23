@@ -12,7 +12,7 @@ switch ($page) {
         require_once __DIR__ . '/../modules/pemilik/dashboard.php';
         break;
 
-    case 'dashboard-penghuni':
+    case 'dashboard_penghuni':
         require_once __DIR__ . '/../modules/penghuni/dashboard.php';
         break;
 
