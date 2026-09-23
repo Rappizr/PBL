@@ -1,5 +1,4 @@
 <?php
-session_start();
 
 $role  = $_GET['role'] ?? 'penghuni';
 $error = '';
@@ -18,33 +17,6 @@ if (isset($_SESSION['login_error'])) {
     <title>SITEMAN - KOS | Masuk</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="../assets/css/styles.css">
-    <style>
-        /* Loading state */
-        .btn-submit.loading {
-            pointer-events: none;
-            opacity: 0.75;
-            position: relative;
-        }
-        .btn-submit.loading .btn-text {
-            visibility: hidden;
-        }
-        .btn-submit.loading::after {
-            content: "";
-            position: absolute;
-            width: 18px;
-            height: 18px;
-            top: 50%;
-            left: 50%;
-            margin: -9px 0 0 -9px;
-            border: 2px solid #fff;
-            border-top-color: transparent;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-        }
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-    </style>
 </head>
 
 <body>
