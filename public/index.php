@@ -12,12 +12,17 @@ switch ($page) {
         require_once __DIR__ . '/../modules/pemilik/dashboard.php';
         break;
 
-    case 'dashboard-penghuni':
+    case 'dashboard_penghuni':
         require_once __DIR__ . '/../modules/penghuni/dashboard.php';
         break;
 
+    case 'logout':
+        session_destroy();
+        header("Location: index.php?page=login");
+        exit;
+        
     default:
         http_response_code(404);
-        echo "Halaman Tidak Ada!";
+        require_once __DIR__ . '/../modules/components/404notfound.php';
         break;
 }
