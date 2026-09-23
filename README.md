@@ -18,24 +18,27 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
 - [ ] Pendaftaran penghuni baru & pencatatan kontrak sewa
 - [ ] Verifikasi pembayaran sewa
 - [ ] Chat penghuni
+- [ ] Penagihan sewa otomatis via WhatsApp
 - [ ] Buku kas sewa digital
-- [ ] Monitoring kas & iuran bersama
+- [ ] Monitoring iuran kamar
+- [ ] Penagihan iuran otomatis via WhatsApp
+- [ ] Buku kas iuran digital operasional bersama
 
 ### 🏠 Penanggung Jawab (PJ) Kos
-- [ ] Buku kas digital operasional bersama
 - [ ] Monitoring iuran kamar
-- [ ] Kartu rincian tagihan & jatuh tempo mandiri
 - [ ] Penagihan iuran otomatis via WhatsApp
-- [ ] Pembayaran iuran bersama & unggah bukti transfer
+- [ ] Kartu rincian tagihan & jatuh tempo mandiri
+- [ ] Pembayaran sewa kamar & unggah bukti transfer
+- [ ] Pembayaran iuran bersama & unggah bukti transfer iuran
 - [ ] Riwayat transaksi & unduh kwitansi digital
-- [ ] Monitoring kas & iuran bersama
+- [ ] Buku kas iuran digital operasional bersama
 
 ### 🧑‍🎓 Penghuni Kos
 - [ ] Kartu rincian tagihan & jatuh tempo mandiri
 - [ ] Pembayaran sewa kamar & unggah bukti transfer
 - [ ] Pembayaran iuran bersama & unggah bukti transfer iuran
 - [ ] Riwayat transaksi & unduh kwitansi digital
-- [ ] Monitoring kas & iuran bersama
+- [ ] Buku kas iuran digital operasional bersama
 
 
 ---

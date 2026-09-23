@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'nama' => 'Bapak Kos',
                 'role' => 'pemilik'
             ];
-            header("Location: index.php?page=dashboard-pemilik");
+            header("Location: index.php?page=dashboard_pemilik");
             exit;
         }
     } else {
