@@ -1,0 +1,71 @@
+.app-shell {
+max-width: 420px;
+margin: 0 auto;
+background: #fff;
+min-height: 100vh;
+}
+
+.topbar {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 20px;
+}
+
+.brand {
+font-size: 18px;
+font-weight: 700;
+color: #111;
+}
+
+.badge-name {
+background: #f4f06a;
+color: #333;
+font-size: 13px;
+font-weight: 600;
+padding: 4px 12px;
+border-radius: 14px;
+}
+
+.page-content {
+padding: 0 20px 24px;
+}
+
+.menu-grid {
+display: grid;
+grid-template-columns: 1fr 1fr;
+gap: 14px;
+margin-top: 18px;
+}
+
+.menu-card {
+background: #fff;
+border: 1px solid #eee;
+border-radius: 14px;
+box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+padding: 22px 12px;
+text-align: center;
+text-decoration: none;
+color: #111;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 12px;
+}
+
+.menu-card .icon {
+width: 42px;
+height: 42px;
+border-radius: 10px;
+background: #22252b;
+color: #fff;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 20px;
+}
+
+.menu-card .title {
+font-size: 13px;
+font-weight: 600;
+}
