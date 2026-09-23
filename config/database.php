@@ -1,24 +1,43 @@
 <?php
 
-$env = file_get_contents(__DIR__."/../.env");
-$lines = explode("\n",$env);
+$envFile = __DIR__ . '/../.env';
 
-foreach($lines as $line){
-  preg_match("/([^#]+)\=(.*)/",$line,$matches);
-  if(isset($matches[2])){ putenv(trim($line)); }
-} 
+if (!file_exists($envFile)) {
+    die('.env file tidak ditemukan');
+}
 
-$host = getenv('DB_HOST') ?: 'localhost';
-$port = getenv('DB_PORT') ?: '3306';
-$dbname = getenv('DB_NAME') ?: 'localhost';
-$username = getenv('DB_USER') ?: 'localhost';
-$password = getenv('DB_PASSWORD') ?: 'localhost';
+$lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+foreach ($lines as $line) {
+    $line = trim($line);
+
+    if ($line === '' || str_starts_with($line, '#')) {
+        continue;
+    }
+
+    [$key, $value] = array_pad(explode('=', $line, 2), 2, '');
+
+    $key = trim($key);
+    $value = trim($value);
+
+    putenv("$key=$value");
+}
+
+$host     = getenv('DB_HOST');
+$port     = getenv('DB_PORT') ?: '5432';
+$dbname   = getenv('DB_NAME');
+$username = getenv('DB_USER');
+$password = getenv('DB_PASSWORD');
 
 try {
-    $pdo = new PDO("pgsql:host=$host;port=$port;dbname=$dbname", $username, $password);
+    $pdo = new PDO(
+        "pgsql:host=$host;port=$port;dbname=$dbname",
+        $username,
+        $password
+    );
+
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
 } catch (PDOException $e) {
     die("Koneksi ke database gagal: " . $e->getMessage());
 }
-
-?>

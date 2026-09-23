@@ -3,6 +3,16 @@
 $role  = $_GET['role'] ?? 'penghuni';
 $error = '';
 
+if(isset($_SESSION['user']) && $_SESSION['user']['role']) {
+    // Jika sudah login, redirect ke dashboard sesuai role
+    if ($_SESSION['user']['role'] === 'pemilik') {
+        header("Location: index.php?page=dashboard-pemilik");
+    } elseif ($_SESSION['user']['role'] === 'penghuni') {
+        header("Location: index.php?page=dashboard-penghuni");
+    }
+    exit;
+}
+
 if (isset($_SESSION['login_error'])) {
     $error = $_SESSION['login_error'];
     unset($_SESSION['login_error']);
@@ -27,7 +37,7 @@ if (isset($_SESSION['login_error'])) {
             <?= $role === 'pemilik' ? 'Masuk sebagai Pemilik Kos' : 'Masuk menggunakan Nomor Kamar'; ?>
         </p>
 
-        <?php if (!empty($error)): ?>
+        <?php if ($error): ?>
             <div class="alert-error"><?= htmlspecialchars($error); ?></div>
         <?php endif; ?>
 

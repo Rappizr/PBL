@@ -1,7 +1,7 @@
 <?php
-session_start();
 
 if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'penghuni') {
+    $_SESSION['login_error'] = 'Anda harus masuk terlebih dahulu!';
     header("Location: index.php?page=login&role=penghuni");
     exit;
 }
@@ -9,7 +9,7 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'penghuni') {
 $pageTitle = "Dashboard Penghuni - Siteman-Kos";
 
 // Data dummy nama penghuni
-$nama_penghuni = 'Mas Rafi';
+$nama_penghuni = $_SESSION['user']['nama'] ?? header("Location: index.php?page=login&role=penghuni");;
 
 // Data dummy tagihan
 $tagihan = [
