@@ -51,3 +51,23 @@ function formatTanggal(?string $tanggal): string {
         <span class="brand">SITEMAN&nbsp;-&nbsp;KOS</span>
         <span class="badge-name"><?= htmlspecialchars($nama_penghuni) ?></span>
     </header>
+
+<div class="page-content">
+     <?php foreach (['sewa' => 'Pembayaran Sewa', 'iuran' => 'Pembayaran Iuran'] as $jenis => $label): ?>
+        <div class="tagihan-card">
+            <span class="label"><?= $label ?></span>
+            <div class="row">
+                <span>Status Pembayaran</span>
+                <?php $t = $tagihan[$jenis]; ?>
+                <?php if ($t && $t['status'] === 'lunas'): ?>
+                    <span class="status-lunas">Lunas</span>
+                <?php else: ?>
+                    <span class="status-belum">Belum Lunas</span>
+                <?php endif; ?>
+            </div>
+            <div class="row">
+                <span>Tenggat Pembayaran</span>
+                <span><?= formatTanggal($t['tanggal_jatuh_tempo'] ?? null) ?></span>
+            </div>
+        </div>
+    <?php endforeach; ?>
