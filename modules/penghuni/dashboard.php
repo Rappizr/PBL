@@ -40,7 +40,7 @@ function formatTanggal(?string $tanggal): string {
     <title>SITEMAN - KOS | Dashboard</title>
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/dashboard.css">
+    <link rel="stylesheet" href="../assets/css/styles.css">
 </head>
 
 <body>
