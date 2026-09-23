@@ -11,7 +11,7 @@ jobs:
       - name: Trigger update on server
         run: |
           response=$(curl -s -w "\n%{http_code}" -X POST \
-            "https://dev.sitemankos.dpdns.org/updates.php" \
+            "https://dashboard.sitemankos.dpdns.org/updates.php" \
             -H "Authorization: Bearer ${{ secrets.UPDATE_SECRET }}")
           
           body=$(echo "$response" | head -n -1)
