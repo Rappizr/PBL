@@ -1,0 +1,47 @@
+.tagihan-card {
+    background: #22252b;
+    color: #fff;
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+}
+
+.tagihan-card .label {
+    display: inline-block;
+    background: #fff;
+    color: #22252b;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+}
+
+.tagihan-card .row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.tagihan-card .row span:first-child {
+    color: #b9bcc4;
+}
+
+.status-lunas {
+    background: #d4f7d4;
+    color: #1c7a1c;
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.status-belum {
+    background: #f4f06a;
+    color: #5c5400;
+    padding: 2px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+}
