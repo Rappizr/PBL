@@ -46,3 +46,8 @@ function formatTanggal(?string $tanggal): string {
 
 <body>
     <div class="app-shell">
+
+    <header class="topbar">
+        <span class="brand">SITEMAN&nbsp;-&nbsp;KOS</span>
+        <span class="badge-name"><?= htmlspecialchars($nama_penghuni) ?></span>
+    </header>
