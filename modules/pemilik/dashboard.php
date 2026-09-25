@@ -1,6 +1,3 @@
-<?php
-
-?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -8,13 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Dashboard Pemilik</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/styles.css">
+    
+    <style>
+        <?php 
+        $css_path = __DIR__ . '/../../assets/css/styles.css';
+        if (file_exists($css_path)) {
+            echo file_get_contents($css_path);
+        }
+        ?>
+    </style>
 </head>
 <body class="dashboard-body">
     <div class="mobile-container">
         <header class="dashboard-header">
             <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
-            <span class="badge-role badge-pemilik">Bapak Kos</span>
+            <div class="kotak-kapsul-pemilik">
+                <span class="lingkaran-user-abu">
+                    <i class="fa-solid fa-user"></i>
+                </span>
+                <span class="tulisan-bapak-kos">Bapak Kos</span>
+            </div>
         </header>
 
         <main class="menu-card-container">

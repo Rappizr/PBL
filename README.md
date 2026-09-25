@@ -147,7 +147,8 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
 4. **Akses aplikasi** melalui browser:
 
    ```
-   http://localhost:3000/siteman-kos
+   PRODUCTION : https://pbl-blond.vercel.app/
+   DEVELOPMENT : https://pbl-git-dev-rappizrs-projects.vercel.app/
    ```
 
 5. Login sesuai role masing-masing (Pemilik, PJ, atau Penghuni) untuk mulai menggunakan sistem.
