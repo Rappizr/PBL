@@ -29,7 +29,7 @@ $pendingPembayaranCount = (int) $stmtPendingPembayaran->fetchColumn();
                 <span class="lingkaran-user-abu">
                     <i class="fa-solid fa-user"></i>
                 </span>
-                <span class="tulisan-bapak-kos">Bapak Kos</span>
+                <span class="tulisan-nama">Bapak Kos</span>
             </div>
         </header>
 

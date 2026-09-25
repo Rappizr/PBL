@@ -57,12 +57,15 @@ function formatTanggalIndo(?string $tanggal): string {
     <div class="mobile-container">
         <div>
             <!-- Header -->
-            <header class="dashboard-header">
-                <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
-                <span class="badge-role <?= $is_pj ? 'badge-pj' : 'badge-penghuni' ?>">
-                    <?= htmlspecialchars($nama_penghuni) ?>
+        <header class="dashboard-header">
+            <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
+            <div class="kotak-kapsul-pemilik">
+                <span class="lingkaran-user-abu">
+                    <i class="fa-solid fa-user"></i>
                 </span>
-            </header>
+                <span class="tulisan-nama">Penghuni</span>
+            </div>
+        </header>
 
             <main class="page-content">
                 <!-- Cards Tagihan -->
