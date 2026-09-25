@@ -5,6 +5,17 @@
 //     exit;
 // }
 
+require_once __DIR__ . '/../../config/database.php';
+
+// Hitung pembayaran yang masih menunggu verifikasi
+$stmtPendingPembayaranIuran = $pdo->query("
+    SELECT COUNT(*) AS total
+    FROM pembayaran
+    WHERE status_verifikasi = 'pending'
+");
+$pendingPembayaranIuranCount = (int) $stmtPendingPembayaranIuran->fetchColumn();
+
+
 $is_pj = true;
 $nama_penghuni = 'Mas Dafa';
 
@@ -97,6 +108,19 @@ function formatTanggalIndo(?string $tanggal): string {
                                 <i class="fa-solid fa-file-invoice-dollar"></i>
                             </div>
                             <span class="menu-label">Pembayaran</span>
+                        </a>
+
+                        <a href="/?page=verifikasi-pembayaran" class="menu-item-box">
+                            <div class="menu-icon-wrapper">
+                                <i class="fa-solid fa-list-check"></i>
+                            </div>
+                            <span class="menu-label">Verifikasi<br>Pembayaran Iuran</span>
+                            <?php if ($pendingPembayaranIuranCount > 0): ?>
+                                <span class="badge-notif">
+                                    <i class="fa-solid fa-bell"></i>
+                                    <?= $pendingPembayaranIuranCount ?> Notifikasi
+                                </span>
+                            <?php endif; ?>
                         </a>
 
                         <!-- Menu 3 -->

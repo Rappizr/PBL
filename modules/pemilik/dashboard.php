@@ -1,3 +1,16 @@
+<?php
+
+require_once __DIR__ . '/../../config/database.php';
+
+// Hitung pembayaran yang masih menunggu verifikasi
+$stmtPendingPembayaran = $pdo->query("
+    SELECT COUNT(*) AS total
+    FROM pembayaran
+    WHERE status_verifikasi = 'pending'
+");
+$pendingPembayaranCount = (int) $stmtPendingPembayaran->fetchColumn();
+
+?>
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -43,9 +56,12 @@
                         <i class="fa-solid fa-list-check"></i>
                     </div>
                     <span class="menu-label">Verifikasi<br>Pembayaran</span>
-                    <span class="badge-notif">
-                        <i class="fa-solid fa-bell"></i> 3 Notifikasi
-                    </span>
+                    <?php if ($pendingPembayaranCount > 0): ?>
+                        <span class="badge-notif">
+                            <i class="fa-solid fa-bell"></i>
+                            <?= $pendingPembayaranCount ?> Notifikasi
+                        </span>
+                    <?php endif; ?>
                 </a>
 
                 <a href="#" class="menu-item-box">
