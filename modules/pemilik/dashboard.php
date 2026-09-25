@@ -1,10 +1,5 @@
 <?php
-// Optional auth guard (uncomment when ready)
-// if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'pemilik') {
-//     $_SESSION['login_error'] = 'Anda harus masuk sebagai pemilik!';
-//     header('Location: /?page=login&role=pemilik');
-//     exit;
-// }
+
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -19,7 +14,7 @@
     <div class="mobile-container">
         <header class="dashboard-header">
             <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
-            <span class="badge-role">Bapak Kos</span>
+            <span class="badge-role badge-pemilik">Bapak Kos</span>
         </header>
 
         <main class="menu-card-container">
