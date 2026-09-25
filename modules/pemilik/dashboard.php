@@ -1,10 +1,15 @@
 <?php
-// Optional auth guard (uncomment when ready)
-// if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'pemilik') {
-//     $_SESSION['login_error'] = 'Anda harus masuk sebagai pemilik!';
-//     header('Location: /?page=login&role=pemilik');
-//     exit;
-// }
+
+require_once __DIR__ . '/../../config/database.php';
+
+// Hitung pembayaran yang masih menunggu verifikasi
+$stmtPendingPembayaran = $pdo->query("
+    SELECT COUNT(*) AS total
+    FROM pembayaran
+    WHERE status_verifikasi = 'pending'
+");
+$pendingPembayaranCount = (int) $stmtPendingPembayaran->fetchColumn();
+
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -19,7 +24,7 @@
     <div class="mobile-container">
         <header class="dashboard-header">
             <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
-            <span class="badge-role">Bapak Kos</span>
+            <span class="badge-role badge-pemilik">Bapak Kos</span>
         </header>
 
         <main class="menu-card-container">
@@ -45,9 +50,12 @@
                         <i class="fa-solid fa-list-check"></i>
                     </div>
                     <span class="menu-label">Verifikasi<br>Pembayaran</span>
-                    <span class="badge-notif">
-                        <i class="fa-solid fa-bell"></i> 3 Notifikasi
-                    </span>
+                    <?php if ($pendingPembayaranCount > 0): ?>
+                        <span class="badge-notif">
+                            <i class="fa-solid fa-bell"></i>
+                            <?= $pendingPembayaranCount ?> Notifikasi
+                        </span>
+                    <?php endif; ?>
                 </a>
 
                 <a href="#" class="menu-item-box">
