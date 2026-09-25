@@ -6,14 +6,7 @@
     <title>SITEMAN - KOS | Dashboard Pemilik</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
-    <style>
-        <?php 
-        $css_path = __DIR__ . '/../../assets/css/styles.css';
-        if (file_exists($css_path)) {
-            echo file_get_contents($css_path);
-        }
-        ?>
-    </style>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body class="dashboard-body">
     <div class="mobile-container">

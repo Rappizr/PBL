@@ -11,7 +11,7 @@
 }
 
 /* ==========================================================================
-   LOGIN 
+   LOGIN
    ========================================================================== */
 body {
   background-color: #20242c;
@@ -187,7 +187,7 @@ body {
 }
 
 /* ==========================================================================
-   DASHBOARD LAYOUT & FOOTER 
+   DASHBOARD LAYOUT & HEADER
    ========================================================================== */
 .dashboard-body {
   background-color: #20242c;
@@ -213,8 +213,9 @@ body {
 .dashboard-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 20px;
 }
 
 .brand-title-dashboard {
@@ -226,15 +227,54 @@ body {
   margin: 0;
 }
 
-.badge-role {
-  font-family: "Inter", sans-serif;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 4px 12px;
-  border-radius: 8px;
-  display: inline-block;
+/* ==========================================================================
+   BADGE BAPAK KOS (KAPSUL HIJAU MINT & AVATAR ABU-ABU)
+   ========================================================================== */
+.kotak-kapsul-pemilik {
+  display: inline-flex;
+  align-items: center;
+  background-color: #d5ffdd;
+  height: 35px;
+  min-width: 125px;
+  border-radius: 9999px;
+  padding: 0 12px 0 5px;
+  gap: 8px;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
+.lingkaran-user-abu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 25px;
+  height: 25px;
+  min-width: 25px;
+  background-color: #c4c4c4;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.lingkaran-user-abu i {
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1;
+  display: block;
+}
+
+.tulisan-bapak-kos {
+  font-family: "Inter", sans-serif;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #275231;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   MENU CARD CONTAINER & GRID
+   ========================================================================== */
 .page-content {
   display: flex;
   flex-direction: column;
@@ -300,6 +340,23 @@ body {
   line-height: 1.25;
 }
 
+.badge-notif {
+  margin-top: 6px;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #991b1b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-notif i {
+  font-size: 10px;
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
 .dashboard-footer {
   text-align: center;
   margin-top: 24px;
@@ -321,30 +378,7 @@ body {
 }
 
 /* ==========================================================================
-   MODUL DASHBOARD PEMILIK KOS
-   ========================================================================== */
-.badge-role.badge-pemilik,
-.badge-pemilik {
-  background-color: #79f2c3;
-  color: #1e3b2e;
-}
-
-.badge-notif {
-  margin-top: 6px;
-  font-size: 10.5px;
-  font-weight: 800;
-  color: #991b1b;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.badge-notif i {
-  font-size: 10px;
-}
-
-/* ==========================================================================
-   DASHBOARD PENGHUNI & PENANGGUNG JAWAB (PJ)
+   ROLE LAINNYA (PENGHUNI & PJ)
    ========================================================================== */
 .badge-penghuni {
   background-color: #f7f1af;
