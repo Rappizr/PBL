@@ -1,8 +1,9 @@
 {
-  "require": {
-    "php": ">=8.2",
-    "ext-pgsql": "*",
-    "ext-pdo_pgsql": "*",
-    "ext-redis": "*"
-  }
+    "name": "putuwaw/php-app-vercel",
+    "description": "Deploy PHP Application to Vercel",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "vlucas/phpdotenv": "^5.5"
+    }
 }

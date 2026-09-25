@@ -1,7 +1,7 @@
 <?php
 // if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'penghuni') {
 //     $_SESSION['login_error'] = 'Anda harus masuk terlebih dahulu!';
-//     header("Location: index.php?page=login&role=penghuni");
+//     header("Location: /?page=login&role=penghuni");
 //     exit;
 // }
 
@@ -39,7 +39,7 @@ function formatTanggalIndo(?string $tanggal): string {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 
 <body class="dashboard-body">
@@ -84,7 +84,7 @@ function formatTanggalIndo(?string $tanggal): string {
                     <h2 class="menu-heading">Silahkan pilih menu</h2>
                     <div class="menu-grid">
                         <!-- Menu 1 -->
-                        <a href="index.php?page=penghuni-tagihan" class="menu-item-box">
+                        <a href="/?page=penghuni-tagihan" class="menu-item-box">
                             <div class="menu-icon-wrapper">
                                 <i class="fa-solid fa-receipt"></i>
                             </div>
@@ -92,7 +92,7 @@ function formatTanggalIndo(?string $tanggal): string {
                         </a>
 
                         <!-- Menu 2 -->
-                        <a href="index.php?page=penghuni-bayar" class="menu-item-box">
+                        <a href="/?page=penghuni-bayar" class="menu-item-box">
                             <div class="menu-icon-wrapper">
                                 <i class="fa-solid fa-file-invoice-dollar"></i>
                             </div>
@@ -100,7 +100,7 @@ function formatTanggalIndo(?string $tanggal): string {
                         </a>
 
                         <!-- Menu 3 -->
-                        <a href="index.php?page=penghuni-peraturan" class="menu-item-box">
+                        <a href="/?page=penghuni-peraturan" class="menu-item-box">
                             <div class="menu-icon-wrapper">
                                 <i class="fa-solid fa-book-open"></i>
                             </div>
@@ -108,7 +108,7 @@ function formatTanggalIndo(?string $tanggal): string {
                         </a>
 
                         <!-- Menu 4 -->
-                        <a href="index.php?page=penghuni-chat" class="menu-item-box">
+                        <a href="/?page=penghuni-chat" class="menu-item-box">
                             <div class="menu-icon-wrapper">
                                 <i class="fa-solid fa-comment-dots"></i>
                             </div>
@@ -117,14 +117,14 @@ function formatTanggalIndo(?string $tanggal): string {
 
                         <!-- Menu 5 (Kondisional: Monitor Kas vs Kelola & Monitor Iuran) -->
                         <?php if (!$is_pj): ?>
-                            <a href="index.php?page=penghuni-kas" class="menu-item-box">
+                            <a href="/?page=penghuni-kas" class="menu-item-box">
                                 <div class="menu-icon-wrapper">
                                     <i class="fa-solid fa-wallet"></i>
                                 </div>
                                 <span class="menu-label">Monitor Kas</span>
                             </a>
                         <?php else: ?>
-                            <a href="index.php?page=pj-kelola-iuran" class="menu-item-box">
+                            <a href="/?page=pj-kelola-iuran" class="menu-item-box">
                                 <div class="menu-icon-wrapper">
                                     <i class="fa-solid fa-wallet"></i>
                                 </div>

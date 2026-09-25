@@ -1,7 +1,8 @@
 <?php
+// Optional auth guard (uncomment when ready)
 // if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'pemilik') {
 //     $_SESSION['login_error'] = 'Anda harus masuk sebagai pemilik!';
-//     header("Location: index.php?page=login&role=pemilik");
+//     header('Location: /?page=login&role=pemilik');
 //     exit;
 // }
 ?>
@@ -12,10 +13,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Dashboard Pemilik</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body class="dashboard-body">
-
     <div class="mobile-container">
         <header class="dashboard-header">
             <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
@@ -26,21 +26,21 @@
             <h2 class="menu-heading">Silahkan pilih menu</h2>
 
             <div class="menu-grid">
-                <a href="index.php?page=kamar-penghuni" class="menu-item-box">
+                <a href="/?page=kamar-penghuni" class="menu-item-box">
                     <div class="menu-icon-wrapper">
                         <i class="fa-solid fa-warehouse"></i>
                     </div>
                     <span class="menu-label">Manajemen<br>Kamar & Penghuni</span>
                 </a>
 
-                <a href="index.php?page=analisis-keuangan" class="menu-item-box">
+                <a href="/?page=analisis-keuangan" class="menu-item-box">
                     <div class="menu-icon-wrapper">
                         <i class="fa-solid fa-wallet"></i>
                     </div>
                     <span class="menu-label">Buku Kas<br>Sewa</span>
                 </a>
 
-                <a href="index.php?page=verifikasi-pembayaran" class="menu-item-box">
+                <a href="/?page=verifikasi-pembayaran" class="menu-item-box">
                     <div class="menu-icon-wrapper">
                         <i class="fa-solid fa-list-check"></i>
                     </div>
@@ -57,18 +57,16 @@
                     <span class="menu-label">Monitoring &<br>Tagihan Iuran</span>
                 </a>
 
-                <a href="index.php?page=chat-penghuni" class="menu-item-box">
+                <a href="/?page=chat-penghuni" class="menu-item-box">
                     <div class="menu-icon-wrapper">
                         <i class="fa-solid fa-comments"></i>
                     </div>
                     <span class="menu-label">Chat Penghuni</span>
                 </a>
-
             </div>
         </main>
 
-    <?php require_once __DIR__ . '/../components/footer.php'; ?>
+        <?php require_once __DIR__ . '/../components/footer.php'; ?>
     </div>
-
 </body>
 </html>

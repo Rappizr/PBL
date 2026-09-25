@@ -1,14 +1,12 @@
 <?php
-
 $role  = $_GET['role'] ?? 'penghuni';
 $error = '';
 
-if(isset($_SESSION['user']) && $_SESSION['user']['role']) {
-    // Jika sudah login, redirect ke dashboard sesuai role
+if (isset($_SESSION['user']) && !empty($_SESSION['user']['role'])) {
     if ($_SESSION['user']['role'] === 'pemilik') {
-        header("Location: index.php?page=dashboard_pemilik");
+        header('Location: /?page=dashboard_pemilik');
     } elseif ($_SESSION['user']['role'] === 'penghuni') {
-        header("Location: index.php?page=dashboard_penghuni");
+        header('Location: /?page=dashboard_penghuni');
     }
     exit;
 }
@@ -20,17 +18,14 @@ if (isset($_SESSION['login_error'])) {
 ?>
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Masuk</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="../assets/css/styles.css">
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
-
 <body>
-
     <div class="login-card">
         <h1 class="brand-title">SITEMAN - KOS</h1>
         <p class="brand-subtitle">
@@ -41,7 +36,7 @@ if (isset($_SESSION['login_error'])) {
             <div class="alert-error"><?= htmlspecialchars($error); ?></div>
         <?php endif; ?>
 
-        <form action="../backend/auth.php" method="POST" id="loginForm">
+        <form action="/api/auth" method="POST" id="loginForm">
             <input type="hidden" name="role" value="<?= htmlspecialchars($role); ?>">
 
             <?php if ($role === 'penghuni'): ?>
@@ -67,9 +62,9 @@ if (isset($_SESSION['login_error'])) {
         <p class="role-section-text"><strong>Klik</strong> disini sebagai:</p>
 
         <div class="role-selection">
-            <a href="index.php?page=login&role=pemilik"
+            <a href="/?page=login&role=pemilik"
                class="btn-role <?= $role === 'pemilik' ? 'active' : ''; ?>">Pemilik Kos</a>
-            <a href="index.php?page=login&role=penghuni"
+            <a href="/?page=login&role=penghuni"
                class="btn-role <?= $role === 'penghuni' ? 'active' : ''; ?>">Penghuni Kos</a>
         </div>
     </div>
@@ -81,6 +76,5 @@ if (isset($_SESSION['login_error'])) {
             btn.disabled = true;
         });
     </script>
-
 </body>
 </html>

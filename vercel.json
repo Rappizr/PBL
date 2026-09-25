@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "functions": {
+    "api/*.php": {
+      "runtime": "vercel-php@0.9.0"
+    }
+  },
+  "routes": [
+    {
+      "src": "/css/(.*)",
+      "dest": "/public/css/$1"
+    },
+    {
+      "src": "/api/auth",
+      "dest": "/api/auth.php"
+    },
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/$1"
+    },
+    {
+      "src": "/logout",
+      "dest": "/api/index.php?page=logout"
+    },
+    {
+      "src": "/dashboard/pemilik",
+      "dest": "/api/index.php?page=dashboard_pemilik"
+    },
+    {
+      "src": "/dashboard/penghuni",
+      "dest": "/api/index.php?page=dashboard_penghuni"
+    },
+    {
+      "src": "/login",
+      "dest": "/api/index.php?page=login"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.php"
+    }
+  ]
+}

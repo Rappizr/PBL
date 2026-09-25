@@ -1,17 +1,19 @@
 <?php
-
+/**
+ * Login handler — POST /api/auth
+ */
 session_start();
 
-include __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/database.php';
 
 $data_pemilik = $pdo->query("SELECT * FROM pemilik LIMIT 1")->fetch(PDO::FETCH_ASSOC);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $pin = trim($_POST['pin'] ?? '');
+    $pin           = trim($_POST['pin'] ?? '');
     $selected_role = $_POST['role'] ?? 'penghuni';
 
     if ($selected_role === 'pemilik') {
-        if (empty($pin)) {
+        if ($pin === '') {
             $_SESSION['login_error'] = 'PIN Pemilik wajib diisi!';
         } elseif (!$data_pemilik || $pin !== $data_pemilik['pin']) {
             $_SESSION['login_error'] = 'PIN Pemilik salah!';
@@ -19,16 +21,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user'] = [
                 'id'   => $data_pemilik['id'],
                 'nama' => $data_pemilik['nama'] ?? 'Bapak Kos',
-                'role' => 'pemilik'
+                'role' => 'pemilik',
             ];
-            header("Location: ../public/index.php?page=dashboard_pemilik");
+            header('Location: /?page=dashboard_pemilik');
             exit;
         }
     } else {
-        // === LOGIN PENGHUNI ===
-        $no_kamar = trim($_POST['number'] ?? ''); // nomor kamar dari form
+        // Login penghuni
+        $no_kamar = trim($_POST['number'] ?? '');
 
-        if (empty($no_kamar) || empty($pin)) {
+        if ($no_kamar === '' || $pin === '') {
             $_SESSION['login_error'] = 'Nomor Kamar dan PIN wajib diisi!';
         } else {
             $stmt = $pdo->prepare("
@@ -45,16 +47,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 INNER JOIN penghuni_kamar pk ON pk.kamar_id = k.id
                 INNER JOIN penghuni p ON p.id = pk.penghuni_id
                 WHERE k.no_kamar = :no_kamar
-                AND p.pin = :pin
-                LIMIT 1;
+                  AND p.pin = :pin
+                LIMIT 1
             ");
 
             $stmt->execute([
                 ':no_kamar' => $no_kamar,
-                ':pin'      => $pin
+                ':pin'      => $pin,
             ]);
 
             $penghuni = $stmt->fetch(PDO::FETCH_ASSOC);
+
             if (!$penghuni) {
                 $_SESSION['login_error'] = 'Nomor Kamar atau PIN tidak sesuai / kamar tidak aktif!';
             } else {
@@ -67,19 +70,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'no_kamar'          => $penghuni['no_kamar'],
                     'penghuni_kamar_id' => $penghuni['penghuni_kamar_id'],
                 ];
-                // print_r($_SESSION['user']); // Debugging: Print session data
-                header("Location: ../public/index.php?page=dashboard_penghuni");
+                header('Location: /?page=dashboard_penghuni');
                 exit;
             }
         }
     }
 
+    // Error → back to login
     if (isset($_SESSION['login_error'])) {
-        header("Location: ../public/index.php?page=login&role=" . urlencode($selected_role));
+        header('Location: /?page=login&role=' . urlencode($selected_role));
         exit;
     }
 }
-header("Location: ../public/index.php?page=login");
-exit;
 
-?>
+// Fallback
+header('Location: /?page=login');
+exit;
