@@ -1,0 +1,8 @@
+{
+  "require": {
+    "php": ">=8.2",
+    "ext-pgsql": "*",
+    "ext-pdo_pgsql": "*",
+    "ext-redis": "*"
+  }
+}
