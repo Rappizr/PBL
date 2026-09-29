@@ -1,8 +1,4 @@
 <?php
-/**
- * SITEMAN-KOS — Front controller for Vercel
- * All page routes land here via vercel.json
- */
 session_start();
 
 $page = $_GET['page'] ?? 'login';
@@ -19,6 +15,10 @@ switch ($page) {
     case 'dashboard_penghuni':
         require_once __DIR__ . '/../modules/penghuni/dashboard.php';
         break;
+
+case 'verifikasi_pembayaran':
+    require_once __DIR__ . '/../modules/pemilik/verifikasi_bayar/page.php';
+    break;
 
     case 'logout':
         session_destroy();

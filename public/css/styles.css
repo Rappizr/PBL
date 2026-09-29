@@ -445,3 +445,193 @@ body {
   border-radius: 4px;
   display: inline-block;
 }
+
+/* ==========================================================================
+   VERIFIKASI PEMBAYARAN
+   ========================================================================== */
+.verifikasi-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.banner-card {
+  background-color: #2b303a;
+  border-radius: 20px;
+  padding: 18px 20px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+
+.banner-title {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 12px;
+  letter-spacing: 0.3px;
+}
+
+.btn-kembali {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  color: #2b303a;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Card Utama (Gelap) */
+.verifikasi-card {
+  background-color: #2b303a;
+  border-radius: 20px;
+  padding: 14px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Layout Berjajar Samping-Sampingan (Foto & Detail) */
+.verifikasi-card-body {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+/* Box Foto */
+.bukti-wrapper {
+  position: relative !important;
+  width: 90px !important;
+  height: 90px !important;
+  flex-shrink: 0 !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background-color: #ffffff !important;
+}
+
+.bukti-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+/* Tombol Zoom (Presisi Di Tengah Gambar) */
+.btn-zoom {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #2b303a !important;
+  text-decoration: none !important;
+  font-size: 13px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+  z-index: 10 !important;
+}
+
+/* Box Detail Teks (Background Abu-abu) */
+.detail-wrapper {
+  flex: 1 !important;
+  height: 90px !important;
+  background-color: #e5e5e5 !important;
+  border-radius: 16px !important;
+  padding: 10px 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 2px !important;
+}
+
+.user-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nama-penghuni {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a1e24;
+}
+
+.badge-kamar {
+  background-color: #a5b4fc;
+  color: #312e81;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.nominal-text {
+  font-size: 17px;
+  font-weight: 900;
+  color: #047857;
+}
+
+.metode-tanggal {
+  font-size: 11px;
+  font-weight: 500;
+  color: #4b5563;
+}
+
+/* Tombol Aksi (Chat & Setujui) */
+.verifikasi-card-footer {
+  display: flex !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+.btn-action {
+  flex: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 10px !important;
+  border-radius: 12px !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  border: none !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+
+.btn-chat {
+  background-color: #fde68a !important;
+  color: #1a1e24 !important;
+}
+
+.btn-chat i {
+  font-size: 18px !important;
+}
+
+.btn-approve {
+  background-color: #6ee7b7 !important;
+  color: #064e3b !important;
+}
+
+.btn-approve i {
+  font-size: 18px !important;
+}

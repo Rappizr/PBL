@@ -51,7 +51,7 @@ $pendingPembayaranCount = (int) $stmtPendingPembayaran->fetchColumn();
                     <span class="menu-label">Buku Kas<br>Sewa</span>
                 </a>
 
-                <a href="/?page=verifikasi-pembayaran" class="menu-item-box">
+                <a href="/?page=verifikasi_pembayaran" class="menu-item-box">
                     <div class="menu-icon-wrapper">
                         <i class="fa-solid fa-list-check"></i>
                     </div>
