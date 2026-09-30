@@ -788,3 +788,99 @@ body {
   text-align: center;
   margin-bottom: 24px;
 }
+
+
+/* ==========================================================================
+   ANALISIS KAS
+   ========================================================================== */
+/* tambah pengeluaran dan saldo */
+.kas-action-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+ 
+.btn-tambah-pengeluaran,
+.saldo-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  background-color: #ffffff;
+  color: #111111;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #d8d8d8;
+  text-decoration: none;
+}
+ 
+.transaksi-kosong {
+  text-align: center;
+  color: #6b7280;
+  font-size: 13px;
+  padding: 20px 0;
+}
+ 
+/* Grid Transaksi */
+.transaksi-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #2b303a;
+  border-radius: 20px;
+  padding: 14px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+}
+ 
+.transaksi-icon {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 10px;
+  background-color: #383c44;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+ 
+.transaksi-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+}
+ 
+.transaksi-nama {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+ 
+.transaksi-tanggal {
+  color: #9aa0aa;
+  font-size: 11px;
+  margin-top: 2px;
+}
+ 
+.transaksi-nominal-pill {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+ 
+.status-merah {
+  background-color: #fca5a5;
+  color: #7f1d1d;
+}
+ 
+.status-hijau {
+  background-color: #6ee7b7;
+  color: #064e3b;
+}
