@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="/css/styles.css">
 </head>
 
-<body class="dashboard-body">
+<body class="kas-body">
     <div class="mobile-container">
-        <header class="dashboard-header">
+        <header class="dashboard-header kas-header">
             <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
             <div class="kotak-kapsul-pemilik">
                 <span class="lingkaran-user-abu">
@@ -21,30 +21,31 @@
             </div>
         </header>
 
-        <main class="analisis-container">
+        <main class="kas-container">
 
-            <div class="banner-card">
+            <div class="banner-card kas-title-card">
                 <h2 class="banner-title">Analisis Kas</h2>
-                <a href="/?page=dashboard_pemilik" class="btn-kembali">
+                <a href="/dashboard/pemilik" class="btn-kembali btn-back">
                     <i class="fa-solid fa-arrow-left"></i> Kembali
                 </a>
             </div>
 
-            <div class="kas-action-row">
+            <div class="kas-action-row kas-actions">
                 <a href="/?page=tambah-pengeluaran" class="btn-tambah-pengeluaran">
-                    <i class="fa-solid fa-plus"></i> Tambah Pengeluaran
+                    <span class="icon-lingkaran"><i class="fa-solid fa-plus"></i></span>
+                    Tambah Pengeluaran
                 </a>
                 <div class="saldo-box">
-                    <i class="fa-regular fa-credit-card"></i>
+                    <span class="icon-lingkaran"><i class="fa-solid fa-wallet"></i></span>
                     Rp. 1.253.500
                 </div>
             </div>
 
             <div class="card-list">
 
-                <div class="transaksi-card">
-                    <div class="transaksi-icon">
-                        <i class="fa-solid fa-pen"></i>
+                <div class="transaksi-item">
+                    <div class="transaksi-icon ikon-keluar">
+                        <i class="fa-solid fa-arrow-up"></i>
                     </div>
                     <div class="transaksi-info">
                         <span class="transaksi-nama">Pembelian alat kebersihan</span>
@@ -53,10 +54,9 @@
                     <span class="transaksi-nominal-pill status-merah">Rp. -150.000</span>
                 </div>
 
-                <div class="transaksi-card">
-
-                    <div class="transaksi-icon">
-                        <i class="fa-solid fa-pen"></i>
+                <div class="transaksi-item">
+                    <div class="transaksi-icon ikon-masuk">
+                        <i class="fa-solid fa-arrow-down"></i>
                     </div>
                     <div class="transaksi-info">
                         <span class="transaksi-nama">Pembelian alat kebersihan</span>
@@ -65,9 +65,9 @@
                     <span class="transaksi-nominal-pill status-hijau">Rp. -150.000</span>
                 </div>
 
-                <div class="transaksi-card">
-                    <div class="transaksi-icon">
-                        <i class="fa-solid fa-pen"></i>
+                <div class="transaksi-item">
+                    <div class="transaksi-icon ikon-keluar">
+                        <i class="fa-solid fa-arrow-up"></i>
                     </div>
                     <div class="transaksi-info">
                         <span class="transaksi-nama">Pembelian alat kebersihan</span>
@@ -75,7 +75,10 @@
                     </div>
                     <span class="transaksi-nominal-pill status-merah">Rp. -150.000</span>
                 </div>
+
+            </div>
         </main>
+
         <?php require_once __DIR__ . '/../../components/footer.php'; ?>
     </div>
 </body>
