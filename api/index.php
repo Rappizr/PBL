@@ -22,6 +22,10 @@ case 'verifikasi_pembayaran':
  case 'arus_kas':
         require_once __DIR__ . '/../modules/pemilik/analisis_kas/arus_kas.php';
         break;
+
+        case 'manajemen_kamar':
+        require_once __DIR__ . '/../modules/pemilik/manajemen_kamar/manajemenKamar.php'; 
+        break;
         
     case 'logout':
         session_destroy();
