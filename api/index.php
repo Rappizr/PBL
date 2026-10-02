@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 $page = $_GET['page'] ?? 'login';
 
@@ -16,14 +18,15 @@ switch ($page) {
         require_once __DIR__ . '/../modules/penghuni/dashboard.php';
         break;
 
-case 'verifikasi_pembayaran':
-    require_once __DIR__ . '/../modules/pemilik/verifikasi_bayar/page.php';
-    break;
- case 'arus_kas':
+    case 'verifikasi_pembayaran':
+        require_once __DIR__ . '/../modules/pemilik/verifikasi_bayar/page.php';
+        break;
+
+     case 'arus_kas':
         require_once __DIR__ . '/../modules/pemilik/analisis_kas/arus_kas.php';
         break;
 
-        case 'manajemen_kamar':
+    case 'manajemen_kamar':
         require_once __DIR__ . '/../modules/pemilik/manajemen_kamar/manajemenKamar.php'; 
         break;
         

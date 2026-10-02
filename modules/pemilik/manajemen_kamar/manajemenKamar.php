@@ -1,7 +1,9 @@
 <?php
-session_start();
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'pemilik')  {
+if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'pemilik') {
     header("Location: ../../public/index.php?page=login&role=pemilik");
     exit;
 }
@@ -23,7 +25,7 @@ $daftar_kamar = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | manajemen Kamar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="../../assets/css/styles.css">
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body class="kamar-body">
     <div class="mobile-container">
@@ -45,7 +47,7 @@ $daftar_kamar = [
 
     <div class ="kamar-title-card">
         <h2>Manajemen Kamar &amp; Penghuni</h2>
-        <a href="?page=dashboard-pemilik" class="btn-back">
+        <a href="/?page=dashboard_pemilik" class="btn-back">
             <i class="fa-solid fa-arrow-left"></i> Kembali
         </a>
     </div>
@@ -76,10 +78,7 @@ $daftar_kamar = [
         <?php endforeach; ?>
     </div>
 
-    <div class="kamar-footer">
-        <p class="footer-title"><strong>SITEMAN - KOS</strong> &nbsp; <i class="fa-regular fa-copyright"></i> 2g2b - 2026</p>
-        <p class="footer-desc">Sistem Manajemen Operasion Kos</p>
-    </div>
+ <?php require_once __DIR__ . '/../../components/footer.php'; ?>
 
 </div>
 
