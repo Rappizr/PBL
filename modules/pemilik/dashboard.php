@@ -37,14 +37,14 @@ $pendingPembayaranCount = (int) $stmtPendingPembayaran->fetchColumn();
             <h2 class="menu-heading">Silahkan pilih menu</h2>
 
             <div class="menu-grid">
-                <a href="/?page=manajemen-kamar" class="menu-item-box">
+                <a href="/?page=manajemen_kamar" class="menu-item-box">
                     <div class="menu-icon-wrapper">
                         <i class="fa-solid fa-warehouse"></i>
                     </div>
                     <span class="menu-label">Manajemen<br>Kamar & Penghuni</span>
                 </a>
 
-                <a href="/?page=analisis-kas" class="menu-item-box">
+                <a href="/?page=arus_kas" class="menu-item-box">
                     <div class="menu-icon-wrapper">
                         <i class="fa-solid fa-wallet"></i>
                     </div>
