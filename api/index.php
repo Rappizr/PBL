@@ -18,27 +18,15 @@ switch ($page) {
         require_once __DIR__ . '/../modules/penghuni/dashboard.php';
         break;
 
-<<<<<<< HEAD
     case 'verifikasi_pembayaran':
         require_once __DIR__ . '/../modules/pemilik/verifikasi_bayar/page.php';
         break;
 
-    case 'manajemen-kamar':
-        require_once __DIR__ . '/../modules/pemilik/manjemen_kamar/manajemenKamar.php';
-        break;
-
-    case 'analisis-kas':
-        require_once __DIR__ . '/../modules/pemilik/analisis-kas/arus-kas.php';
-=======
-case 'verifikasi_pembayaran':
-    require_once __DIR__ . '/../modules/pemilik/verifikasi_bayar/page.php';
-    break;
- case 'arus_kas':
+     case 'arus_kas':
         require_once __DIR__ . '/../modules/pemilik/analisis_kas/arus_kas.php';
->>>>>>> b30c9f3ba06bf4a144f4ceb4b7feaec788b471e3
         break;
 
-        case 'manajemen_kamar':
+    case 'manajemen_kamar':
         require_once __DIR__ . '/../modules/pemilik/manajemen_kamar/manajemenKamar.php'; 
         break;
         

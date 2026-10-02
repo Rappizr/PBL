@@ -32,7 +32,12 @@ $daftar_kamar = [
 
     <div class="kamar-page-header">
         <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
-        <span class="badge-role">Bapak Kos</span>
+        <div class="kotak-kapsul-pemilik">
+            <span class="lingkaran-user-abu">
+                <i class="fa-solid fa-user"></i>
+            </span>
+            <span class="tulisan-nama">Bapak Kos</span>
+        </div>
     </div>
 
     <div class="kamar-title-card">
