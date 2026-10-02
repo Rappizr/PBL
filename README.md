@@ -121,27 +121,23 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
 
    ```bash
    git clone https://github.com/Rappizr/PBL siteman-kos
+   cd siteman-kos
    ```
 
-2. **Konfigurasi koneksi database**, sesuaikan kredensial (host, user, password, nama database) pada file konfigurasi, misalnya `config/database.php`:
+2. **Konfigurasi koneksi database**, sesuaikan kredensial (host, user, password, nama database) pada file konfigurasi `.env`:
 
-   ```php
-   <?php
-   $host = "localhost";
-   $user = "root";
-   $pass = "";
-   $dbname = "siteman_kos";
-
-   $conn = new mysqli($host, $user, $pass, $dbname);
-   if ($conn->connect_error) {
-       die("Koneksi gagal: " . $conn->connect_error);
-   }
+   ```env
+   DB_HOST=<Your Database Postgres Host>
+   DB_PORT=<You Database Port>
+   DB_NAME=<You Database Name>
+   DB_USER=<You Database Username>
+   DB_PASSWORD=<You Database Password>
    ```
 
 3. **Memulai aplikasi** melalui CLI:
 
    ```
-   php -S localhost:3000
+   php -S localhost:3000 router.php
    ```
 
 4. **Akses aplikasi** melalui browser:
