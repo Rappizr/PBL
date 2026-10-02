@@ -12,7 +12,7 @@ if (!isset($_SESSION['user']) || $_SESSION['user']['role'] !== 'pemilik') {
 $daftar_kamar = [
     ['nomor' => '01', 'penghuni'=> 'Ridwan', 'status' => 'lunas'],
     ['nomor' => '02', 'penghuni'=> 'Rafi', 'status' => 'lunas'],
-    ['nomor' => '03', 'penghuni'=> 'Bahlil', 'status' => 'lunas'],
+    ['nomor' => '03', 'penghuni'=> 'Bahlil', 'status' => 'belum'],
     ['nomor' => '04', 'penghuni'=> 'Belum terisi', 'status' => 'kosong'],
     ['nomor' => '05', 'penghuni'=> 'Joko', 'status' => 'lunas'],
     ['nomor' => '06', 'penghuni'=> 'Bowo', 'status' => 'lunas'],
@@ -38,11 +38,6 @@ $daftar_kamar = [
             </span>
             <span class="tulisan-nama">Bapak Kos</span>
         </div>
-    </div>
-
-    <div class="kamar-title-card">
-        <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
-        <span class="badge-role">Bapak Kos</span>
     </div>
 
     <div class ="kamar-title-card">
