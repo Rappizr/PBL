@@ -814,6 +814,34 @@ body {
   margin-bottom: 24px;
 }
 
+/* === ATUR JARAK === */
+.kamar-body .mobile-container {
+  display: block;            /* matikan flex/space-between kalau ada */
+  gap: 0;
+}
+
+.kamar-page-header {
+  padding: 24px 24px 16px;   /* atas | kiri-kanan | bawah */
+  margin: 0;
+}
+
+.kamar-page-header .brand-title-dashboard {
+  margin: 0;                 /* hilangkan margin bawaan h1 */
+}
+
+.kamar-title-card {
+  margin: 0 24px 14px;       /* jarak ke tombol di bawahnya */
+}
+
+.kamar-actions {
+  margin: 0 24px 16px;       /* jarak ke grid kartu */
+}
+
+.kamar-grid {
+  gap: 14px;                 /* jarak antarkartu */
+  padding: 0 24px 24px;
+}
+
 
 /* ==========================================================================
    ANALISIS KAS
