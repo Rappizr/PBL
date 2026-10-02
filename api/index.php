@@ -19,11 +19,16 @@ switch ($page) {
 case 'verifikasi_pembayaran':
     require_once __DIR__ . '/../modules/pemilik/verifikasi_bayar/page.php';
     break;
-
+ case 'arus_kas':
+        require_once __DIR__ . '/../modules/pemilik/analisis_kas/arus_kas.php';
+        break;
+        
     case 'logout':
         session_destroy();
         header('Location: /?page=login');
         exit;
+
+   
 
     default:
         http_response_code(404);
