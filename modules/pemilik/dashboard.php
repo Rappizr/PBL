@@ -23,15 +23,7 @@ $pendingPembayaranCount = (int) $stmtPendingPembayaran->fetchColumn();
 </head>
 <body class="dashboard-body">
     <div class="mobile-container">
-        <header class="dashboard-header">
-            <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
-            <div class="kotak-kapsul-pemilik">
-                <span class="lingkaran-user-abu">
-                    <i class="fa-solid fa-user"></i>
-                </span>
-                <span class="tulisan-nama">Bapak Kos</span>
-            </div>
-        </header>
+ <?php require_once __DIR__ . '/../components/header.php'; ?>
 
         <main class="menu-card-container">
             <h2 class="menu-heading">Silahkan pilih menu</h2>
@@ -64,14 +56,14 @@ $pendingPembayaranCount = (int) $stmtPendingPembayaran->fetchColumn();
                     <?php endif; ?>
                 </a>
 
-                <a href="#" class="menu-item-box">
+                <a href="/?page=monitoring_tagihan_iuran" class="menu-item-box">
                     <div class="menu-icon-wrapper">
                         <i class="fa-solid fa-chart-pie"></i>
                     </div>
                     <span class="menu-label">Monitoring &<br>Tagihan Iuran</span>
                 </a>
 
-                <a href="/?page=chat-penghuni" class="menu-item-box">
+                <a href="/?page=chat_penghuni" class="menu-item-box">
                     <div class="menu-icon-wrapper">
                         <i class="fa-solid fa-comments"></i>
                     </div>

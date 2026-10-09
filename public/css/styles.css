@@ -11,33 +11,36 @@
 }
 
 /* ==========================================================================
-   LOGIN
+   LOGIN (TEMA ORANGE PASTEL & TEAL)
    ========================================================================== */
 body {
-  background-color: #20242c;
+  background-color: #f3ca81;
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
+  padding: 40px 20px 24px 20px;
   margin: 0;
+  box-sizing: border-box;
 }
 
 .login-card {
-  background-color: #e5e5e5;
+  background-color: #ffffff;
   width: 100%;
   max-width: 360px;
   padding: 35px 28px;
-  border-radius: 16px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
   text-align: center;
+  margin-top: 60px;
 }
 
 .brand-title {
   font-family: "Jockey One", sans-serif;
   font-size: 28px;
   letter-spacing: 1px;
-  color: #212529;
+  color: #4ca5b0;
   text-transform: uppercase;
   margin-bottom: 4px;
 }
@@ -52,7 +55,7 @@ body {
 
 .brand-subtitle {
   font-size: 14px;
-  color: #333333;
+  color: #4ca5b0;
   margin-bottom: 24px;
 }
 
@@ -94,12 +97,12 @@ body {
 .btn-submit {
   width: 100%;
   padding: 13px;
-  background-color: #2b303a;
+  background-color: #4ca5b0;
   color: #ffffff;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   margin-top: 8px;
   margin-bottom: 24px;
@@ -107,12 +110,12 @@ body {
 }
 
 .btn-submit:hover {
-  background-color: #1a1d23;
+  background-color: #3b8892;
 }
 
 .role-section-text {
   font-size: 14px;
-  color: #222222;
+  color: #4ca5b0;
   text-align: left;
   margin-bottom: 12px;
 }
@@ -130,11 +133,11 @@ body {
 .btn-role {
   width: 100%;
   padding: 12px;
-  background-color: #e5e5e5;
-  color: #222222;
+  background-color: #ffffff;
+  color: #4ca5b0;
   font-weight: 700;
   font-size: 14px;
-  border: 1.5px solid #495057;
+  border: 1.5px solid #4ca5b0;
   border-radius: 10px;
   cursor: pointer;
   text-decoration: none;
@@ -143,14 +146,14 @@ body {
 }
 
 .btn-role:hover {
-  background-color: #dcdcdc;
+  background-color: #f0fdfa;
 }
 
 .btn-role.active,
 .btn-role.btn-role-active {
-  background-color: #2b303a;
+  background-color: #4ca5b0;
   color: #ffffff;
-  border-color: #2b303a;
+  border-color: #4ca5b0;
 }
 
 .alert-error {
@@ -195,7 +198,7 @@ body {
 }
 
 /* ==========================================================================
-   DASHBOARD LAYOUT & HEADER
+   DASHBOARD LAYOUT & HEADER (TEMA ORANGE & TEAL)
    ========================================================================== */
 .dashboard-body {
   background-color: #20242c;
@@ -207,8 +210,8 @@ body {
   margin: 0;
 }
 
-.mobile-container {
-  background-color: #e5e5e5;
+.dashboard-body .mobile-container {
+  background-color: #f3ca81;
   width: 100%;
   max-width: 412px;
   min-height: 100vh;
@@ -216,6 +219,22 @@ body {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.brand-title-dashboard {
+  font-family: "Jockey One", sans-serif;
+  font-size: 28px;
+  color: #ffffff;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow:
+    1px 1px 0 #4ca5b0,
+    2px 2px 0 #4ca5b0,
+    3px 3px 0 #4ca5b0,
+    4px 4px 0 #4ca5b0,
+    5px 5px 0 #4ca5b0;
 }
 
 .dashboard-header {
@@ -226,26 +245,15 @@ body {
   margin-bottom: 20px;
 }
 
-.brand-title-dashboard {
-  font-family: "Jockey One", sans-serif;
-  font-size: 26px;
-  color: #1a1e24;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  margin: 0;
-}
-
 /* ==========================================================================
-   BADGE BAPAK KOS (KAPSUL HIJAU MINT & AVATAR ABU-ABU)
+   BADGE PROFIL BAPAK KOS
    ========================================================================== */
 .kotak-kapsul-pemilik {
   display: inline-flex;
   align-items: center;
-  background-color: #d5ffdd;
+  background-color: transparent;
   height: 35px;
-  min-width: 125px;
-  border-radius: 9999px;
-  padding: 0 12px 0 5px;
+  padding: 0;
   gap: 8px;
   box-sizing: border-box;
   flex-shrink: 0;
@@ -255,74 +263,68 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 25px;
-  height: 25px;
-  min-width: 25px;
-  background-color: #c4c4c4;
+  width: 32px;
+  height: 32px;
+  background-color: #ffffff;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
 }
 
 .lingkaran-user-abu i {
-  color: #ffffff;
-  font-size: 13px;
+  color: #f3ca81;
+  font-size: 16px;
   line-height: 1;
-  display: block;
 }
 
 .tulisan-nama {
   font-family: "Inter", sans-serif;
-  font-size: 13.5px;
+  font-size: 14px;
   font-weight: 800;
-  color: #275231;
+  color: #ffffff;
   line-height: 1;
   white-space: nowrap;
 }
 
 /* ==========================================================================
-   MENU CARD CONTAINER & GRID
+   MENU CARD CONTAINER & GRID (DASHBOARD UTAMA)
    ========================================================================== */
-.page-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
 .menu-card-container {
-  background-color: #2b303a;
-  border-radius: 20px;
-  padding: 18px 16px 20px 16px;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  background-color: #4ca5b0;
+  border-radius: 24px;
+  padding: 22px 18px 24px 18px;
   margin-top: 4px;
+  box-shadow: 4px 4px 0px #d49f53;
 }
 
 .menu-heading {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   color: #ffffff;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
   text-align: left;
 }
 
 .menu-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
 
 .menu-item-box {
-  background-color: #e5e5e5;
-  border-radius: 16px;
-  padding: 16px 8px;
+  background-color: #e8ecef;
+  border-radius: 20px;
+  padding: 18px 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  min-height: 110px;
+  min-height: 115px;
+  box-shadow: 4px 4px 0px #367d87;
   transition:
     transform 0.15s ease,
+    box-shadow 0.15s ease,
     background-color 0.15s ease;
 }
 
@@ -331,9 +333,14 @@ body {
   background-color: #ffffff;
 }
 
+.menu-item-box:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 3px 0px #367d87;
+}
+
 .menu-icon-wrapper {
-  font-size: 32px;
-  color: #2b303a;
+  font-size: 34px;
+  color: #4ca5b0;
   margin-bottom: 8px;
   display: flex;
   align-items: center;
@@ -341,34 +348,60 @@ body {
 }
 
 .menu-label {
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 800;
-  color: #2b303a;
+  color: #4ca5b0;
   text-align: center;
   line-height: 1.25;
 }
 
 .badge-notif {
   margin-top: 6px;
-  font-size: 10.5px;
+  font-size: 10px;
   font-weight: 800;
-  color: #991b1b;
+  color: #ef4444;
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
 .badge-notif i {
-  font-size: 10px;
+  font-size: 9px;
 }
 
 /* ==========================================================================
-   FOOTER
+   FOOTER KOMPONEN
    ========================================================================== */
 .dashboard-footer {
   text-align: center;
   margin-top: 24px;
   color: #2c313a;
+}
+
+/* Khusus footer di halaman login */
+body .dashboard-footer {
+  text-align: center;
+  margin-top: 30px;
+  color: #4ca5b0;
+}
+
+body .dashboard-footer .footer-title,
+body .dashboard-footer .footer-title strong {
+  color: #4ca5b0;
+  font-weight: 800;
+}
+
+body .dashboard-footer .footer-desc {
+  color: #4ca5b0;
+  font-weight: 600;
+}
+
+.dashboard-footer .simbol-copy {
+  font-size: 1.35em;
+  color: #ffffff;
+  display: inline-block;
+  vertical-align: -1px;
+  line-height: 1;
 }
 
 .footer-title {
@@ -386,77 +419,424 @@ body {
 }
 
 /* ==========================================================================
-   ROLE LAINNYA (PENGHUNI & PJ)
+   MANAJEMEN KAMAR (PEMILIK)
    ========================================================================== */
-.badge-penghuni {
-  background-color: #f7f1af;
-  color: #574e0d;
+.kamar-body {
+  background-color: #20242c;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0;
+  margin: 0;
 }
 
-.badge-pj {
-  background-color: #f6c8ce;
-  color: #63222d;
-}
-
-.tagihan-dark-card {
-  background-color: #2b303a;
-  border-radius: 18px;
-  padding: 14px 16px;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
-}
-
-.tagihan-pill-label {
-  display: inline-block;
-  background-color: #ffffff;
-  color: #1a1e24;
-  font-size: 11px;
-  font-weight: 800;
-  padding: 3px 10px;
-  border-radius: 6px;
-  margin-bottom: 10px;
-}
-
-.tagihan-meta-grid {
+.kamar-body .mobile-container {
+  background-color: #f3ca81;
+  width: 100%;
+  max-width: 412px;
+  min-height: 100vh;
+  padding: 36px 20px 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  justify-content: space-between;
+  box-sizing: border-box;
 }
 
-.meta-row {
-  display: grid;
-  grid-template-columns: 140px 14px 1fr;
+.kamar-page-header {
+  display: flex;
   align-items: center;
-  font-size: 11.5px;
+  justify-content: space-between;
+  margin-bottom: 24px;
 }
 
-.meta-label,
-.meta-colon {
+.kamar-page-header .brand-title-dashboard {
+  font-family: "Jockey One", sans-serif;
+  font-size: 32px;
   color: #ffffff;
-  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow:
+    1px 1px 0 #4ca5b0,
+    2px 2px 0 #4ca5b0,
+    3px 3px 0 #4ca5b0,
+    4px 4px 0 #4ca5b0;
 }
 
-.meta-value {
+.kamar-title-card {
+  background-color: #4ca5b0;
+  border-radius: 26px;
+  padding: 20px 20px 22px;
+  margin-bottom: 16px;
+  box-shadow: 5px 6px 0px #c8924b;
+}
+
+.kamar-title-card h2 {
   color: #ffffff;
-}
-
-.meta-value.date-text {
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.status-badge-yellow {
-  background-color: #fff9c4;
-  color: #615600;
-  font-size: 10.5px;
+  font-size: 18px;
   font-weight: 800;
-  padding: 2px 8px;
+  margin: 0 0 14px;
+}
+
+.kamar-title-card .btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+}
+
+.kamar-title-card .btn-back i {
+  color: #4ca5b0;
+  font-size: 12px;
+}
+
+.kamar-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.kamar-actions .btn-add-outline {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  padding: 10px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 4px 5px 0px #c8924b;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+
+.kamar-actions .btn-add-outline:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 3px 0px #c8924b;
+}
+
+.btn-add-outline .plus-icon {
+  width: 18px;
+  height: 18px;
+  background-color: #ffffff;
+  color: #4ca5b0;
   border-radius: 4px;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.kamar-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kamar-card {
+  background-color: #4ca5b0;
+  border-radius: 22px;
+  padding: 18px 16px;
+  position: relative;
+  min-height: 105px;
+  box-shadow: 5px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.kamar-nomor {
+  color: #ffffff;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 6px;
+  letter-spacing: -1px;
+}
+
+.kamar-nama {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge-status {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+}
+
+.badge-lunas {
+  background-color: #93f5c7;
+  color: #0d5635;
+}
+
+.badge-belum {
+  background-color: #ffeed3;
+  color: #7c4103;
+}
+
+.badge-kosong {
+  background-color: transparent;
+  color: #ffffff;
+  box-shadow: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 0;
+  top: 16px;
+  right: 16px;
 }
 
 /* ==========================================================================
-   VERIFIKASI PEMBAYARAN
+   ANALISIS KAS (TEMA ORANGE PASTEL & TEAL)
    ========================================================================== */
+.kas-body {
+  background-color: #20242c;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0;
+  margin: 0;
+}
+
+.kas-body .mobile-container {
+  background-color: #f3ca81;
+  width: 100%;
+  max-width: 412px;
+  min-height: 100vh;
+  padding: 36px 20px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.kas-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.kas-header .brand-title-dashboard {
+  font-family: "Jockey One", sans-serif;
+  font-size: 32px;
+  color: #ffffff;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin: 0;
+  text-shadow:
+    1px 1px 0 #4ca5b0,
+    2px 2px 0 #4ca5b0,
+    3px 3px 0 #4ca5b0,
+    4px 4px 0 #4ca5b0;
+}
+
+.kas-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.kas-title-card {
+  background-color: #4ca5b0;
+  border-radius: 26px;
+  padding: 20px 20px 22px;
+  box-shadow: 5px 6px 0px #c8924b;
+}
+
+.kas-title-card .banner-title {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 14px 0;
+}
+
+.kas-title-card .btn-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+}
+
+.kas-title-card .btn-back i {
+  color: #4ca5b0;
+  font-size: 12px;
+}
+
+.kas-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-tambah-pengeluaran,
+.saldo-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex: 1;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 10px 8px;
+  border-radius: 14px;
+  border: none;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 4px 5px 0px #c8924b;
+}
+
+.icon-lingkaran {
+  background-color: #ffffff;
+  color: #4ca5b0;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.kas-container .card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transaksi-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #4ca5b0;
+  border-radius: 18px;
+  padding: 12px 14px;
+  box-shadow: 4px 5px 0px #c8924b;
+}
+
+.transaksi-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.transaksi-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.transaksi-nama {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.transaksi-tanggal {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 10.5px;
+  margin-top: 3px;
+  font-weight: 600;
+}
+
+.transaksi-nominal-pill {
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.status-merah {
+  background-color: #ffeed3;
+  color: #a82323;
+}
+
+.status-hijau {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+/* ==========================================================================
+   VERIFIKASI PEMBAYARAN (TEMA ORANGE PASTEL & TEAL)
+   ========================================================================== */
+.verifikasi-body {
+  background-color: #20242c;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0;
+  margin: 0;
+}
+
+.verifikasi-body .mobile-container {
+  background-color: #f3ca81;
+  width: 100%;
+  max-width: 412px;
+  min-height: 100vh;
+  padding: 36px 20px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
 .verifikasi-container {
   display: flex;
   flex-direction: column;
@@ -464,52 +844,61 @@ body {
   width: 100%;
 }
 
-.banner-card {
-  background-color: #2b303a;
-  border-radius: 20px;
-  padding: 18px 20px;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+/* Card Banner Judul Verifikasi Pembayaran */
+.verifikasi-container .banner-card {
+  background-color: #4ca5b0;
+  border-radius: 26px;
+  padding: 20px 20px 22px;
+  box-shadow: 5px 6px 0px #c8924b;
 }
 
-.banner-title {
+.verifikasi-container .banner-title {
   color: #ffffff;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   letter-spacing: 0.3px;
 }
 
-.btn-kembali {
+.verifikasi-container .btn-kembali {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   background-color: #ffffff;
-  color: #2b303a;
+  color: #4ca5b0;
   padding: 6px 14px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 800;
   text-decoration: none;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
 }
 
-.card-list {
+.verifikasi-container .btn-kembali i {
+  color: #4ca5b0;
+  font-size: 12px;
+}
+
+/* Daftar Card Verifikasi */
+.verifikasi-container .card-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-/* Card Utama (Gelap) */
+/* Card Pembungkus Utama Teal */
 .verifikasi-card {
-  background-color: #2b303a;
-  border-radius: 20px;
+  background-color: #4ca5b0;
+  border-radius: 22px;
   padding: 14px;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+  box-shadow: 5px 6px 0px #c8924b;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-/* Layout Berjajar Samping-Sampingan (Foto & Detail) */
+/* Card Bagian Atas: Bukti Foto + Detail */
 .verifikasi-card-body {
   display: flex !important;
   flex-direction: row !important;
@@ -520,15 +909,16 @@ body {
   padding: 0 !important;
 }
 
-/* Box Foto */
+/* Kotak Bukti Transfer Foto */
 .bukti-wrapper {
   position: relative !important;
-  width: 90px !important;
-  height: 90px !important;
+  width: 86px !important;
+  height: 86px !important;
   flex-shrink: 0 !important;
   border-radius: 16px !important;
   overflow: hidden !important;
   background-color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
 }
 
 .bukti-img {
@@ -538,37 +928,38 @@ body {
   display: block !important;
 }
 
-/* Tombol Zoom (Presisi Di Tengah Gambar) */
+/* Tombol Zoom (Kaca Pembesar Tengah Foto) */
 .btn-zoom {
   position: absolute !important;
   top: 50% !important;
   left: 50% !important;
   transform: translate(-50%, -50%) !important;
-  background-color: rgba(255, 255, 255, 0.9) !important;
-  width: 32px !important;
-  height: 32px !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  width: 30px !important;
+  height: 30px !important;
   border-radius: 50% !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  color: #2b303a !important;
+  color: #4ca5b0 !important;
   text-decoration: none !important;
   font-size: 13px !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
   z-index: 10 !important;
 }
 
-/* Box Detail Teks (Background Abu-abu) */
+/* Card Detail Putih */
 .detail-wrapper {
   flex: 1 !important;
-  height: 90px !important;
-  background-color: #e5e5e5 !important;
-  border-radius: 16px !important;
+  min-height: 86px !important;
+  background-color: #ffffff !important;
+  border-radius: 18px !important;
   padding: 10px 14px !important;
   display: flex !important;
   flex-direction: column !important;
   justify-content: center !important;
-  gap: 2px !important;
+  gap: 3px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
 }
 
 .user-info-row {
@@ -583,9 +974,10 @@ body {
   color: #1a1e24;
 }
 
+/* Badge Kamar Cokelat Muda / Oranye Pucat */
 .badge-kamar {
-  background-color: #a5b4fc;
-  color: #312e81;
+  background-color: #f7d498;
+  color: #5a3804;
   font-size: 11px;
   font-weight: 800;
   padding: 2px 8px;
@@ -593,24 +985,23 @@ body {
 }
 
 .nominal-text {
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 900;
-  color: #047857;
+  color: #1a1e24;
 }
 
 .metode-tanggal {
   font-size: 11px;
-  font-weight: 500;
+  font-weight: 600;
   color: #4b5563;
 }
 
-/* Tombol Aksi (Chat & Setujui) */
+/* Footer Card: Baris 3 Tombol Aksi */
 .verifikasi-card-footer {
   display: flex !important;
-  gap: 0.375rem !important;
+  gap: 10px !important;
   width: 100% !important;
   align-items: center !important;
-  align-self: stretch !important;
 }
 
 .btn-action {
@@ -618,423 +1009,322 @@ body {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  gap: 8px !important;
-  padding: 10px !important;
+  gap: 6px !important;
+  padding: 8px 6px !important;
   border-radius: 12px !important;
-  font-size: 13.5px !important;
+  font-size: 12.5px !important;
   font-weight: 800 !important;
   border: none !important;
   cursor: pointer !important;
   text-decoration: none !important;
+  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.18) !important;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease !important;
 }
 
+.btn-action:active {
+  transform: translate(1px, 1px) !important;
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* Tombol Chat (Krem / Putih Hangat) */
 .btn-chat {
-  background-color: #fde68a !important;
-  color: #1a1e24 !important;
+  background-color: #fdf5ea !important;
+  color: #2b1f09 !important;
 }
 
 .btn-chat i {
-  font-size: 18px !important;
+  font-size: 15px !important;
+  color: #2b1f09 !important;
 }
 
+/* Tombol Tolak (Merah Pastel Muda) */
+.btn-decline {
+  background-color: #ffd6d9 !important;
+  color: #8c0c16 !important;
+}
+
+.btn-decline i {
+  font-size: 13px !important;
+  color: #8c0c16 !important;
+}
+
+/* Tombol Terima (Hijau Mint Pastel) */
 .btn-approve {
-  background-color: #6ee7b7 !important;
-  color: #064e3b !important;
+  background-color: #cbfae4 !important;
+  color: #0b5e39 !important;
 }
 
 .btn-approve i {
-  font-size: 18px !important;
+  font-size: 13px !important;
+  color: #0b5e39 !important;
 }
 
-.btn-decline {
-  background-color: #fca5a5 !important;
-  color: #7f1d1d !important;
-}
-
-/* MANAJEMEN KAMAR KOS */
-/* === MANAJEMEN KAMAR (PEMILIK) === */
-.kamar-body {
-  background-color: #ececec;
-  min-height: 100vh;
+/* ==========================================================================
+   MONITORING & TAGIHAN IURAN
+   ========================================================================== */
+.monitoring-summary-row {
   display: flex;
-  justify-content: center;
-  padding: 0;
-  margin: 0;
+  gap: 12px;
+  width: 100%;
 }
 
-.kamar-page-header {
+.summary-card {
+  flex: 1;
+  background-color: #4ca5b0;
+  border-radius: 20px;
+  padding: 14px 16px;
+  box-shadow: 5px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.summary-card .summary-title {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.summary-card .summary-nominal {
+  color: #ffffff;
+  font-size: 14.5px;
+  font-weight: 800;
+  margin: 0;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   CHAT PENGHUNI (TEMA ORANGE PASTEL & TEAL)
+   ========================================================================== */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+/* Kolom Cari Nama / Kamar */
+.search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-wrapper i {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #3b7b84;
+  font-size: 14px;
+}
+
+.search-input {
+  width: 100%;
+  background-color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 12px 18px 12px 42px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1e24;
+  outline: none;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.search-input::placeholder {
+  color: #555555;
+  font-weight: 500;
+}
+
+/* Card List Penghuni */
+.chat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-card {
+  background-color: #4ca5b0;
+  border-radius: 20px;
+  padding: 14px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 30px 24px 20px;
+  box-shadow: 5px 6px 0px #c8924b;
 }
 
-.kamar-title-card {
-  background-color: #1e1e1e;
-  border-radius: 20px;
-  padding: 18px 20px;                          
-  margin: 0 24px 18px;                         
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+.chat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.kamar-title-card h2 {
+.chat-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-nama {
   color: #ffffff;
-  font-size: 17px;                             
-  font-weight: 700;                            
-  margin: 0 0 12px;                            
-  white-space: nowrap;    
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
 }
 
-.btn-back {
+/* Badge Kapsul Putih Kamar */
+.badge-kamar-putih {
+  background-color: #ffffff;
+  color: #4ca5b0;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 9999px;
+}
+
+.chat-wa {
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* Tombol Hijau Chat WhatsApp */
+.btn-wa-chat {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-   background-color: #ececec;                  
-  color: #1e1e1e; 
-  background-color: #333333;
-  color: #ffffff;
-  border: none;
-   border-radius: 6px;                         
-  padding: 4px 10px 4px 5px;                   
-  font-size: 11px;
-  font-weight: 700;
-  cursor: pointer;
-  text-decoration: none;
-}
-
-.btn-back i {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  background-color: #1e1e1e;
-  color: #ffffff;
-  border-radius: 4px;
-  font-size: 9px;
-}
-
-.kamar-actions {
-  display: flex;
-  gap: 12px;
-  margin: 0 24px 20px;
-}
-
-.btn-add-outline {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  background-color: #2a2a2a;
-  color:  #ffffff;
-  border: none;
-  border-radius: 12px;
-  padding: 9px 8px;
-  font-size: 11.5px;
-  font-weight: 700;
-  cursor: pointer;
-  text-decoration: none;
-   white-space: nowrap;
-}
-
-.btn-add-outline .plus-icon {
-  width: 16px;
-  height: 16px;
-  background-color: #ffffff;                  
-  color: #1e1e1e;
-  border-radius: 4px;
-  border: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.kamar-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 22px 16px;
-  padding: 0 24px 30px;
-}
-
-.kamar-card {
-  background-color:  #2a2a2a;
-  border-radius: 16px;
-  padding: 16px 14px 14px;
-  position: relative;
-  min-height: 88px;
-}
-
-.kamar-nomor {
-  color: #ffffff;
-  font-size: 34px;
-  font-weight: 800;
-  line-height: 1;
-  margin-bottom: 12px;
-}
-
-.kamar-nama {
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.badge-status {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  font-size: 10.5px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 10px;
-}
-
-.badge-lunas {
-  background-color: #79f2c3;
-  color: #1e3b2e;
-}
-
-.badge-belum {
-  background-color: #ffd9a8;
-  color: #8a4b00;
-}
-
-.badge-kosong {
-  background-color: transparent;
-  color: #e5e5e5;
-  text-align: right;
-}
-
-
-.kamar-footer {
-  text-align: center;
-  margin-bottom: 24px;
-}
-
-/* === ATUR JARAK === */
-.kamar-body .mobile-container {
-  display: block;            /* matikan flex/space-between kalau ada */
-  gap: 0;
-}
-
-.kamar-page-header {
-  padding: 24px 24px 16px;   /* atas | kiri-kanan | bawah */
-  margin: 0;
-}
-
-.kamar-page-header .brand-title-dashboard {
-  margin: 0;                 /* hilangkan margin bawaan h1 */
-}
-
-.kamar-title-card {
-  margin: 0 24px 14px;       /* jarak ke tombol di bawahnya */
-}
-
-.kamar-actions {
-  margin: 0 24px 16px;       /* jarak ke grid kartu */
-}
-
-.kamar-grid {
-  gap: 14px;                 /* jarak antarkartu */
-  padding: 0 24px 24px;
-}
-
-
-/* ==========================================================================
-   ANALISIS KAS
-   ========================================================================== */
-/* Header: logo + Bapak Kos */
-.kas-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 30px 24px 20px;
-  margin: 0;
-}
-
-.kas-body .btn-back {
-  background-color: #ececec;
-  color: #1e1e1e;
-}
-
-.kas-header .brand-title-dashboard {
-  margin: 0;
-}
-
-/* Card judul "Analisis Kas" */
-.kas-title-card {
-  background-color: #2a2a2a;
-  border-radius: 20px;
-  padding: 18px 20px;
-  margin: 0 24px 18px;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
-}
-
-.kas-title-card h1,
-.kas-title-card h2 {
-  color: #ffffff;
-  font-size: 17px;
-  font-weight: 700;
-  margin: 0 0 12px;
-}
-
-/* Baris Tambah Pengeluaran + saldo */
-.kas-actions {
-  display: flex;
-  gap: 10px;
-  margin: 0 24px 18px;
-}
-
-.btn-tambah-pengeluaran,
-.saldo-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  flex: 1;
-  background-color: #2a2a2a;
-  color: #ffffff;
-  font-size: 11.5px;
-  font-weight: 700;
-  padding: 9px 10px;
-  border-radius: 10px;
-  border: none;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.btn-tambah-pengeluaran {
-  flex: 1.15;
-}
-
-/* Ikon di dalam tombol: kotak putih kecil */
-.icon-lingkaran {
-  background-color: #ffffff;
-  color: #1e1e1e;
-  width: 16px;
-  height: 16px;
-  min-width: 16px;
-  border: none;
-  border-radius: 4px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-}
-
-/* Daftar transaksi */
-.transaksi-kosong {
-  text-align: center;
-  color: #6b7280;
-  font-size: 13px;
-  padding: 20px 0;
-}
-
-.card-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin: 0 24px;
-  padding-bottom: 24px;
-}
-
-.transaksi-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  background-color: #2a2a2a;
-  border-radius: 12px;
-  padding: 10px 12px;
-  box-shadow: none;
-}
-
-/* Ikon panah: kotak putih */
-.transaksi-icon {
-  width: 22px;
-  height: 22px;
-  min-width: 22px;
-  background-color: #ffffff;
-  color: #1e1e1e;
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-}
-
-.transaksi-info {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  min-width: 0;
-}
-
-.transaksi-nama {
-  color: #ffffff;
-  font-size: 12.5px;
-  font-weight: 700;
-}
-
-.transaksi-tanggal {
-  color: #b5b5b5;
-  font-size: 9.5px;
-  margin-top: 2px;
-}
-
-/* Pill nominal */
-.transaksi-nominal-pill {
+  background-color: #83f0bd;
+  color: #0d4a2d;
   font-size: 12px;
   font-weight: 800;
-  padding: 4px 9px;
-  border-radius: 6px;
-  white-space: nowrap;
+  padding: 7px 14px;
+  border-radius: 9999px;
+  text-decoration: none;
+  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
 }
 
-.status-merah {
-  background-color: #ffe1d6;
-  color: #e11d1d;
+.btn-wa-chat:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.15);
 }
 
-.status-hijau {
-  background-color: #6ff2c0;
-  color: #064e3b;
+.btn-wa-chat {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background-color: #83f0bd;
+  color: #32522e;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 14px;
+  border-radius: 9999px;
+  text-decoration: none;
+  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
 }
 
-.kas-body .mobile-container {
-  display: block; 
-  gap: 0;
+.btn-wa-chat svg {
+  display: block;
+  flex-shrink: 0;
 }
 
-.kas-body .dashboard-header {
-  height: auto;
-  min-height: 0;
-  padding: 24px 24px 16px;
-  margin: 0;
+/* ==========================================================================
+   DASHBOARD PENGHUNI & PJ (TEMA ORANGE & TEAL)
+   ========================================================================== */
+.penghuni-summary-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 8px;
 }
 
-.kas-body .dashboard-header .brand-title-dashboard {
-  margin: 0; 
+/* Kartu Ringkasan Tagihan Teal */
+.tagihan-dark-card {
+  background-color: #4ca5b0;
+  border-radius: 22px;
+  padding: 16px 18px;
+  box-shadow: 5px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.kas-body .kas-container {
-  margin: 0;
-  padding: 0;
-  gap: 0;
+/* Pill Judul Atas (Pembayaran Sewa / Pembayaran Iuran) */
+.tagihan-pill-label {
+  display: inline-block;
+  align-self: flex-start;
+  background-color: #ffffff;
+  color: #1a1e24;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.kas-body .kas-title-card {
-  margin: 0 24px 14px;
+.tagihan-meta-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.kas-body .kas-actions {
-  margin: 0 24px 16px;
+.meta-row {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #ffffff;
 }
 
-.kas-body .card-list {
-  gap: 12px;  
-  margin: 0 24px;
-  padding-bottom: 24px;
+.meta-label {
+  font-weight: 700;
+  min-width: 135px;
+}
+
+.meta-colon {
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.meta-value {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+
+/* Pill Status Belum Lunas / Lunas */
+.status-badge-white {
+  background-color: #ffffff;
+  color: #1a1e24;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.status-badge-green {
+  background-color: #83f0bd;
+  color: #0b5e39;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+.meta-value.date-text {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #ffffff;
 }

@@ -77,6 +77,6 @@ if (isset($_SESSION['login_error'])) {
         });
     </script>
 
-    
+<?php require_once __DIR__ . '/../components/footer.php'; ?>
 </body>
 </html>

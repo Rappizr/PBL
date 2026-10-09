@@ -15,7 +15,7 @@ switch ($page) {
         break;
 
     case 'dashboard_penghuni':
-        require_once __DIR__ . '/../modules/penghuni/dashboard.php';
+        require_once __DIR__ . '/../modules/penghuni_Pj/dashboard.php';
         break;
 
     case 'verifikasi_pembayaran':
@@ -23,19 +23,25 @@ switch ($page) {
         break;
 
      case 'arus_kas':
-        require_once __DIR__ . '/../modules/pemilik/analisis_kas/arus_kas.php';
+        require_once __DIR__ . '/../modules/pemilik/analisis_kas/page.php';
         break;
 
     case 'manajemen_kamar':
-        require_once __DIR__ . '/../modules/pemilik/manajemen_kamar/manajemenKamar.php'; 
+        require_once __DIR__ . '/../modules/pemilik/manajemen_kamar/page.php'; 
+        break;
+    
+    case 'monitoring_tagihan_iuran':
+        require_once __DIR__ . '/../modules/pemilik/monitor_tagihan_iuaran/page.php';
+        break;
+    
+    case 'chat_penghuni':
+        require_once __DIR__ . '/../modules/pemilik/chat_penghuni/page.php';
         break;
         
     case 'logout':
         session_destroy();
         header('Location: /?page=login');
         exit;
-
-   
 
     default:
         http_response_code(404);
