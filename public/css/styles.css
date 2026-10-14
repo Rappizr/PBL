@@ -1328,3 +1328,216 @@ body .dashboard-footer .footer-desc {
   font-weight: 700;
   color: #ffffff;
 }
+
+/* ==========================================================================
+   HALAMAN TAGIHAN & RIWAYAT (PENGHUNI)
+   ========================================================================== */
+
+/* Header Box: Tagihan & Riwayat + Tombol Kembali */
+.subpage-banner-card {
+  background-color: #4ca5b0;
+  border-radius: 24px;
+  padding: 16px 20px;
+  box-shadow: 4px 6px 0px #c8924b;
+  margin-bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subpage-banner-title {
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+.btn-kembali-banner {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 12px;
+  text-decoration: none;
+  align-self: flex-start;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s ease;
+}
+
+.btn-kembali-banner:active {
+  transform: scale(0.97);
+}
+
+/* Judul Bagian / Section Header */
+.section-title-white {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0 0 12px 2px;
+  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+}
+
+.section-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+/* Kartu Transaksi & Tagihan Teal */
+.item-tagihan-card {
+  background-color: #4ca5b0;
+  border-radius: 22px;
+  padding: 16px 18px;
+  box-shadow: 4px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Header dalam kartu (Nama & Badge) */
+.item-tagihan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.item-tagihan-name {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* Badge Status Belum Bayar (Krem/Peach) & Lunas (Mint Green) */
+.badge-status-krem {
+  background-color: #f7d5b8;
+  color: #684323;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2);
+}
+
+.badge-status-lunas {
+  background-color: #8ce3b9;
+  color: #116843;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.2);
+}
+
+/* Detail Info 2 Kolom (Kiri: Deskripsi, Kanan: Angka/Nominal) */
+.item-tagihan-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 12.5px;
+  color: #ffffff;
+}
+
+.item-tagihan-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item-tagihan-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.nominal-highlight {
+  font-size: 14.5px;
+  font-weight: 800;
+}
+
+/* Tombol Aksi Putih Penuh (Bayar / Cetak Invoice) */
+.btn-card-action {
+  display: block;
+  width: 100%;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  text-align: center;
+  font-size: 14.5px;
+  font-weight: 800;
+  padding: 9px 0;
+  border-radius: 9999px;
+  text-decoration: none;
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s ease;
+}
+
+.btn-card-action:active {
+  transform: translateY(1px);
+  background-color: #f5f8f8;
+}
+
+/* ==========================================================================
+   HALAMAN PERATURAN KOS
+   ========================================================================== */
+
+/* Kartu Putih Kontainer Seluruh Aturan */
+.peraturan-card-wrapper {
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 24px 20px;
+  box-shadow: 5px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* Setiap Baris Item Peraturan */
+.peraturan-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/* Lingkaran / Area Ikon Hitam */
+.peraturan-icon-col {
+  flex-shrink: 0;
+  width: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #2b303a;
+  font-size: 24px;
+  padding-top: 2px;
+}
+
+/* Konten Teks (Judul & Paragraf) */
+.peraturan-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.peraturan-title {
+  color: #11141a;
+  font-size: 14.5px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+.peraturan-desc {
+  color: #555b66;
+  font-size: 12.5px;
+  line-height: 1.45;
+  margin: 0;
+  font-weight: 500;
+}

@@ -38,6 +38,14 @@ switch ($page) {
         require_once __DIR__ . '/../modules/pemilik/chat_penghuni/page.php';
         break;
         
+    case 'tagihan_riwayat':
+        require_once __DIR__ . '/../modules/penghuni_Pj/tagihan_riwayat/page.php';
+        break;
+    
+    case 'peraturan_kost':
+        require_once __DIR__ . '/../modules/penghuni_Pj/peraturan_kost/page.php';
+        break;
+
     case 'logout':
         session_destroy();
         header('Location: /?page=login');

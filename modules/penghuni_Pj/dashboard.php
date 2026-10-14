@@ -114,7 +114,7 @@ function formatTanggalIndo(?string $tanggal): string {
                     
                     <div class="menu-grid">
                         <!-- Menu 1: Tagihan & Riwayat -->
-                        <a href="/?page=penghuni-tagihan" class="menu-item-box">
+                        <a href="/?page=tagihan_riwayat" class="menu-item-box">
                             <div class="menu-icon-wrapper">
                                 <i class="fa-solid fa-receipt"></i>
                             </div>
@@ -130,7 +130,7 @@ function formatTanggalIndo(?string $tanggal): string {
                         </a>
 
                         <!-- Menu 3: Peraturan Kos -->
-                        <a href="/?page=penghuni-peraturan" class="menu-item-box">
+                        <a href="/?page=peraturan_kost" class="menu-item-box">
                             <div class="menu-icon-wrapper">
                                 <i class="fa-solid fa-book-open"></i>
                             </div>
