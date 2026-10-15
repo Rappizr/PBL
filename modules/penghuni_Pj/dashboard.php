@@ -122,12 +122,21 @@ function formatTanggalIndo(?string $tanggal): string {
                         </a>
 
                         <!-- Menu 2: Monitoring & Tagihan Iuran -->
-                        <a href="/?page=monitoring_iuran" class="menu-item-box">
+                         <?php if ($is_pj): ?>
+                            <a href="/?page=kelola_iuran" class="menu-item-box">
+                                <div class="menu-icon-wrapper">
+                                    <i class="fa-solid fa-chart-pie"></i>
+                                </div>
+                                <span class="menu-label">Kelola Iuran</span>
+                            </a>
+                        <?php else: ?>
+                            <a href="/?page=monitoring_iuran" class="menu-item-box">
                             <div class="menu-icon-wrapper">
                                 <i class="fa-solid fa-chart-pie"></i>
                             </div>
-                            <span class="menu-label">Monitoring &amp;<br>Tagihan Iuran</span>
+                            <span class="menu-label">Monitoring Iuran</span>
                         </a>
+                        <?php endif; ?>
 
                         <!-- Menu 3: Peraturan Kos -->
                         <a href="/?page=peraturan_kost" class="menu-item-box">
@@ -136,9 +145,8 @@ function formatTanggalIndo(?string $tanggal): string {
                             </div>
                             <span class="menu-label">Peraturan Kos</span>
                         </a>
-
                         <!-- Menu 4: Chat Penghuni -->
-                        <a href="/?page=chat-penghuni" class="menu-item-box">
+                        <a href="/?page=chat_penghuni" class="menu-item-box">
                             <div class="menu-icon-wrapper">
                                 <i class="fa-solid fa-comments"></i>
                             </div>
@@ -147,16 +155,8 @@ function formatTanggalIndo(?string $tanggal): string {
 
                         <!-- Menu 5 & 6 (Khusus PJ Kos) -->
                         <?php if ($is_pj): ?>
-                            <!-- Menu 5: Kelola Iuran -->
-                            <a href="/?page=pj-kelola-iuran" class="menu-item-box">
-                                <div class="menu-icon-wrapper">
-                                    <i class="fa-solid fa-wallet"></i>
-                                </div>
-                                <span class="menu-label">Kelola Iuran</span>
-                            </a>
-
                             <!-- Menu 6: Verifikasi Pembayaran -->
-                            <a href="/?page=verifikasi_pembayaran" class="menu-item-box">
+                            <a href="/?page=verifikasi_bayar" class="menu-item-box">
                                 <div class="menu-icon-wrapper">
                                     <i class="fa-solid fa-list-check"></i>
                                 </div>

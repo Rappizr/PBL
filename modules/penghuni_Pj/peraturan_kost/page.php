@@ -4,7 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Nama penghuni dari session atau dummy
-$nama_penghuni = $_SESSION['user']['nama'];
+// $nama_penghuni = $_SESSION['user']['nama'];
+$nama_penghuni = "Mas Rafi";
 
 // Data Peraturan Kos sesuai Mockup
 $peraturan_list = [
@@ -59,7 +60,7 @@ $peraturan_list = [
                 <!-- Banner Peraturan Kos + Tombol Kembali -->
                 <div class="subpage-banner-card">
                     <h2 class="subpage-banner-title">Peraturan Kos</h2>
-                    <a href="/?page=penghuni-dashboard" class="btn-kembali-banner">
+                    <a href="/dashboard/penghuni" class="btn-kembali-banner">
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
                 </div>
