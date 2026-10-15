@@ -616,50 +616,8 @@ body .dashboard-footer .footer-desc {
 }
 
 /* ==========================================================================
-   ANALISIS KAS (TEMA ORANGE PASTEL & TEAL)
+   HALAMAN ANALISIS KAS (SESUAI MOCKUP GAMBAR 6)
    ========================================================================== */
-.kas-body {
-  background-color: #20242c;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 0;
-  margin: 0;
-}
-
-.kas-body .mobile-container {
-  background-color: #f3ca81;
-  width: 100%;
-  max-width: 412px;
-  min-height: 100vh;
-  padding: 36px 20px 24px 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-sizing: border-box;
-}
-
-.kas-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-}
-
-.kas-header .brand-title-dashboard {
-  font-family: "Jockey One", sans-serif;
-  font-size: 32px;
-  color: #ffffff;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  margin: 0;
-  text-shadow:
-    1px 1px 0 #4ca5b0,
-    2px 2px 0 #4ca5b0,
-    3px 3px 0 #4ca5b0,
-    4px 4px 0 #4ca5b0;
-}
 
 .kas-container {
   display: flex;
@@ -668,148 +626,239 @@ body .dashboard-footer .footer-desc {
   width: 100%;
 }
 
-.kas-title-card {
+/* 1. Header Banner Analisis Kas */
+.kas-banner-card {
   background-color: #4ca5b0;
   border-radius: 26px;
-  padding: 20px 20px 22px;
-  box-shadow: 5px 6px 0px #c8924b;
-}
-
-.kas-title-card .banner-title {
-  color: #ffffff;
-  font-size: 18px;
-  font-weight: 800;
-  margin: 0 0 14px 0;
-}
-
-.kas-title-card .btn-back {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background-color: #ffffff;
-  color: #4ca5b0;
-  border: none;
-  border-radius: 8px;
-  padding: 6px 14px;
-  font-size: 12.5px;
-  font-weight: 800;
-  text-decoration: none;
-  cursor: pointer;
-  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.3);
-}
-
-.kas-title-card .btn-back i {
-  color: #4ca5b0;
-  font-size: 12px;
-}
-
-.kas-actions {
-  display: flex;
-  gap: 12px;
-}
-
-.btn-tambah-pengeluaran,
-.saldo-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  flex: 1;
-  background-color: #4ca5b0;
-  color: #ffffff;
-  font-size: 12px;
-  font-weight: 800;
-  padding: 10px 8px;
-  border-radius: 14px;
-  border: none;
-  text-decoration: none;
-  white-space: nowrap;
-  box-shadow: 4px 5px 0px #c8924b;
-}
-
-.icon-lingkaran {
-  background-color: #ffffff;
-  color: #4ca5b0;
-  width: 20px;
-  height: 20px;
-  min-width: 20px;
-  border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 900;
-}
-
-.kas-container .card-list {
+  padding: 18px 20px;
+  box-shadow: 4px 6px 0px #c8924b;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 12px;
 }
 
-.transaksi-item {
-  display: flex;
+.kas-banner-title {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+.btn-kembali-banner {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 12px;
+  text-decoration: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  transition: transform 0.1s ease;
+}
+
+.btn-kembali-banner:active {
+  transform: scale(0.97);
+}
+
+/* 2. Card Total Pemasukan */
+.kas-total-card {
   background-color: #4ca5b0;
-  border-radius: 18px;
+  border-radius: 24px;
+  padding: 16px 20px;
+  box-shadow: 4px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kas-total-label {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.kas-total-value {
+  color: #ffffff;
+  font-size: 23px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+/* 3. Daftar Transaksi Mutasi */
+.kas-transaksi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kas-transaksi-card {
+  background-color: #4ca5b0;
+  border-radius: 20px;
   padding: 12px 14px;
   box-shadow: 4px 5px 0px #c8924b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-.transaksi-icon {
+.kas-transaksi-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.kas-icon-box {
   width: 32px;
   height: 32px;
   min-width: 32px;
-  background-color: #ffffff;
   color: #4ca5b0;
-  border-radius: 10px;
+  border-radius: 9px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
 }
 
-.transaksi-info {
+.kas-transaksi-info {
   display: flex;
   flex-direction: column;
-  flex-grow: 1;
-  min-width: 0;
+  gap: 2px;
 }
 
-.transaksi-nama {
+.kas-item-title {
   color: #ffffff;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 800;
-  line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.transaksi-tanggal {
-  color: rgba(255, 255, 255, 0.85);
+.kas-item-date {
+  color: rgba(255, 255, 255, 0.9);
   font-size: 10.5px;
-  margin-top: 3px;
   font-weight: 600;
 }
 
-.transaksi-nominal-pill {
-  font-size: 12px;
+.kas-nominal-pill {
+  background-color: #8ce3b9;
+  color: #116843;
+  font-size: 11.5px;
   font-weight: 800;
-  padding: 5px 10px;
-  border-radius: 8px;
+  padding: 6px 12px;
+  border-radius: 12px;
   white-space: nowrap;
 }
 
-.status-merah {
-  background-color: #ffeed3;
-  color: #a82323;
+/* 4. Filter Pill Row */
+.kas-filter-row {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 2px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.kas-filter-row::-webkit-scrollbar {
+  display: none;
 }
 
-.status-hijau {
-  background-color: #d1fae5;
-  color: #065f46;
+.filter-pill {
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.filter-pill.active {
+  background-color: #4ca5b0;
+  color: #ffffff;
+}
+
+.filter-pill.inactive {
+  background-color: #ffffff;
+  color: #4ca5b0;
+}
+
+/* 5. Daftar Tagihan Penghuni */
+.kas-penghuni-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kas-penghuni-card {
+  background-color: #4ca5b0;
+  border-radius: 22px;
+  padding: 14px 16px;
+  box-shadow: 4px 5px 0px #c8924b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kas-penghuni-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kas-penghuni-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kas-penghuni-name {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.badge-kamar-putih {
+  background-color: #ffffff;
+  color: #4ca5b0;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 9px;
+  border-radius: 9999px;
+}
+
+.kas-penghuni-nominal {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.btn-chat-wa {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #8ce3b9;
+  color: #116843;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.1s ease;
+}
+
+.btn-chat-wa:active {
+  transform: scale(0.96);
 }
 
 /* ==========================================================================
@@ -1062,40 +1111,272 @@ body .dashboard-footer .footer-desc {
 }
 
 /* ==========================================================================
-   MONITORING & TAGIHAN IURAN
+   HALAMAN KELOLA IURAN (PJ KOS / PEMILIK) - SESUAI MOCKUP GAMBAR 8
    ========================================================================== */
-.monitoring-summary-row {
+
+.kelola-container {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  width: 100%;
+}
+
+/* 1. Baris Dua Kartu Ringkasan (Total Penghuni & Sudah Bayar) */
+.kelola-stats-row {
   display: flex;
   gap: 12px;
   width: 100%;
 }
 
-.summary-card {
+.kelola-stat-card {
   flex: 1;
   background-color: #4ca5b0;
   border-radius: 20px;
   padding: 14px 16px;
-  box-shadow: 5px 6px 0px #c8924b;
+  box-shadow: 4px 6px 0px #c8924b;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 4px;
 }
 
-.summary-card .summary-title {
+.kelola-stat-label {
   color: #ffffff;
-  font-size: 14px;
-  font-weight: 800;
+  font-size: 13.5px;
+  font-weight: 700;
   margin: 0;
-  line-height: 1.2;
 }
 
-.summary-card .summary-nominal {
+.kelola-stat-value {
   color: #ffffff;
-  font-size: 14.5px;
+  font-size: 22px;
   font-weight: 800;
   margin: 0;
+  letter-spacing: 0.3px;
+}
+
+/* 2. Baris Dua Tombol Aksi (Tambah Pengeluaran & Saldo) */
+.kelola-action-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}
+
+.btn-kelola-action,
+.box-kelola-saldo {
+  flex: 1;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  border-radius: 16px;
+  padding: 10px 12px;
+  box-shadow: 4px 5px 0px #c8924b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-decoration: none;
   white-space: nowrap;
+}
+
+.btn-kelola-action:active {
+  transform: translateY(1px);
+}
+
+.icon-kelola-white {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+/* 3. Daftar Transaksi Mutasi */
+.kelola-transaksi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kelola-transaksi-card {
+  background-color: #4ca5b0;
+  border-radius: 18px;
+  padding: 11px 14px;
+  box-shadow: 4px 5px 0px #c8924b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.kelola-tx-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.kelola-tx-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.kelola-tx-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kelola-tx-title {
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.kelola-tx-date {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* Badge Nominal Merah (Pengeluaran) & Hijau (Pemasukan) */
+.kelola-nominal-red {
+  background-color: #ffeed3;
+  color: #b91c1c;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 5px 11px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+.kelola-nominal-green {
+  background-color: #8ce3b9;
+  color: #065f46;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 5px 11px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+/* 4. Baris Filter Pill */
+.kelola-filter-row {
+  display: flex;
+  gap: 8px;
+  margin: 2px 0 1px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.kelola-filter-row::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-pill {
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.filter-pill.active {
+  background-color: #4ca5b0;
+  color: #ffffff;
+}
+
+.filter-pill.inactive {
+  background-color: #ffffff;
+  color: #4ca5b0;
+}
+
+/* 5. Daftar Penghuni Iuran */
+.kelola-penghuni-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.kelola-penghuni-card {
+  background-color: #4ca5b0;
+  border-radius: 20px;
+  padding: 13px 16px;
+  box-shadow: 4px 5px 0px #c8924b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kelola-penghuni-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kelola-penghuni-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kelola-penghuni-name {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.badge-kamar-putih {
+  background-color: #ffffff;
+  color: #4ca5b0;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 9px;
+  border-radius: 9999px;
+}
+
+.kelola-penghuni-nominal {
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.btn-chat-wa {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background-color: #8ce3b9;
+  color: #065f46;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.1s ease;
+}
+
+.btn-chat-wa:active {
+  transform: scale(0.96);
 }
 
 /* ==========================================================================

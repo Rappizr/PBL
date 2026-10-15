@@ -122,7 +122,7 @@ function formatTanggalIndo(?string $tanggal): string {
                         </a>
 
                         <!-- Menu 2: Monitoring & Tagihan Iuran -->
-                        <a href="/?page=monitoring-iuran" class="menu-item-box">
+                        <a href="/?page=monitoring_iuran" class="menu-item-box">
                             <div class="menu-icon-wrapper">
                                 <i class="fa-solid fa-chart-pie"></i>
                             </div>

@@ -30,8 +30,8 @@ switch ($page) {
         require_once __DIR__ . '/../modules/pemilik/manajemen_kamar/page.php'; 
         break;
     
-    case 'monitoring_tagihan_iuran':
-        require_once __DIR__ . '/../modules/pemilik/monitor_tagihan_iuaran/page.php';
+    case 'kelola_iuran':
+        require_once __DIR__ . '/../modules/pemilik/kelola_iuran/page.php';
         break;
     
     case 'chat_penghuni':
@@ -44,6 +44,10 @@ switch ($page) {
     
     case 'peraturan_kost':
         require_once __DIR__ . '/../modules/penghuni_Pj/peraturan_kost/page.php';
+        break;
+    
+    case 'monitoring_iuran':
+        require_once __DIR__ . '/../modules/penghuni_Pj/monitoring_iuran/page.php';
         break;
 
     case 'logout':

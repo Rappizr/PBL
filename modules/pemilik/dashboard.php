@@ -40,7 +40,7 @@ $pendingPembayaranCount = (int) $stmtPendingPembayaran->fetchColumn();
                     <div class="menu-icon-wrapper">
                         <i class="fa-solid fa-wallet"></i>
                     </div>
-                    <span class="menu-label">Buku Kas<br>Sewa</span>
+                    <span class="menu-label">Analisis Kas</span>
                 </a>
 
                 <a href="/?page=verifikasi_pembayaran" class="menu-item-box">
@@ -56,11 +56,11 @@ $pendingPembayaranCount = (int) $stmtPendingPembayaran->fetchColumn();
                     <?php endif; ?>
                 </a>
 
-                <a href="/?page=monitoring_tagihan_iuran" class="menu-item-box">
+                <a href="/?page=kelola_iuran" class="menu-item-box">
                     <div class="menu-icon-wrapper">
                         <i class="fa-solid fa-chart-pie"></i>
                     </div>
-                    <span class="menu-label">Monitoring &<br>Tagihan Iuran</span>
+                    <span class="menu-label">Kelola Iuran</span>
                 </a>
 
                 <a href="/?page=chat_penghuni" class="menu-item-box">
