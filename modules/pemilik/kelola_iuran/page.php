@@ -15,6 +15,9 @@ if ($role_user === 'pemilik') {
     $link_kembali = '/?page=penghuni-dashboard';
 }
 
+$current_page = $_GET['page'] ?? 'pj-kelola-iuran';
+$show_modal = isset($_GET['modal']) && $_GET['modal'] === 'tambah_pengeluaran';
+
 // 2. Data Ringkasan Penghuni
 $total_penghuni = 13;
 $sudah_bayar    = 9;
@@ -117,10 +120,10 @@ $daftar_penghuni = [
 
                 <!-- 3. Dua Tombol Aksi: Tambah Pengeluaran & Saldo Kas -->
                 <div class="kelola-action-row">
-                    <a href="/?page=tambah-pengeluaran-iuran" class="btn-kelola-action">
-                        <span class="icon-kelola-white"><i class="fa-solid fa-plus"></i></span>
-                        Tambah Pengeluaran
-                    </a>
+                        <a href="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran" class="btn-kelola-action">
+                            <span class="icon-kelola-white"><i class="fa-solid fa-plus"></i></span>
+                            Tambah Pengeluaran
+                        </a>
                     <div class="box-kelola-saldo">
                         <span class="icon-kelola-white"><i class="fa-solid fa-wallet"></i></span>
                         Rp. <?= $saldo_kas_iuran; ?>
@@ -179,9 +182,39 @@ $daftar_penghuni = [
             </main>
         </div>
 
-        <!-- Footer Modular -->
         <?php require_once __DIR__ . '/../../components/footer.php'; ?>
     </div>
+
+ <?php if ($show_modal): ?>
+    <div class="modal-overlay active">
+        <div class="modal-card">
+            <h3 class="modal-title">Tambah Pengeluaran</h3>
+            
+            <form action="/?page=<?= urlencode($current_page); ?>" method="POST" class="modal-form">
+                <div class="modal-field">
+                    <label class="modal-label" for="keterangan">Keterangan</label>
+                    <input type="text" id="keterangan" name="keterangan" class="modal-input" required>
+                </div>
+
+                <div class="modal-field">
+                    <label class="modal-label" for="kategori">Kategori</label>
+                    <input type="text" id="kategori" name="kategori" class="modal-input" required>
+                </div>
+
+                <div class="modal-field">
+                    <label class="modal-label" for="nominal">Nominal</label>
+                    <input type="number" id="nominal" name="nominal" class="modal-input" required>
+                </div>
+
+                <div class="modal-actions">
+                    <!-- Tombol Batal kembali ke halaman asal tanpa query modal -->
+                    <a href="/?page=<?= urlencode($current_page); ?>" class="btn-modal-cancel" style="display: flex; align-items: center; justify-content: center; text-decoration: none;">Batal</a>
+                    <button type="submit" class="btn-modal-submit">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+<?php endif; ?>
 </body>
 
 </html>

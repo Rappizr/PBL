@@ -616,8 +616,176 @@ body .dashboard-footer .footer-desc {
 }
 
 /* ==========================================================================
-   HALAMAN ANALISIS KAS (SESUAI MOCKUP GAMBAR 6)
+   POP-UP MANAJEMEN KAMAR & PENGHUNI 
    ========================================================================== */
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  padding: 1rem;
+}
+
+/* Modal Box */
+.modal-box {
+  width: 19.5rem;
+  max-width: 100%;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.15rem;
+  border-radius: 1.25rem;
+  background: #f3ca81;
+  box-shadow: 0 4px 9px 0 rgba(0, 0, 0, 0.25);
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
+  box-sizing: border-box;
+}
+
+.modal-title {
+  color: #155560;
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* Form Group */
+.modal-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.modal-label {
+  color: #4e545c;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.modal-input,
+.modal-select {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 0.75rem;
+  border: none;
+  background: #fff;
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.25);
+  color: #4e545c;
+  font-size: 0.875rem;
+  font-weight: 500;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.modal-input:focus,
+.modal-select:focus {
+  box-shadow: 2px 2px 0 0 rgba(76, 165, 176, 0.8);
+}
+
+.upload-area {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  height: 7.25rem;
+  border-radius: 1rem;
+  border: 2px dashed #4ca5b0;
+  background: #fff;
+  box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  position: relative;
+  box-sizing: border-box;
+  padding: 0.5rem;
+  text-decoration: none;
+}
+
+/* Sembunyikan input file asli secara transparan di seluruh area */
+.upload-area input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+
+/* Ikon SVG di dalam area upload */
+.upload-icon-svg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.upload-icon-svg svg {
+  display: block;
+}
+
+/* Teks Petunjuk */
+.upload-text {
+  color: #4ca5b0;
+  font-size: 0.725rem;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+  pointer-events: none;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+.btn-modal {
+  display: flex;
+  padding: 0.6rem 0.25rem;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  text-decoration: none;
+  box-sizing: border-box;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s;
+}
+
+.btn-modal-batal {
+  background: #fff;
+  color: #4ca5b0;
+  box-shadow: 3px 4px 0 0 #c8924b;
+}
+
+.btn-modal-simpan {
+  background: #4ca5b0;
+  color: #fff;
+  box-shadow: 3px 4px 0 0 #c8924b;
+}
+
+.btn-modal:active {
+  transform: translate(1px, 1px);
+}
 
 .kas-container {
   display: flex;
@@ -1382,6 +1550,137 @@ body .dashboard-footer .footer-desc {
 }
 
 /* ==========================================================================
+   POP-UP TAMBAH PENGELUARAN 
+   ========================================================================== */
+
+/* Overlay Latar Gelap Transparan */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
+  padding: 16px;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Kotak Modal Krem Sesuai Gambar Mockup */
+.modal-card {
+  background-color: #f3ca81;
+  width: 100%;
+  max-width: 330px;
+  border-radius: 26px;
+  padding: 24px 20px 22px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transform: scale(0.92);
+  transition: transform 0.2s ease;
+}
+
+.modal-overlay.active .modal-card {
+  transform: scale(1);
+}
+
+.modal-title {
+  color: #2b545b;
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0;
+}
+
+/* Form Group & Input */
+.modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-label {
+  color: #4a5568;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.modal-input {
+  width: 100%;
+  background-color: #ffffff;
+  border: none;
+  border-radius: 18px;
+  padding: 11px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1e24;
+  outline: none;
+  box-sizing: border-box;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.modal-input:focus {
+  box-shadow: 0 0 0 2px #4ca5b0;
+}
+
+/* Baris Dua Tombol Batal & Simpan */
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.btn-modal-cancel {
+  flex: 1;
+  background-color: #ffffff;
+  color: #3b7b84;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 10px 0;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 3px 4px 0px #c8924b;
+  text-align: center;
+  transition: transform 0.1s ease;
+}
+
+.btn-modal-submit {
+  flex: 1;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 10px 0;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 3px 4px 0px #c8924b;
+  text-align: center;
+  transition: transform 0.1s ease;
+}
+
+.btn-modal-cancel:active,
+.btn-modal-submit:active {
+  transform: translateY(1px);
+}
+
+/* ==========================================================================
    CHAT PENGHUNI (TEMA ORANGE PASTEL & TEAL)
    ========================================================================== */
 .chat-container {
@@ -1850,9 +2149,13 @@ body .dashboard-footer .footer-desc {
   align-items: flex-start;
   gap: 1.5rem;
   border-radius: 0.75rem;
-  background: #F3CA81;
+  background: #f3ca81;
   box-shadow: 0 4px 9px 0 rgba(0, 0, 0, 0.25);
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    system-ui,
+    -apple-system,
+    sans-serif;
 }
 
 .modal-bayar .modal-title {
@@ -1877,7 +2180,7 @@ body .dashboard-footer .footer-desc {
 }
 
 .modal-info-box .batas {
-  color: #4E545C;
+  color: #4e545c;
   font-size: 0.8125rem;
   font-weight: 600;
 }
@@ -1897,7 +2200,7 @@ body .dashboard-footer .footer-desc {
 }
 
 .modal-section-label {
-  color: #4E545C;
+  color: #4e545c;
   font-size: 0.8125rem;
   font-weight: 600;
 }
@@ -1912,7 +2215,7 @@ body .dashboard-footer .footer-desc {
   border-radius: 0.75rem;
   background: #fff;
   box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.25);
-  color: #4E545C;
+  color: #4e545c;
   font-size: 0.8125rem;
   font-weight: 600;
 }
@@ -1927,7 +2230,7 @@ body .dashboard-footer .footer-desc {
   gap: 0.75rem;
   align-self: stretch;
   border-radius: 0.75rem;
-  border: 2px dashed #4CA5B0;
+  border: 2px dashed #4ca5b0;
   background: #fff;
   box-shadow: 2px 2px 0 0 rgba(0, 0, 0, 0.25);
   cursor: pointer;
@@ -1949,7 +2252,7 @@ body .dashboard-footer .footer-desc {
 }
 
 .upload-area .upload-text {
-  color: #4CA5B0;
+  color: #4ca5b0;
   text-align: center;
   font-size: 0.625rem;
   font-weight: 400;
@@ -2004,13 +2307,13 @@ body .dashboard-footer .footer-desc {
 }
 
 .btn-modal-batal span {
-  color: #4CA5B0;
+  color: #4ca5b0;
   font-size: 0.8125rem;
   font-weight: 700;
 }
 
 .btn-modal-kirim {
-  background: #4CA5B0;
+  background: #4ca5b0;
   box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.25);
 }
 
