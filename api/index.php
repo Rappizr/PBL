@@ -15,14 +15,16 @@ switch ($page) {
         break;
 
     case 'dashboard_penghuni':
+    case 'penghuni-dashboard':
         require_once __DIR__ . '/../modules/penghuni_Pj/dashboard.php';
         break;
 
     case 'verifikasi_pembayaran':
+    case 'verifikasi_bayar':
         require_once __DIR__ . '/../modules/pemilik/verifikasi_bayar/page.php';
         break;
 
-     case 'arus_kas':
+    case 'arus_kas':
         require_once __DIR__ . '/../modules/pemilik/analisis_kas/page.php';
         break;
 
@@ -31,6 +33,7 @@ switch ($page) {
         break;
     
     case 'kelola_iuran':
+    case 'pj-kelola-iuran':
         require_once __DIR__ . '/../modules/pemilik/kelola_iuran/page.php';
         break;
     
