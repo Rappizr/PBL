@@ -1355,8 +1355,10 @@ body {
 }
 
 /* ==========================================================================
-   11. HALAMAN TAGIHAN & RIWAYAT
+   11. HALAMAN TAGIHAN & RIWAYAT (MOBILE & DESKTOP)
    ========================================================================== */
+
+/* Subpage Banner (Mobile) */
 .subpage-banner-card {
   background-color: #4ca5b0;
   border-radius: 24px;
@@ -1391,6 +1393,7 @@ body {
   margin-bottom: 24px;
 }
 
+/* Card Tagihan */
 .item-tagihan-card {
   background-color: #4ca5b0;
   border-radius: 22px;
@@ -1479,6 +1482,252 @@ body {
 .btn-card-action:active {
   transform: translateY(1px);
   background-color: #f5f8f8;
+}
+
+/* ==========================================================================
+   POP-UP MODAL BAYAR TAGIHAN 
+   ========================================================================== */
+.modal-bayar-card {
+  background-color: #f3ca81;
+  width: 100%;
+  max-width: 350px;
+  border-radius: 24px;
+  padding: 22px 20px 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  box-sizing: border-box;
+}
+
+.modal-bayar-title {
+  color: #1a4d55;
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.modal-ringkasan-box {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.modal-ringkasan-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-ringkasan-jenis {
+  color: #1a4d55;
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.modal-ringkasan-nominal {
+  color: #1a4d55;
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.modal-ringkasan-batas {
+  color: #4b5563;
+  font-size: 12px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-rekening-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-rekening-label {
+  color: #374151;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.modal-rekening-val {
+  background-color: #ffffff;
+  border-radius: 9999px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f2937;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.modal-upload-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-upload-box {
+  background-color: #ffffff;
+  border-radius: 16px;
+  border: 2px dashed #4ca5b0;
+  height: 135px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.modal-upload-box input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.modal-upload-text {
+  color: #4ca5b0;
+  font-size: 11px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.modal-bayar-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.btn-bayar-batal {
+  flex: 1;
+  background-color: #ffffff;
+  color: #3b7b84;
+  font-size: 13.5px;
+  font-weight: 800;
+  padding: 9px 0;
+  border-radius: 9999px;
+  text-decoration: none;
+  text-align: center;
+  box-shadow: 3px 4px 0px #c8924b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease;
+}
+
+.btn-bayar-kirim {
+  flex: 1;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  padding: 9px 0;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  box-shadow: 3px 4px 0px #c8924b;
+  transition: transform 0.1s ease;
+}
+
+.btn-bayar-batal:active,
+.btn-bayar-kirim:active {
+  transform: translateY(1px);
+}
+
+/* ==========================================================================
+   DESKTOP VIEW: TAGIHAN & RIWAYAT
+   ========================================================================== */
+@media (min-width: 992px) {
+  .tagihan-desktop-subtitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2b545b;
+    margin: 4px 0 24px 0;
+  }
+
+  .tagihan-section-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a4d55;
+    margin: 0 0 14px 0;
+  }
+
+  .desktop-tagihan-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(320px, 380px));
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+
+  .desktop-riwayat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 784px;
+  }
+
+  .desktop-riwayat-card {
+    background-color: #4ca5b0;
+    border-radius: 20px;
+    padding: 16px 20px;
+    box-shadow: 4px 5px 0px #c8924b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .desktop-riwayat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .desktop-riwayat-title {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .desktop-riwayat-date {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .desktop-riwayat-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .badge-lunas-pill {
+    background-color: #8ce3b9;
+    color: #0d5635;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 12px;
+    border-radius: 9999px;
+  }
+
+  .desktop-riwayat-nominal {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+  }
 }
 
 /* ==========================================================================

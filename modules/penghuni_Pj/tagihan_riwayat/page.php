@@ -3,42 +3,60 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+$is_pj = true;
 $nama_penghuni = "Mas Dafa";
 
-// Data dummy sesuai mockup
 $daftar_tagihan_saya = [
     [
-        'id' => 1,
-        'jenis' => 'Sewa',
-        'nominal' => 450000,
+        'id'          => 1,
+        'jenis'       => 'Sewa',
+        'nominal'     => 1000000,
         'jatuh_tempo' => '11-10-26'
     ],
     [
-        'id' => 2,
-        'jenis' => 'Iuran',
-        'nominal' => 450000,
+        'id'          => 2,
+        'jenis'       => 'Iuran',
+        'nominal'     => 50000,
         'jatuh_tempo' => '11-10-26'
     ]
 ];
 
 $daftar_riwayat = [
     [
-        'id' => 101,
-        'judul' => 'Sewa Bulanan',
+        'id'      => 101,
+        'judul'   => 'Sewa Bulanan',
         'tanggal' => '05 September 2026',
         'nominal' => 1200000
     ],
     [
-        'id' => 102,
-        'judul' => 'Iuran Bulanan',
-        'tanggal' => '05 September 2026',
-        'nominal' => 1200000
+        'id'      => 102,
+        'judul'   => 'Sewa Bulanan',
+        'tanggal' => '06 September 2026',
+        'nominal' => 200000
+    ],
+    [
+        'id'      => 103,
+        'judul'   => 'Sewa Bulanan',
+        'tanggal' => '10 September 2026',
+        'nominal' => 100000
     ]
 ];
+
+// Deteksi Tagihan Terpilih via Query Parameter URL
+$modal_bayar_id = isset($_GET['bayar_id']) ? (int)$_GET['bayar_id'] : null;
+$tagihan_dipilih = null;
+
+if ($modal_bayar_id) {
+    foreach ($daftar_tagihan_saya as $item) {
+        if ($item['id'] === $modal_bayar_id) {
+            $tagihan_dipilih = $item;
+            break;
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -46,11 +64,11 @@ $daftar_riwayat = [
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/css/styles.css">
 </head>
-
 <body class="dashboard-body">
-    <div class="mobile-container">
+
+    <!-- LAYOUT MOBILE -->
+    <div class="mobile-container mobile-dashboard-view">
         <div>
-            <!-- Header Top Bar -->
             <header class="dashboard-header">
                 <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
                 <div class="kotak-kapsul-pemilik">
@@ -62,15 +80,13 @@ $daftar_riwayat = [
             </header>
 
             <main class="page-content">
-                <!-- Banner Tagihan & Riwayat + Tombol Kembali -->
                 <div class="subpage-banner-card">
                     <h2 class="subpage-banner-title">Tagihan &amp; Riwayat</h2>
-                    <a href="/dashboard/penghuni" class="btn-kembali-banner">
+                    <a href="/?page=dashboard_penghuni" class="btn-kembali-banner">
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
                 </div>
 
-                <!-- Section: Tagihan Saya -->
                 <h3 class="section-title-white">Tagihan Saya</h3>
                 <div class="section-group">
                     <?php foreach ($daftar_tagihan_saya as $t): ?>
@@ -91,20 +107,13 @@ $daftar_riwayat = [
                                 </div>
                             </div>
 
-                            <!-- Tombol Bayar → buka modal -->
-                            <button type="button"
-                                    class="btn-card-action btn-bayar"
-                                    data-id="<?= $t['id'] ?>"
-                                    data-jenis="<?= htmlspecialchars($t['jenis']) ?>"
-                                    data-nominal="<?= $t['nominal'] ?>"
-                                    data-jatuh-tempo="<?= htmlspecialchars($t['jatuh_tempo']) ?>">
+                            <a href="/?page=tagihan_riwayat&bayar_id=<?= $t['id'] ?>" class="btn-card-action">
                                 Bayar
-                            </button>
+                            </a>
                         </div>
                     <?php endforeach; ?>
                 </div>
 
-                <!-- Section: Riwayat Transaksi -->
                 <h3 class="section-title-white">Riwayat Transaksi</h3>
                 <div class="section-group">
                     <?php foreach ($daftar_riwayat as $r): ?>
@@ -122,152 +131,156 @@ $daftar_riwayat = [
                                     <span class="nominal-highlight">Rp <?= number_format($r['nominal'], 0, ',', '.') ?></span>
                                 </div>
                             </div>
-
-                            <a href="/?page=cetak-invoice&id=<?= $r['id'] ?>" target="_blank" class="btn-card-action">
-                                Cetak Invoice
-                            </a>
                         </div>
                     <?php endforeach; ?>
                 </div>
             </main>
         </div>
 
-        <!-- Footer Modular -->
         <?php require_once __DIR__ . '/../../components/footer.php'; ?>
     </div>
 
-    <!-- ==================== MODAL BAYAR TAGIHAN ==================== -->
-    <div class="modal-overlay" id="modalBayar">
-        <div class="modal-bayar">
-            <p class="modal-title">Bayar Tagihan</p>
-
-            <div class="modal-info-box">
-                <span class="batas" id="modalBatas">Batas bayar 11-10-26</span>
-                <span class="nominal" id="modalNominal">Rp 450.000</span>
-            </div>
-
-            <div class="modal-section">
-                <div class="modal-section-label">Transfer ke rekening berikut:</div>
-                <div class="rekening-box">
-                    BCA 12345678 a.n Bapak Kos
+    <!-- LAYOUT DESKTOP -->
+    <div class="desktop-dashboard-wrapper">
+        <aside class="desktop-sidebar">
+            <div>
+                <h1 class="sidebar-brand">SITEMAN - KOS</h1>
+                
+                <div class="sidebar-profile">
+                    <div class="sidebar-avatar"><i class="fa-solid fa-user"></i></div>
+                    <span class="sidebar-name"><?= htmlspecialchars($nama_penghuni); ?></span>
                 </div>
+
+                <nav class="sidebar-nav">
+                    <a href="/?page=dashboard_penghuni" class="nav-item">
+                        <i class="fa-solid fa-table-cells-large"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="/?page=tagihan_riwayat" class="nav-item active">
+                        <i class="fa-solid fa-receipt"></i>
+                        <span>Tagihan &amp; Riwayat</span>
+                    </a>
+                    <a href="/?page=monitoring_iuran" class="nav-item">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>Monitoring &amp; Tagihan Iuran</span>
+                    </a>
+                    <a href="/?page=peraturan_kost" class="nav-item">
+                        <i class="fa-solid fa-book-open"></i>
+                        <span>Peraturan Kos</span>
+                    </a>
+                    <a href="/?page=chat_penghuni" class="nav-item">
+                        <i class="fa-solid fa-comments"></i>
+                        <span>Chat Penghuni</span>
+                    </a>
+                    <?php if ($is_pj): ?>
+                        <a href="/?page=kelola_iuran" class="nav-item">
+                            <i class="fa-solid fa-wallet"></i>
+                            <span>Kelola &amp; Monitor Iuran</span>
+                        </a>
+                    <?php endif; ?>
+                </nav>
             </div>
 
-            <div class="modal-section">
-                <div class="modal-section-label">Upload Bukti Pembayaran</div>
-                <label class="upload-area" id="uploadArea">
-                    <input type="file" id="buktiPembayaran" accept="image/*">
-                    <div class="upload-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42" fill="none">
-                            <path d="M16.4062 13.0306H19.4373V26.9062C19.4373 27.0866 19.585 27.2343 19.7654 27.2343H22.2264C22.4068 27.2343 22.5545 27.0866 22.5545 26.9062V13.0306H25.5938C25.8686 13.0306 26.0203 12.7148 25.8521 12.5015L21.2584 6.68547C21.2277 6.64625 21.1885 6.61453 21.1437 6.59272C21.0989 6.57091 21.0498 6.55957 21 6.55957C20.9502 6.55957 20.9011 6.57091 20.8563 6.59272C20.8115 6.61453 20.7723 6.64625 20.7416 6.68547L16.1479 12.4974C15.9797 12.7148 16.1314 13.0306 16.4062 13.0306ZM36.0117 25.6757H33.5508C33.3703 25.6757 33.2227 25.8234 33.2227 26.0038V32.3202H8.77734V26.0038C8.77734 25.8234 8.62969 25.6757 8.44922 25.6757H5.98828C5.80781 25.6757 5.66016 25.8234 5.66016 26.0038V34.1249C5.66016 34.8509 6.24668 35.4374 6.97266 35.4374H35.0273C35.7533 35.4374 36.3398 34.8509 36.3398 34.1249V26.0038C36.3398 25.8234 36.1922 25.6757 36.0117 25.6757Z" fill="#4CA5B0" />
-                        </svg>
+            <div class="sidebar-footer">
+                <p class="sidebar-footer-title">SITEMAN - KOS &copy; 2g2b - 2026</p>
+                <p class="sidebar-footer-desc">Sistem Manajemen Operasion Kos</p>
+            </div>
+        </aside>
+
+        <main class="desktop-content">
+            <h2 class="desktop-header-title">Tagihan &amp; Riwayat</h2>
+            <p class="tagihan-desktop-subtitle">Ringkasan tagihan dan riwayat pembayaran</p>
+
+            <h3 class="tagihan-section-title">Tagihan Saya</h3>
+            <div class="desktop-tagihan-grid">
+                <?php foreach ($daftar_tagihan_saya as $t): ?>
+                    <div class="item-tagihan-card">
+                        <div class="item-tagihan-header">
+                            <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']) ?></h4>
+                            <span class="badge-status-krem">Belum bayar</span>
+                        </div>
+
+                        <div class="item-tagihan-body">
+                            <div class="item-tagihan-left">
+                                <span>Total tagihan</span>
+                                <span>Batas bayar</span>
+                            </div>
+                            <div class="item-tagihan-right">
+                                <span class="nominal-highlight">Rp <?= number_format($t['nominal'], 0, ',', '.') ?></span>
+                                <span><?= htmlspecialchars($t['jatuh_tempo']) ?></span>
+                            </div>
+                        </div>
+
+                        <a href="/?page=tagihan_riwayat&bayar_id=<?= $t['id'] ?>" class="btn-card-action">
+                            Bayar
+                        </a>
                     </div>
-                    <p class="upload-text">Ketuk untuk pilih foto</p>
-                    <img class="upload-preview" id="uploadPreview" alt="Preview bukti">
-                </label>
+                <?php endforeach; ?>
             </div>
 
-            <div class="modal-actions">
-                <button type="button" class="btn-modal btn-modal-batal" id="btnBatal">
-                    <span>Batal</span>
-                </button>
-                <button type="button" class="btn-modal btn-modal-kirim" id="btnKirim">
-                    <span>Kirim Bukti</span>
-                </button>
+            <h3 class="tagihan-section-title">Riwayat Transaksi</h3>
+            <div class="desktop-riwayat-list">
+                <?php foreach ($daftar_riwayat as $r): ?>
+                    <div class="desktop-riwayat-card">
+                        <div class="desktop-riwayat-info">
+                            <h4 class="desktop-riwayat-title"><?= htmlspecialchars($r['judul']) ?></h4>
+                            <span class="desktop-riwayat-date"><?= htmlspecialchars($r['tanggal']) ?></span>
+                        </div>
+                        <div class="desktop-riwayat-right">
+                            <span class="badge-lunas-pill">Lunas</span>
+                            <span class="desktop-riwayat-nominal">Rp <?= number_format($r['nominal'], 0, ',', '.') ?></span>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
-        </div>
+        </main>
     </div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const modal = document.getElementById('modalBayar');
-            const modalBatas = document.getElementById('modalBatas');
-            const modalNominal = document.getElementById('modalNominal');
-            const uploadArea = document.getElementById('uploadArea');
-            const fileInput = document.getElementById('buktiPembayaran');
-            const uploadPreview = document.getElementById('uploadPreview');
-            const btnBatal = document.getElementById('btnBatal');
-            const btnKirim = document.getElementById('btnKirim');
+    <!-- POP-UP MODAL BAYAR TAGIHAN -->
+    <?php if ($tagihan_dipilih): ?>
+        <div class="modal-overlay active">
+            <div class="modal-bayar-card">
+                <h3 class="modal-bayar-title">Bayar Tagihan</h3>
 
-            let currentTagihanId = null;
+                <div class="modal-ringkasan-box">
+                    <div class="modal-ringkasan-top">
+                        <span class="modal-ringkasan-jenis"><?= htmlspecialchars($tagihan_dipilih['jenis']); ?></span>
+                        <span class="modal-ringkasan-nominal">Rp <?= number_format($tagihan_dipilih['nominal'], 0, ',', '.'); ?></span>
+                    </div>
+                    <span class="modal-ringkasan-batas">Batas bayar <?= htmlspecialchars($tagihan_dipilih['jatuh_tempo']); ?></span>
+                </div>
 
-            // Format Rupiah
-            function formatRupiah(angka) {
-                return 'Rp ' + Number(angka).toLocaleString('id-ID');
-            }
+                <form action="/?page=tagihan_riwayat" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 12px; width: 100%;">
+                    <input type="hidden" name="tagihan_id" value="<?= $tagihan_dipilih['id']; ?>">
 
-            // Buka modal saat tombol Bayar diklik
-            document.querySelectorAll('.btn-bayar').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    currentTagihanId = this.dataset.id;
-                    const jatuhTempo = this.dataset.jatuhTempo;
-                    const nominal = this.dataset.nominal;
+                    <div class="modal-rekening-wrapper">
+                        <label class="modal-rekening-label">Transfer Ke Rekening</label>
+                        <div class="modal-rekening-val">
+                            BCA 12345678 a.n Bapak Kos
+                        </div>
+                    </div>
 
-                    modalBatas.textContent = 'Batas bayar ' + jatuhTempo;
-                    modalNominal.textContent = formatRupiah(nominal);
+                    <div class="modal-upload-wrapper">
+                        <label class="modal-rekening-label">Upload Bukti Pembayaran</label>
+                        <label class="modal-upload-box">
+                            <input type="file" name="bukti_transfer" accept="image/*" required>
+                            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4ca5b0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
+                                <polyline points="7 9 12 4 17 9"></polyline>
+                                <line x1="12" y1="4" x2="12" y2="16"></line>
+                            </svg>
+                            <p class="modal-upload-text">Ketuk untuk pilih foto</p>
+                        </label>
+                    </div>
 
-                    // Reset upload
-                    fileInput.value = '';
-                    uploadArea.classList.remove('has-file');
-                    uploadPreview.src = '';
+                    <div class="modal-bayar-actions">
+                        <a href="/?page=tagihan_riwayat" class="btn-bayar-batal">Batal</a>
+                        <button type="submit" class="btn-bayar-kirim">Kirim Bukti</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    <?php endif; ?>
 
-                    modal.classList.add('active');
-                    document.body.style.overflow = 'hidden'; // cegah scroll background
-                });
-            });
-
-            // Tutup modal
-            function closeModal() {
-                modal.classList.remove('active');
-                document.body.style.overflow = '';
-                currentTagihanId = null;
-            }
-
-            btnBatal.addEventListener('click', closeModal);
-
-            // Klik di luar modal (overlay) juga tutup
-            modal.addEventListener('click', function (e) {
-                if (e.target === modal) {
-                    closeModal();
-                }
-            });
-
-            // Preview gambar saat dipilih
-            fileInput.addEventListener('change', function () {
-                const file = this.files[0];
-                if (file && file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = function (e) {
-                        uploadPreview.src = e.target.result;
-                        uploadArea.classList.add('has-file');
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-
-            // Tombol Kirim Bukti
-            btnKirim.addEventListener('click', function () {
-                if (!fileInput.files.length) {
-                    alert('Silakan upload bukti pembayaran terlebih dahulu.');
-                    return;
-                }
-
-                // Di sini bisa diganti dengan AJAX / form submit ke server
-                // Untuk sementara: simulasi sukses
-                alert('Bukti pembayaran berhasil dikirim!\nTagihan ID: ' + currentTagihanId);
-                closeModal();
-
-                // Contoh: jika nanti mau redirect
-                // window.location.href = '/?page=penghuni-bayar&id=' + currentTagihanId;
-            });
-
-            // Tutup dengan tombol Escape
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape' && modal.classList.contains('active')) {
-                    closeModal();
-                }
-            });
-        });
-    </script>
 </body>
 </html>
