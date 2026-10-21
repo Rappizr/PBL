@@ -90,9 +90,8 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
 - [x] Tampilan mobile-friendly Penghuni
 - [x] Tampilan mobile-friendly PJ
 - [ ] Tampilan dashboard desktop Pemilik
-- [ ] Tampilan dashboard desktop Penghuni
-- [ ] Tampilan dashboard desktop PJ
-- [ ] Halaman Dashboard
+- [x] Tampilan dashboard desktop Penghuni
+- [x] Tampilan dashboard desktop PJ
 - [ ] Halaman Manajemen Kamar & Penghuni
 - [ ] Halaman Chat penghuni
 - [ ] Halaman verifikasi pembayaran
@@ -103,7 +102,7 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
 
 - [ ] Pengujian fungsional tiap modul
 - [ ] Perbaikan bug
-- [ ] Deployment ke server/hosting untuk uji coba
+- [x] Deployment ke server/hosting untuk uji coba
 
 ---
 
