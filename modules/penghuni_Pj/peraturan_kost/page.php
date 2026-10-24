@@ -161,18 +161,19 @@ $peraturan_list = [
         <h2 class="desktop-header-title">Peraturan Kos</h2>
         <p class="peraturan-desktop-subtitle">Tata tertib yang berlaku untuk seluruh penghuni kos</p>
 
-        <div class="desktop-peraturan-grid">
+        <!-- Container Utama Putih 1 Card Besar Bergaris Pembatas (Figma Style) -->
+        <div class="desktop-rules-container">
             <?php foreach ($peraturan_list as $p): ?>
-                  <article class="desktop-peraturan-card">
-                    <div class="peraturan-icon">
-                    <i class="<?= htmlspecialchars($p['icon']) ?>"></i>
+                <div class="rule-item">
+                    <div class="rule-icon-box">
+                        <i class="<?= htmlspecialchars($p['icon']) ?>"></i>
+                    </div>
+                    <div class="rule-text-box">
+                        <h4 class="rule-title"><?= htmlspecialchars($p['judul']) ?></h4>
+                        <p class="rule-desc"><?= htmlspecialchars($p['deskripsi']) ?></p>
+                    </div>
                 </div>
-                <div class="peraturan-text">
-                    <h4 class="peraturan-title"><?= htmlspecialchars($p['judul']) ?></h4>
-                    <p class="peraturan-desc"><?= htmlspecialchars($p['deskripsi']) ?></p>
-                </div>
-            </article>
-        <?php endforeach; ?>
+            <?php endforeach; ?>
         </div>
     </main>
 </div>

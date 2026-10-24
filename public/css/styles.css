@@ -1321,82 +1321,6 @@ body {
   letter-spacing: 0.3px;
 }
 
-/* ==========================================================================
-    CHAT PENGHUNI DESKTOP
-   ========================================================================== */
-
-  @media (min-width: 992px) {
-  /* Container Utama Halaman Chat Desktop */
-  .desktop-content .chat-container {
-    max-width: 900px;
-  }
-
-  /* Search Bar Desktop (Mengikuti bentuk pill / rounded penuh mobile) */
-  .desktop-content .search-wrapper {
-    max-width: 450px;
-    margin-bottom: 8px;
-  }
-
-  .desktop-content .search-input {
-    padding: 14px 20px 14px 46px;
-    font-size: 14px;
-    box-shadow: 3px 4px 0px #c8924b;
-    border: 1px solid rgba(200, 146, 75, 0.3);
-  }
-
-  /* Grid Kartu Chat Menjadi 2 Kolom di Desktop */
-  .desktop-content .chat-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
-    gap: 20px;
-    width: 100%;
-  }
-
-  /* Kartu Chat Desktop (Mempertahankan style shadow & warna asli mobile) */
-  .desktop-content .chat-card {
-    background-color: #4ca5b0;
-    border-radius: 20px;
-    padding: 18px 22px;
-    box-shadow: 5px 6px 0px #c8924b;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .desktop-content .chat-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 5px 8px 0px #c8924b;
-  }
-
-  .desktop-content .chat-nama {
-    font-size: 19px;
-  }
-
-  .desktop-content .chat-wa {
-    font-size: 13.5px;
-  }
-
-  /* Tombol Chat WhatsApp khusus Desktop */
-  .desktop-content .btn-chat-wa {
-    background-color: #ffffff;
-    color: #1a4d55;
-    padding: 8px 16px;
-    border-radius: 12px;
-    text-decoration: none;
-    font-size: 13px;
-    font-weight: 800;
-    box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.15);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: background-color 0.2s ease;
-  }
-
-  .desktop-content .btn-chat-wa:hover {
-    background-color: #f0f7f7;
-  }
-}
 
 /* ==========================================================================
    11. HALAMAN TAGIHAN & RIWAYAT (MOBILE & DESKTOP)
@@ -1831,57 +1755,74 @@ body {
    DESKTOP VIEW: PERATURAN KOS
    ========================================================================== */
 @media (min-width: 992px) {
-  .peraturan-desktop-subtitle {
-    font-size: 16px;
-    font-weight: 600;
-    color: #2b545b;
-    margin: 4px 0 24px 0;
-  }
-
-  .desktop-peraturan-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 380px));
-    gap: 24px;
-    max-width: 784px;
-  }
-
-  .desktop-peraturan-card {
+  /* Container Kartu Putih Utama */
+  .desktop-rules-container {
     background-color: #ffffff;
     border-radius: 20px;
-    padding: 22px 24px;
-    box-shadow: 4px 5px 0px #c8924b;
+    padding: 12px 32px;
+    box-shadow: 4px 6px 0px #c8924b; /* Shadow Emas SITEMAN-KOS */
+    max-width: 850px;
     display: flex;
-    align-items: flex-start;
-    gap: 16px;
+    flex-direction: column;
   }
 
-  .peraturan-icon {
-    flex-shrink: 0;
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+  /* Setiap Baris Item Peraturan */
+  .rule-item {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px 0;
+    border-bottom: 1px solid #e2e8f0; /* Garis tipis antar item */
+  }
+
+  /* Hilangkan garis pembatas pada item terakhir */
+  .rule-item:last-child {
+    border-bottom: none;
+  }
+
+  /* Bulatan Icon Teal */
+  .rule-icon-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
     background-color: #4ca5b0;
     color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 22px;
+    flex-shrink: 0;
   }
 
-  .peraturan-title {
-    font-size: 16px;
+  /* Detail Teks */
+  .rule-text-box {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .rule-title {
+    font-size: 17px;
     font-weight: 800;
     color: #1a4d55;
-    margin: 0 0 6px 0;
-  }
-
-  .peraturan-desc {
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.6;
-    color: #2b545b;
     margin: 0;
   }
+
+  .rule-desc {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #4a5568;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .peraturan-desktop-subtitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2e626a;
+  margin-top: 4px;
+  margin-bottom: 28px !important; /* Tambahkan atau perbesar nilai ini (misal 28px atau 32px) */
+}
 }
 
 /* ==========================================================================
@@ -2426,30 +2367,5 @@ body .dashboard-footer {
     color: #1a4d55;
     text-align: center;
     line-height: 1.25;
-  }
-}
-
-/* Secara default di HP, sembunyikan wrapper desktop */
-.desktop-dashboard-wrapper {
-  display: none !important;
-}
-
-.mobile-container {
-  display: flex !important;
-  flex-direction: column;
-}
-
-/* Ketika dibuka di Laptop / PC (Lebar layar >= 992px) */
-@media (min-width: 992px) {
-  /* Sembunyikan container mobile */
-  .mobile-container {
-    display: none !important;
-  }
-
-  /* Tampilkan layout dashboard desktop */
-  .desktop-dashboard-wrapper {
-    display: flex !important;
-    width: 100%;
-    min-height: 100vh;
   }
 }
