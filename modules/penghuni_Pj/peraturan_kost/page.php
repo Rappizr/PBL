@@ -9,27 +9,49 @@ $nama_penghuni = "Mas Rafi";
 
 // Data Peraturan Kos sesuai Mockup
 $peraturan_list = [
+   
     [
-        'icon' => 'fa-regular fa-clock',
-        'judul' => 'Jam Malam & Keamanan',
-        'deskripsi' => 'Pintu gerbang ditutup pukul 22.00 WIB. Penghuni yang pulang lewat jam tersebut wajib menghubungi pemilik kos untuk dibukakan pintu.'
-    ],
-    [
-        'icon' => 'fa-solid fa-user-group',
-        'judul' => 'Tamu & Kunjungan',
-        'deskripsi' => 'Tamu diperbolehkan berkunjung hingga pukul 20.00 WIB. Tamu menginap harus seizin pemilik kos dan dikenakan biaya tambahan.'
-    ],
-    [
-        'icon' => 'fa-solid fa-receipt',
-        'judul' => 'Pembayaran',
-        'deskripsi' => 'Sewa dan iuran dibayarkan paling lambat tanggal 10 setiap bulan. Keterlambatan lebih dari 7 hari dikenakan denda sesuai kesepakatan awal.'
+        'icon' => 'fa-solid fa-smoking',
+        'judul' => 'Aturan Merokok & Keamanan',
+        'deskripsi' => 'Bagi yang merokok, buanglah puntung dan abu rokok di asbak. Pastikan api rokok sudah mati sebelum dibuang demi mencegah risiko kebakaran.'
     ],
     [
         'icon' => 'fa-solid fa-broom',
-        'judul' => 'Kebersihan dan Fasilitas',
-        'deskripsi' => 'Setiap penghuni wajib menjaga kebersihan kamar dan area kos bersama. Kerusakan fasilitas akibat kelalaian pribadi menjadi tanggung jawab penghuni.'
-    ]
+        'judul' => 'Kebersihan Kamar & Kebersamaan',
+        'deskripsi' => 'Jika menyapu kamar, kotoran jangan dibiarkan di depan pintu. Buanglah sampah pada tempat sampah yang telah disediakan dengan cara yang benar.'
+    ],
+    [
+        'icon' => 'fa-solid fa-utensils',
+        'judul' => 'Dapur & Peralatan Makan',
+        'deskripsi' => 'Selesai makan atau memasak, harap segera mencuci piring, panci, dan peralatan yang digunakan. Pastikan wastafel dalam kondisi bersih dan kembalikan alat pada tempatnya.'
+    ],
+    [
+        'icon' => 'fa-solid fa-car-side',
+        'judul' => 'Parkir & Kunjungan Tamu',
+        'deskripsi' => 'Bagi tamu yang berkunjung di malam hari, mohon kendaraan diparkir di luar (depan rumah / lantai bawah).'
+    ],
+    [
+        'icon' => 'fa-solid fa-clock',
+        'judul' => 'Jam Malam & Keamanan Pagar',
+        'deskripsi' => 'Setiap malam mulai pukul 22:00, pastikan pintu pagar dalam keadaan terkunci atau digembok.'
+    ],
+    [
+        'icon' => 'fa-solid fa-volume-xmark',
+        'judul' => 'Ketenangan & Penggunaan Suara',
+        'deskripsi' => 'Jangan menyalakan sound system terlalu keras/bising (cukup untuk dinikmati sendiri). Hindari bergurau keras pada waktu istirahat agar tidak mengganggu rekan yang sedang istirahat atau belajar.'
+    ],
+    [
+        'icon' => 'fa-solid fa-shirt',
+        'judul' => 'Jemuran Pakaian',
+        'deskripsi' => 'Jika pakaian yang dijemur sudah kering, harap segera diambil dan disimpan di kamar masing-masing agar tempat jemuran dapat digunakan oleh penghuni lain.'
+    ],
+    [
+        'icon' => 'fa-solid fa-receipt',
+        'judul' => 'Pembayaran Sewa & Iuran',
+        'deskripsi' => 'Sewa dan iuran dibayarkan paling lambat tanggal 10 setiap bulan. Keterlambatan lebih dari 7 hari dikenakan denda sesuai kesepakatan awal.'
+    ],
 ];
+
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -85,5 +107,72 @@ $peraturan_list = [
         <!-- Footer Modular -->
         <?php require_once __DIR__ . '/../../components/footer.php'; ?>
     </div>
+
+    <!-- LAYOUT DESKTOP -->
+<div class="desktop-dashboard-wrapper">
+    <aside class="desktop-sidebar">
+        <div>
+            <h1 class="sidebar-brand">SITEMAN - KOS</h1>
+
+            <div class="sidebar-profile">
+                <div class="sidebar-avatar"><i class="fa-solid fa-user"></i></div>
+                <span class="sidebar-name"><?= htmlspecialchars($nama_penghuni); ?></span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="/?page=dashboard_penghuni" class="nav-item">
+                    <i class="fa-solid fa-table-cells-large"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/?page=tagihan_riwayat" class="nav-item">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span>Tagihan &amp; Riwayat</span>
+                </a>
+                <a href="/?page=monitoring_iuran" class="nav-item">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Monitoring &amp; Tagihan Iuran</span>
+                </a>
+                <a href="/?page=peraturan_kost" class="nav-item active">
+                    <i class="fa-solid fa-book-open"></i>
+                    <span>Peraturan Kos</span>
+                </a>
+                <a href="/?page=chat_penghuni" class="nav-item">
+                    <i class="fa-solid fa-comments"></i>
+                    <span>Chat Penghuni</span>
+                </a>
+                <?php if ($is_pj): ?>
+                    <a href="/?page=kelola_iuran" class="nav-item">
+                        <i class="fa-solid fa-wallet"></i>
+                        <span>Kelola &amp; Monitor Iuran</span>
+                    </a>
+                <?php endif; ?>
+            </nav>
+        </div>
+
+        <div class="sidebar-footer">
+            <p class="sidebar-footer-title">SITEMAN - KOS &copy; 2g2b - 2026</p>
+            <p class="sidebar-footer-desc">Sistem Manajemen Operasion Kos</p>
+        </div>
+    </aside>
+
+    <main class="desktop-content">
+        <h2 class="desktop-header-title">Peraturan Kos</h2>
+        <p class="peraturan-desktop-subtitle">Tata tertib yang berlaku untuk seluruh penghuni kos</p>
+
+        <div class="desktop-peraturan-grid">
+            <?php foreach ($daftar_peraturan as $p): ?>
+                <article class="desktop-peraturan-card">
+                    <div class="peraturan-icon">
+                        <i class="<?= htmlspecialchars($p['ikon']) ?>"></i>
+                    </div>
+                    <div class="peraturan-text">
+                        <h4 class="peraturan-title"><?= htmlspecialchars($p['judul']) ?></h4>
+                        <p class="peraturan-desc"><?= htmlspecialchars($p['isi']) ?></p>
+                    </div>
+                </article>
+            <?php endforeach; ?>
+        </div>
+    </main>
+</div>
 </body>
 </html>

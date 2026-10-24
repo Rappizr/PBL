@@ -1751,6 +1751,63 @@ body {
 }
 
 /* ==========================================================================
+   DESKTOP VIEW: PERATURAN KOS
+   ========================================================================== */
+@media (min-width: 992px) {
+  .peraturan-desktop-subtitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2b545b;
+    margin: 4px 0 24px 0;
+  }
+
+  .desktop-peraturan-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 380px));
+    gap: 24px;
+    max-width: 784px;
+  }
+
+  .desktop-peraturan-card {
+    background-color: #ffffff;
+    border-radius: 20px;
+    padding: 22px 24px;
+    box-shadow: 4px 5px 0px #c8924b;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .peraturan-icon {
+    flex-shrink: 0;
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background-color: #4ca5b0;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .peraturan-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #1a4d55;
+    margin: 0 0 6px 0;
+  }
+
+  .peraturan-desc {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.6;
+    color: #2b545b;
+    margin: 0;
+  }
+}
+
+/* ==========================================================================
    13. POP-UP MODAL (GENERAL & FORM)
    ========================================================================== */
 .modal-overlay {
