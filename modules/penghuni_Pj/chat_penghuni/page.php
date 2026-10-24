@@ -6,6 +6,36 @@ if (session_status() === PHP_SESSION_NONE) {
 // Nama penghuni dari session atau dummy
 // $nama_penghuni = $_SESSION['user']['nama'];
 $nama_penghuni = "Mas Rafi";
+$is_pj = $_SESSION['user']['is_pj'] ?? false;
+
+
+// Data Kontak Penghuni Kos
+$daftar_penghuni = [
+    [
+        'nama' => 'Ridwan',
+        'kamar' => 'Kamar 01',
+        'telepon' => '082764518892',
+        'wa' => '6282764518892'
+    ],
+    [
+        'nama' => 'Raffi',
+        'kamar' => 'Kamar 05',
+        'telepon' => '082765678892',
+        'wa' => '6282765678892'
+    ],
+    [
+        'nama' => 'Rofiq',
+        'kamar' => 'Kamar 03',
+        'telepon' => '082094518892',
+        'wa' => '6282094518892'
+    ],
+    [
+        'nama' => 'Omara',
+        'kamar' => 'Kamar 04',
+        'telepon' => '082764533892',
+        'wa' => '6282764533892'
+    ],
+];
 
 ?>
 <!DOCTYPE html>
@@ -16,14 +46,70 @@ $nama_penghuni = "Mas Rafi";
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Chat Penghuni</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
-<body class="flex w-[23.125rem] h-[55.75rem] py-11 px-6 flex-col justify-between items-center shrink-0">
+<!-- <body class="flex w-[23.125rem] h-[55.75rem] py-11 px-6 flex-col justify-between items-center shrink-0">
     <div class="flex flex-col items-start gap-11 self-stretch">
         
+    </div> -->
+   <body class="dashboard-body">
+
+    <!-- ==========================================
+         LAYOUT MOBILE
+         ========================================== -->
+    <div class="mobile-container">
+        <div>
+            <!-- Header Top Bar Mobile -->
+            <header class="dashboard-header">
+                <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
+                <div class="kotak-kapsul-pemilik">
+                    <span class="lingkaran-user-abu">
+                        <i class="fa-solid fa-user"></i>
+                    </span>
+                    <span class="tulisan-nama"><?= htmlspecialchars($nama_penghuni); ?></span>
+                </div>
+            </header>
+
+            <main class="page-content">
+                <!-- Banner Chat Penghuni -->
+                <div class="subpage-banner-card">
+                    <h2 class="subpage-banner-title">Chat Penghuni</h2>
+                    <a href="/?page=dashboard_penghuni" class="btn-kembali-banner">
+                        <i class="fa-solid fa-arrow-left"></i> Kembali
+                    </a>
+                </div>
+
+                <!-- Input Search / Filter Nama atau Kamar -->
+                <div class="chat-search-box">
+                    <i class="fa-solid fa-filter icon-filter"></i>
+                    <input type="text" id="mobileSearchInput" placeholder="Cari Nama / Kamar" onkeyup="filterKontakMobile()">
+                </div>
+
+                <!-- Daftar Kartu Kontak Penghuni (Mobile) -->
+                <div class="chat-list-wrapper" id="mobileChatList">
+                    <?php foreach ($daftar_penghuni as $penghuni): ?>
+                        <div class="chat-card-item">
+                            <div class="chat-card-info">
+                                <div class="chat-card-header">
+                                    <span class="chat-nama"><?= htmlspecialchars($penghuni['nama']) ?></span>
+                                    <span class="badge-kamar"><?= htmlspecialchars($penghuni['kamar']) ?></span>
+                                </div>
+                                <span class="chat-telp"><?= htmlspecialchars($penghuni['telepon']) ?></span>
+                            </div>
+                            <a href="https://wa.me/<?= $penghuni['wa'] ?>" target="_blank" class="btn-chat-wa">
+                                <i class="fa-brands fa-whatsapp"></i> Chat
+                            </a>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </main>
+        </div>
+
+        <!-- Footer Modular Mobile -->
+        <?php if (file_exists(__DIR__ . '/../../components/footer.php')) require_once __DIR__ . '/../../components/footer.php'; ?>
     </div>
-    <?php require_once __DIR__ . '/../../components/footer.php'; ?>
 
     <!-- ==========================================
          LAYOUT DESKTOP
