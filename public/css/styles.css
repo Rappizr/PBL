@@ -2428,3 +2428,28 @@ body .dashboard-footer {
     line-height: 1.25;
   }
 }
+
+/* Secara default di HP, sembunyikan wrapper desktop */
+.desktop-dashboard-wrapper {
+  display: none !important;
+}
+
+.mobile-container {
+  display: flex !important;
+  flex-direction: column;
+}
+
+/* Ketika dibuka di Laptop / PC (Lebar layar >= 992px) */
+@media (min-width: 992px) {
+  /* Sembunyikan container mobile */
+  .mobile-container {
+    display: none !important;
+  }
+
+  /* Tampilkan layout dashboard desktop */
+  .desktop-dashboard-wrapper {
+    display: flex !important;
+    width: 100%;
+    min-height: 100vh;
+  }
+}
