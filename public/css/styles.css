@@ -1238,7 +1238,7 @@ body {
 }
 
 /* ==========================================================================
-   10. CHAT PENGHUNI (MOBILE)
+   10. CHAT PENGHUNI (MOBILE DEFAULT)
    ========================================================================== */
 .chat-search-box {
   background-color: #ffffff;
@@ -1294,14 +1294,14 @@ body {
   gap: 10px;
 }
 
-.chat-nama {
+.chat-card-item .chat-nama {
   color: #ffffff;
   font-size: 18px;
   font-weight: 800;
   line-height: 1;
 }
 
-.badge-kamar {
+.chat-card-item .badge-kamar {
   background-color: #ffffff;
   color: #2b545b;
   font-size: 11px;
@@ -1310,29 +1310,33 @@ body {
   border-radius: 12px;
 }
 
-.chat-telp {
+.chat-card-item .chat-telp {
   color: #ffffff;
   font-size: 13px;
   font-weight: 600;
 }
 
-.btn-chat-wa {
-  color: #0d4b53;
-  font-size: 14px;
-  font-weight: 800;
-  text-decoration: underline;
+.chat-card-item .btn-chat-wa {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
   display: flex;
   align-items: center;
   gap: 6px;
+  background-color: rgba(255, 255, 255, 0.15);
+  padding: 6px 12px;
+  border-radius: 10px;
 }
 
+
 /* ==========================================================================
-   CHAT PENGHUNI (DESKTOP VIEW)
+   CHAT PENGHUNI (DESKTOP VIEW >= 992px)
    ========================================================================== */
 @media (min-width: 992px) {
   .desktop-chat-search {
     background-color: #ffffff;
-    border-radius: 9999px;
+    border-radius: 16px;
     padding: 12px 20px;
     display: flex;
     align-items: center;
