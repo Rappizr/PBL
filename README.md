@@ -89,7 +89,7 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
 - [x] Tampilan mobile-friendly Pemilik
 - [x] Tampilan mobile-friendly Penghuni
 - [x] Tampilan mobile-friendly PJ
-- [ ] Tampilan dashboard desktop Pemilik
+- [x] Tampilan dashboard desktop Pemilik
 - [x] Tampilan dashboard desktop Penghuni
 - [x] Tampilan dashboard desktop PJ
 - [ ] Halaman Manajemen Kamar & Penghuni
