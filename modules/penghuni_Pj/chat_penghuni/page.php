@@ -50,10 +50,6 @@ $daftar_penghuni = [
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
-<!-- <body class="flex w-[23.125rem] h-[55.75rem] py-11 px-6 flex-col justify-between items-center shrink-0">
-    <div class="flex flex-col items-start gap-11 self-stretch">
-        
-    </div> -->
    <body class="dashboard-body">
 
     <!-- ==========================================
