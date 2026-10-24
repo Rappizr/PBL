@@ -1238,7 +1238,7 @@ body {
 }
 
 /* ==========================================================================
-   10. CHAT PENGHUNI
+   10. CHAT PENGHUNI (MOBILE)
    ========================================================================== */
 .chat-container {
   display: flex;
@@ -1321,15 +1321,35 @@ body {
   letter-spacing: 0.3px;
 }
 
-/* ==========================================================================
-    CHAT PENGHUNI DESKTOP
-   ========================================================================== */
+/* Styling Tombol WhatsApp Standar (Mobile) */
+.chat-card .btn-chat-wa {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(255, 255, 255, 0.15);
+  padding: 6px 12px;
+  border-radius: 10px;
+  transition: background-color 0.2s ease;
+}
 
-  @media (min-width: 992px) {
+.chat-card .btn-chat-wa:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+
+/* ==========================================================================
+   CHAT PENGHUNI DESKTOP
+   ========================================================================== */
+@media (min-width: 992px) {
   /* Container Utama Halaman Chat Desktop */
   .desktop-content .chat-container {
     max-width: 900px;
   }
+
   /* Search Bar Desktop (Mengikuti bentuk pill / rounded penuh mobile) */
   .desktop-content .search-wrapper {
     max-width: 450px;
@@ -1396,7 +1416,6 @@ body {
     background-color: #f0f7f7;
   }
 }
-
 /* ==========================================================================
    11. HALAMAN TAGIHAN & RIWAYAT (MOBILE & DESKTOP)
    ========================================================================== */
