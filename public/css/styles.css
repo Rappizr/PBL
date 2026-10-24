@@ -1325,12 +1325,11 @@ body {
     CHAT PENGHUNI DESKTOP
    ========================================================================== */
 
-   @media (min-width: 992px) {
+  @media (min-width: 992px) {
   /* Container Utama Halaman Chat Desktop */
   .desktop-content .chat-container {
     max-width: 900px;
   }
-
   /* Search Bar Desktop (Mengikuti bentuk pill / rounded penuh mobile) */
   .desktop-content .search-wrapper {
     max-width: 450px;
