@@ -41,7 +41,7 @@ function formatRupiah(int $angka): string
 </head>
 
 <body class="dashboard-body">
-    <div class="mobile-container">
+    <div class="mobile-container mobile-dashboard-view">
         <?php require_once __DIR__ . '/../components/header.php'; ?>
 
         <main class="menu-card-container">
@@ -106,7 +106,7 @@ function formatRupiah(int $angka): string
                 </div>
 
                 <nav class="sidebar-nav">
-                    <a href="/?page=dashboard_penghuni" class="nav-item active">
+                    <a href="/?page=dashboard_pemilik" class="nav-item active">
                         <i class="fa-solid fa-table-cells-large"></i>
                         <span>Dashboard</span>
                     </a>

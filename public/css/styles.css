@@ -2293,104 +2293,284 @@ body .dashboard-footer {
     text-align: center;
     line-height: 1.25;
   }
-  /* ==========================================================================
-   DESKTOP VIEW: DASHBOARD PEMILIK
+}
+
+/* ==========================================================================
+   16. DESKTOP VIEW: DASHBOARD PEMILIK
    ========================================================================== */
-   @media (min-width: 992px) {
-    .pemilik-stat-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 200px);
-      gap: 14px;
-      margin-bottom: 30px;
-    }
+@media (min-width: 992px) {
+  .pemilik-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 200px);
+    gap: 14px;
+    margin-bottom: 30px;
+  }
 
-    .pemilik-stat-card {
-      background-color: #ffffff;
-      border-radius: 16px;
-      padding: 12px 18px;
-      box-shadow: 4px 6px 0px #c8924b;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
+  .pemilik-stat-card {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 12px 18px;
+    box-shadow: 4px 6px 0px #c8924b;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 
-    .pemilik-stat-card.lebar {
-      grid-column: 1 / -1;
-    }
+  .pemilik-stat-card.lebar {
+    grid-column: 1 / -1;
+  }
 
-    .pemilik-stat-label {
-      font-size: 14px;
-      font-weight: 600px;
-      color: #164f58;
-    }
+  .pemilik-stat-label {
+    font-size: 14px;
+    font-weight: 600px;
+    color: #164f58;
+  }
 
-    .pemilik-stat-val {
-      font-size: 20;
-      font-weight: 900;
-      color: #164f58;
-    }
+  .pemilik-stat-val {
+    font-size: 20;
+    font-weight: 900;
+    color: #164f58;
+  }
 
-    .pemilik-stat-val.merah {
-      color: #991b1b;
-    }
+  .pemilik-stat-val.merah {
+    color: #991b1b;
+  }
 
-    .pemilik-menu-list {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      max-width: 620px;
-    }
+  .pemilik-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 620px;
+  }
 
-    .pemilik-menu-row {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      background-color: #ffffff;
-      border-radius: 16px;
-      padding: 14px 20px;
-      text-decoration: none;
-      box-shadow: 4px 6px 0px #c8924b;
-      transition: 
-        transform 0.15s ease,
-        box-shadow 0.15s ease;
-    }
+  .pemilik-menu-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 14px 20px;
+    text-decoration: none;
+    box-shadow: 4px 6px 0px #c8924b;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+  }
 
-    .pemilik-menu-row:hover {
-      transform: translateY(-3px);
-      box-shadow: 4px 9px 0px #c8924b;
-    }
+  .pemilik-menu-row:hover {
+    transform: translateY(-3px);
+    box-shadow: 4px 9px 0px #c8924b;
+  }
 
-    .pemilik-menu-row:active {
-      transform: translate(2px, 2px);
-      box-shadow: 2px 3px 0px #c8924b;
-    }
+  .pemilik-menu-row:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 3px 0px #c8924b;
+  }
 
-    .pemilik-menu-icon {
-      width: 36px;
-      min-width: 36px;
-      font-size: 26px;
-      color: #164f58;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
+  .pemilik-menu-icon {
+    width: 36px;
+    min-width: 36px;
+    font-size: 26px;
+    color: #164f58;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-    .pemilik-menu-text {
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
+  .pemilik-menu-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
 
-    .pemilik-menu-title {
-      font-size: 16px;
-      font-weight: 800;
-      color: #164f58;
-    }
+  .pemilik-menu-title {
+    font-size: 16px;
+    font-weight: 800;
+    color: #164f58;
+  }
 
-    .pemilik-menu-desc {
-      font-size: 12.5px;
-      font-weight: 600;
-      color: #2e626a;
-    }
-   }
+  .pemilik-menu-desc {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #2e626a;
+  }
+}
+
+/* ==========================================================================
+   17. DESKTOP VIEW: MANAJEMEN KAMAR DAN PENGHUNI
+   ========================================================================== */
+@media (min-width: 992px) {
+  .kamar-desktop-label {
+    font-size: 16px;
+    font-weight: 900;
+    color: #164f58;
+    margin: 0 0 12px 0;
+  }
+
+  .kamar-desktop-actions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
+  .kamar-desktop-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #4ca5b0;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    box-shadow: 3px 4px 0px #c8924b;
+    transition:
+      transform 0.1s ease,
+      box-shadow 0.1s ease;
+  }
+
+  .kamar-desktop-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 2px 0px #c8924b;
+  }
+
+  .kamar-desktop-btn .plus {
+    width: 16px;
+    height: 16px;
+    background-color: #ffffff;
+    color: #4ca5b0;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .kamar-desktop-panel {
+    background-color: #4ca5b0;
+    border-radius: 22px;
+    padding: 22px;
+    max-width: 780px;
+    box-shadow: 5px 6px 0px #c8924b;
+  }
+
+  .kamar-desktop-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+  }
+
+  .kamar-desktop-card {
+    position: relative;
+    background-color: #ffffff;
+    border-radius: 14px;
+    padding: 14px;
+    min-height: 96px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
+  .kamar-desktop-nomor {
+    font-size: 30px;
+    font-weight: 900;
+    color: #164f58;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+
+  .kamar-desktop-nama {
+    font-size: 13px;
+    font-weight: 700;
+    color: #2e626a;
+    margin-top: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .kamar-desktop-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 5px;
+  }
+
+  .kamar-desktop-badge.lunas {
+    background-color: #93f5c7;
+    color: #0d5635;
+  }
+
+  .kamar-desktop-badge.belum {
+    background-color: #ffeed3;
+    color: #7c4103;
+  }
+
+  .kamar-desktop-badge.kosong {
+    background-color: #3d4450;
+    color: #ffffff;
+  }
+
+  .kamar-desktop-legend {
+    display: flex;
+    gap: 18px;
+    margin-top: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  .legend-dot {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+
+  .legend-dot.lunas {
+    background-color: #93f5c7;
+  }
+  .legend-dot.belum {
+    background-color: #ffeed3;
+  }
+  .legend-dot.kosong {
+    background-color: #3d4450;
+  }
+
+  .kamar-desktop-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .kamar-page-btn {
+    width: 24px;
+    height: 24px;
+    background-color: #ffffff;
+    color: #4ca5b0;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    text-decoration: none;
+  }
+
+  .kamar-page-btn.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
 }
