@@ -4,10 +4,8 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Nama penghuni dari session atau dummy
-// $nama_penghuni = $_SESSION['user']['nama'];
 $nama_penghuni = "Mas Rafi";
 $is_pj = $_SESSION['user']['is_pj'] ?? false;
-
 
 // Data Kontak Penghuni Kos
 $daftar_penghuni = [
@@ -36,7 +34,6 @@ $daftar_penghuni = [
         'wa' => '6282764533892'
     ],
 ];
-
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -47,10 +44,9 @@ $daftar_penghuni = [
     <title>SITEMAN - KOS | Chat Penghuni</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/css/styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
-   <body class="dashboard-body">
+<body class="dashboard-body">
 
     <!-- ==========================================
          LAYOUT MOBILE
