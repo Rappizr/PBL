@@ -6,6 +6,8 @@ if (session_status() === PHP_SESSION_NONE) {
 // Nama penghuni dari session atau dummy
 // $nama_penghuni = $_SESSION['user']['nama'];
 $nama_penghuni = "Mas Rafi";
+$is_pj = $_SESSION['user']['is_pj'] ?? false; 
+// Inisialisasi variabel $is_pj agar tidak Undefined Variable Error
 
 // Data Peraturan Kos sesuai Mockup
 $peraturan_list = [
@@ -160,17 +162,17 @@ $peraturan_list = [
         <p class="peraturan-desktop-subtitle">Tata tertib yang berlaku untuk seluruh penghuni kos</p>
 
         <div class="desktop-peraturan-grid">
-            <?php foreach ($daftar_peraturan as $p): ?>
-                <article class="desktop-peraturan-card">
+            <?php foreach ($peraturan_list as $p): ?>
+                  <article class="desktop-peraturan-card">
                     <div class="peraturan-icon">
-                        <i class="<?= htmlspecialchars($p['ikon']) ?>"></i>
-                    </div>
-                    <div class="peraturan-text">
-                        <h4 class="peraturan-title"><?= htmlspecialchars($p['judul']) ?></h4>
-                        <p class="peraturan-desc"><?= htmlspecialchars($p['isi']) ?></p>
-                    </div>
-                </article>
-            <?php endforeach; ?>
+                    <i class="<?= htmlspecialchars($p['icon']) ?>"></i>
+                </div>
+                <div class="peraturan-text">
+                    <h4 class="peraturan-title"><?= htmlspecialchars($p['judul']) ?></h4>
+                    <p class="peraturan-desc"><?= htmlspecialchars($p['deskripsi']) ?></p>
+                </div>
+            </article>
+        <?php endforeach; ?>
         </div>
     </main>
 </div>
