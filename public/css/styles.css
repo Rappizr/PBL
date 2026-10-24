@@ -1321,6 +1321,132 @@ body {
   letter-spacing: 0.3px;
 }
 
+/* ==========================================================================
+   DESKTOP CHAT PENGHUNI (MODUL PEMILIK / PENGHUNI_PJ)
+   ========================================================================== */
+@media (min-width: 992px) {
+  /* Subtitle "Data Penghuni kos" */
+  .desktop-section-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a4d55;
+    margin: 18px 0 14px 0;
+  }
+
+  /* Search Bar Kapsul Desktop */
+  .desktop-chat-search {
+    background-color: #ffffff;
+    border-radius: 9999px;
+    padding: 8px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 2px 3px 0px #c8924b;
+    margin-bottom: 24px;
+    width: fit-content;
+    min-width: 220px;
+  }
+
+  .desktop-chat-search .search-icon {
+    color: #1a4d55;
+    font-size: 14px;
+  }
+
+  .desktop-chat-search input {
+    border: none;
+    outline: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a4d55;
+    background: transparent;
+    width: 100%;
+  }
+
+  /* List Container 1 Kolom Memanjang */
+  .desktop-chat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 620px;
+    width: 100%;
+  }
+
+  /* Kartu Chat Auto Layout */
+  .desktop-chat-card {
+    background-color: #4ca5b0;
+    border-radius: 18px;
+    padding: 14px 22px;
+    box-shadow: 4px 5px 0px #c8924b;
+    
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .desktop-chat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 4px 7px 0px #c8924b;
+  }
+
+  /* Info Teks Sisi Kiri */
+  .desktop-chat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .desktop-chat-header-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .desktop-chat-nama {
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: 800;
+  }
+
+  .desktop-badge-kamar {
+    background-color: #ffffff;
+    color: #1a4d55;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 10px;
+    border-radius: 9999px;
+  }
+
+  .desktop-chat-telp {
+    color: #ffffff;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  /* Tombol Chat WA Sisi Kanan */
+  .desktop-btn-wa {
+    background-color: #53c5b8;
+    color: #11363c;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 1px 2px 0px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.2s ease;
+  }
+
+  .desktop-btn-wa:hover {
+    background-color: #45b3a6;
+  }
+}
 
 /* ==========================================================================
    11. HALAMAN TAGIHAN & RIWAYAT (MOBILE & DESKTOP)
