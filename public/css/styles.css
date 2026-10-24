@@ -1322,6 +1322,83 @@ body {
 }
 
 /* ==========================================================================
+    CHAT PENGHUNI DESKTOP
+   ========================================================================== */
+
+   @media (min-width: 992px) {
+  /* Container Utama Halaman Chat Desktop */
+  .desktop-content .chat-container {
+    max-width: 900px;
+  }
+
+  /* Search Bar Desktop (Mengikuti bentuk pill / rounded penuh mobile) */
+  .desktop-content .search-wrapper {
+    max-width: 450px;
+    margin-bottom: 8px;
+  }
+
+  .desktop-content .search-input {
+    padding: 14px 20px 14px 46px;
+    font-size: 14px;
+    box-shadow: 3px 4px 0px #c8924b;
+    border: 1px solid rgba(200, 146, 75, 0.3);
+  }
+
+  /* Grid Kartu Chat Menjadi 2 Kolom di Desktop */
+  .desktop-content .chat-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 20px;
+    width: 100%;
+  }
+
+  /* Kartu Chat Desktop (Mempertahankan style shadow & warna asli mobile) */
+  .desktop-content .chat-card {
+    background-color: #4ca5b0;
+    border-radius: 20px;
+    padding: 18px 22px;
+    box-shadow: 5px 6px 0px #c8924b;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .desktop-content .chat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 5px 8px 0px #c8924b;
+  }
+
+  .desktop-content .chat-nama {
+    font-size: 19px;
+  }
+
+  .desktop-content .chat-wa {
+    font-size: 13.5px;
+  }
+
+  /* Tombol Chat WhatsApp khusus Desktop */
+  .desktop-content .btn-chat-wa {
+    background-color: #ffffff;
+    color: #1a4d55;
+    padding: 8px 16px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 800;
+    box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.2s ease;
+  }
+
+  .desktop-content .btn-chat-wa:hover {
+    background-color: #f0f7f7;
+  }
+}
+
+/* ==========================================================================
    11. HALAMAN TAGIHAN & RIWAYAT (MOBILE & DESKTOP)
    ========================================================================== */
 
