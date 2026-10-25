@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $page = $_GET['page'] ?? 'login';
+$role = $_SESSION['user']['role'] ?? 'penghuni'; // Deteksi role pengguna aktif
 
 switch ($page) {
     case 'login':
@@ -38,7 +39,12 @@ switch ($page) {
         break;
     
     case 'chat_penghuni':
-        require_once __DIR__ . '/../modules/pemilik/chat_penghuni/page.php';
+        // Arahkan otomatis berdasarkan role yang sedang login
+        if ($role === 'pemilik') {
+            require_once __DIR__ . '/../modules/pemilik/chat_penghuni/page.php';
+        } else {
+            require_once __DIR__ . '/../modules/penghuni_Pj/chat_penghuni/page.php';
+        }
         break;
         
     case 'tagihan_riwayat':

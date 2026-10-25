@@ -61,7 +61,7 @@ $penghuniKos = [
                                 </div>
                                 <span class="chat-wa"><?= htmlspecialchars($p['no_wa']); ?></span>
                             </div>
-                            <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>" target="_blank" class="btn-wa-chat">
+                            <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>" target="_blank" class="btn-chat-wa">
                                 <i class="fa-brands fa-whatsapp"></i> Chat
                             </a>
                         </div>
@@ -149,9 +149,9 @@ $penghuniKos = [
                             </div>
                             <span class="desktop-chat-telp"><?= htmlspecialchars($p['no_wa']); ?></span>
                         </div>
-                        <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>" target="_blank" class="desktop-btn-wa">
-                            <i class="fa-brands fa-whatsapp"></i> Chat
-                        </a>
+<a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>" target="_blank" class="btn-chat-wa">
+    <i class="fa-brands fa-whatsapp"></i> Chat
+</a>
                     </article>
                 <?php endforeach; ?>
             </div>
