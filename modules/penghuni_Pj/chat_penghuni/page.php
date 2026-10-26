@@ -158,37 +158,29 @@ $penghuniKos = [
         </main>
     </div>
 
-    <!-- Script Filter Pencarian Realtime (Mobile & Desktop) -->
-    <script>
-        function setupFilter(inputId, listId) {
-            const input = document.getElementById(inputId);
-            if (!input) return;
+   <!-- Mobile -->
+<div id="chatListMobile">
+    <?php if (empty($chatList)): ?>
+        <p class="empty">Tidak ada hasil untuk "<?= htmlspecialchars($q) ?>"</p>
+    <?php else: ?>
+        <?php foreach ($chatList as $row): ?>
+            <div class="chat-card">
+                <strong><?= htmlspecialchars($row['nama']) ?></strong>
+                <span>Kamar <?= htmlspecialchars($row['kamar']) ?></span>
+            </div>
+        <?php endforeach; ?>
+    <?php endif; ?>
+</div>
 
-            input.addEventListener('input', function() {
-                const query = this.value.toLowerCase().trim();
-                const container = document.getElementById(listId);
-                if (!container) return;
-
-                const cards = container.querySelectorAll('.chat-card, .desktop-chat-card');
-
-                cards.forEach(card => {
-                    const nama = card.getAttribute('data-nama') || '';
-                    const kamar = card.getAttribute('data-kamar') || '';
-
-                    // Jika query kosong, tampilkan kembali. Jika cocok, tampilkan, jika tidak sembunyikan.
-                    if (query === '' || nama.includes(query) || kamar.includes(query)) {
-                        card.style.display = 'flex';
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-            });
-        }
-
-        // Jalankan untuk kedua input (Mobile & Desktop)
-        setupFilter('searchInputMobile', 'chatListMobile');
-        setupFilter('searchInputDesktop', 'chatListDesktop');
-    </script>
+<!-- Desktop -->
+<div id="chatListDesktop">
+    <?php foreach ($chatList as $row): ?>
+        <div class="desktop-chat-card">
+            <strong><?= htmlspecialchars($row['nama']) ?></strong>
+            <span>Kamar <?= htmlspecialchars($row['kamar']) ?></span>
+        </div>
+    <?php endforeach; ?>
+</div>
 </body>
 
 </html>
