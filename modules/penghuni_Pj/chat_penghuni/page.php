@@ -41,7 +41,7 @@ $penghuniKos = [
             <main class="chat-container">
                 <div class="kamar-title-card" style="margin-bottom: 0;">
                     <h2>Chat Penghuni</h2>
-                    <a href="/?page=dashboard_pemilik" class="btn-back">
+                    <a href="/?page=dashboard_pemilik" class="btn-kembali-banner">
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
                 </div>

@@ -17,7 +17,7 @@
                 <!-- Banner Judul -->
                 <div class="banner-card">
                     <h2 class="banner-title">Verifikasi Pembayaran</h2>
-                    <a href="/?page=dashboard_pemilik" class="btn-kembali">
+                    <a href="/?page=dashboard_pemilik" class="btn-kembali-banner">
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
                 </div>

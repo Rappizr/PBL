@@ -642,6 +642,8 @@ body {
 .btn-kembali-banner {
   display: inline-flex;
   align-items: center;
+  align-self: flex-start;
+  width: fit-content;
   gap: 6px;
   background-color: #ffffff;
   color: #4ca5b0;
@@ -650,7 +652,7 @@ body {
   padding: 6px 14px;
   border-radius: 12px;
   text-decoration: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
   transition: transform 0.1s ease;
 }
 

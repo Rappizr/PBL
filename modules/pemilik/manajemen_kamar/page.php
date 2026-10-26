@@ -35,7 +35,7 @@ $daftar_kamar = [
 
             <div class="kamar-title-card">
                 <h2>Manajemen Kamar &amp; Penghuni</h2>
-                <a href="/?page=dashboard_pemilik" class="btn-back">
+                <a href="/?page=dashboard_pemilik" class="btn-kembali-banner">
                     <i class="fa-solid fa-arrow-left"></i> Kembali
                 </a>
             </div>
