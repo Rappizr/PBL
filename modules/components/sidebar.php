@@ -1,6 +1,6 @@
 <?php
 // modules/components/sidebar.php
-$role_user  = $_SESSION['user']['role'] ?? 'pemilik';
+$role_user  = $_SESSION['user']['role'] ?? 'penghuni';
 $is_pj      = $_SESSION['user']['is_pj'] ?? false;
 $nama_user  = $_SESSION['user']['nama'] ?? ($role_user === 'pemilik' ? 'Bapak Kos' : 'Mas Dafa');
 $currentPage = $_GET['page'] ?? 'dashboard';
@@ -8,11 +8,7 @@ $currentPage = $_GET['page'] ?? 'dashboard';
 <aside class="desktop-sidebar">
     <div>
         <h1 class="sidebar-brand">SITEMAN - KOS</h1>
-        <div class="sidebar-profile">
-            <div class="sidebar-avatar"><i class="fa-solid fa-user"></i></div>
-            <span class="sidebar-name"><?= htmlspecialchars($nama_user); ?></span>
-        </div>
-
+        
         <nav class="sidebar-nav">
             <?php if ($role_user === 'pemilik'): ?>
                 <a href="/?page=dashboard_pemilik" class="nav-item <?= $currentPage === 'dashboard_pemilik' ? 'active' : '' ?>">
@@ -57,6 +53,10 @@ $currentPage = $_GET['page'] ?? 'dashboard';
     </div>
 
     <div class="sidebar-footer">
+        <div class="sidebar-profile">
+            <div class="sidebar-avatar"><i class="fa-solid fa-user"></i></div>
+            <span class="sidebar-name"><?= htmlspecialchars($nama_user); ?></span>
+        </div>
         <p class="sidebar-footer-title">SITEMAN - KOS &copy; 2g2b - 2026</p>
         <p class="sidebar-footer-desc">Sistem Manajemen Operasion Kos</p>
     </div>
