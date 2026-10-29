@@ -538,6 +538,7 @@ body .dashboard-footer {
 
   .sidebar-footer {
     margin-top: 30px;
+    text-align: center;
   }
 
   .sidebar-footer-title {
@@ -550,7 +551,6 @@ body .dashboard-footer {
   .sidebar-footer-desc {
     color: rgba(255, 255, 255, 0.85);
     font-size: 10px;
-    margin: 2px 0 0 0;
   }
 
   .desktop-content {
