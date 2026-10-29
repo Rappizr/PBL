@@ -10,6 +10,11 @@ switch ($page) {
     case 'login':
         require_once __DIR__ . '/../modules/auth/login.php';
         break;
+    
+    // Reset
+    case 'reset':
+        require_once __DIR__ . '/../modules/auth/reset.php';
+        break;
 
     // Pemilik
     case 'dashboard_pemilik':
@@ -49,6 +54,9 @@ switch ($page) {
         session_destroy();
         header('Location: /?page=login');
         exit;
+    case 'profile':
+        require_once __DIR__ . '/../modules/shared/profile.php';
+        break;
 
     default:
         http_response_code(404);

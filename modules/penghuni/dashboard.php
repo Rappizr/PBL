@@ -3,29 +3,18 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$is_pj = $_SESSION['user']['is_pj'] ?? true;
+$is_pj = !empty($_SESSION['user']['is_pj']) || !empty($_SESSION['user']['is_ketua_kos']);
 
 $tagihan = [
     'sewa' => [
         'status' => 'belum_lunas',
-        'tanggal_jatuh_tempo' => '2026-10-11',
+        'tenggat' => 'Rabu, 11 October 2026',
     ],
     'iuran' => [
         'status' => 'belum_lunas',
-        'tanggal_jatuh_tempo' => '2026-10-11',
+        'tenggat' => 'Rabu, 11 October 2026',
     ],
 ];
-
-function formatTanggalIndo(?string $tanggal): string {
-    if (!$tanggal) return '-';
-    $hari = ['Sunday' => 'Minggu', 'Monday' => 'Senin', 'Tuesday' => 'Selasa', 'Wednesday' => 'Rabu', 'Thursday' => 'Kamis', 'Friday' => 'Jumat', 'Saturday' => 'Sabtu'];
-    $bulan = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
-    
-    $ts = strtotime($tanggal);
-    $hariNama = $hari[date('l', $ts)] ?? date('D', $ts);
-    $bulanNama = $bulan[(int)date('n', $ts)] ?? date('F', $ts);
-    return $hariNama . ', ' . date('d', $ts) . ' ' . $bulanNama . ' ' . date('Y', $ts);
-}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -39,97 +28,87 @@ function formatTanggalIndo(?string $tanggal): string {
 </head>
 <body class="dashboard-body">
 
-    <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
         <div>
             <?php require_once __DIR__ . '/../components/header.php'; ?>
 
-            <main class="page-content">
-                <div class="penghuni-summary-cards">
-                    <div class="tagihan-dark-card">
-                        <span class="tagihan-pill-label">Pembayaran Sewa</span>
-                        <div class="tagihan-meta-grid">
-                            <div class="meta-row">
-                                <span class="meta-label">Status Pembayaran</span>
-                                <span class="meta-colon">:</span>
-                                <span class="meta-value">
-                                    <span class="<?= $tagihan['sewa']['status'] === 'lunas' ? 'status-badge-green' : 'status-badge-white' ?>">
-                                        <?= $tagihan['sewa']['status'] === 'lunas' ? 'Lunas' : 'Belum Lunas' ?>
-                                    </span>
-                                </span>
-                            </div>
-                            <div class="meta-row">
-                                <span class="meta-label">Tenggat Pembayaran</span>
-                                <span class="meta-colon">:</span>
-                                <span class="meta-value date-text">
-                                    <?= formatTanggalIndo($tagihan['sewa']['tanggal_jatuh_tempo']) ?>
-                                </span>
-                            </div>
+            <div class="penghuni-mobile-summary">
+                <div class="penghuni-summary-card">
+                    <span class="badge-tagihan-title">Pembayaran Sewa</span>
+                    <div class="tagihan-info-grid">
+                        <div class="tagihan-info-row">
+                            <span class="info-label">Status Pembayaran</span>
+                            <span class="info-colon">:</span>
+                            <span class="badge-status-pill"><?= $tagihan['sewa']['status'] === 'lunas' ? 'Lunas' : 'Belum Lunas'; ?></span>
                         </div>
-                    </div>
-
-                    <div class="tagihan-dark-card">
-                        <span class="tagihan-pill-label">Pembayaran Iuran</span>
-                        <div class="tagihan-meta-grid">
-                            <div class="meta-row">
-                                <span class="meta-label">Status Pembayaran</span>
-                                <span class="meta-colon">:</span>
-                                <span class="meta-value">
-                                    <span class="<?= $tagihan['iuran']['status'] === 'lunas' ? 'status-badge-green' : 'status-badge-white' ?>">
-                                        <?= $tagihan['iuran']['status'] === 'lunas' ? 'Lunas' : 'Belum Lunas' ?>
-                                    </span>
-                                </span>
-                            </div>
-                            <div class="meta-row">
-                                <span class="meta-label">Tenggat Pembayaran</span>
-                                <span class="meta-colon">:</span>
-                                <span class="meta-value date-text">
-                                    <?= formatTanggalIndo($tagihan['iuran']['tanggal_jatuh_tempo']) ?>
-                                </span>
-                            </div>
+                        <div class="tagihan-info-row">
+                            <span class="info-label">Tenggat Pembayaran</span>
+                            <span class="info-colon">:</span>
+                            <span class="info-date"><?= $tagihan['sewa']['tenggat']; ?></span>
                         </div>
                     </div>
                 </div>
 
-                <div class="menu-card-container">
-                    <h2 class="menu-heading">Silahkan pilih menu</h2>
-                    <div class="menu-grid">
-                        <a href="/?page=tagihan_riwayat" class="menu-item-box">
-                            <div class="menu-icon-wrapper"><i class="fa-solid fa-receipt"></i></div>
-                            <span class="menu-label">Tagihan &amp; Riwayat</span>
-                        </a>
-                        <a href="/?page=peraturan_kost" class="menu-item-box">
-                            <div class="menu-icon-wrapper"><i class="fa-solid fa-book-open"></i></div>
-                            <span class="menu-label">Peraturan Kos</span>
-                        </a>
-                        <a href="/?page=chat_penghuni" class="menu-item-box">
-                            <div class="menu-icon-wrapper"><i class="fa-solid fa-comments"></i></div>
-                            <span class="menu-label">Chat Penghuni</span>
-                        </a>
-                        <?php if ($is_pj): ?>
-                            <a href="/?page=kelola_iuran" class="menu-item-box">
-                                <div class="menu-icon-wrapper"><i class="fa-solid fa-chart-pie"></i></div>
-                                <span class="menu-label">Kelola Iuran</span>
-                            </a>
-                            <a href="/?page=verifikasi_pembayaran" class="menu-item-box">
-                                <div class="menu-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
-                                <span class="menu-label">Verifikasi<br>Pembayaran</span>
-                            </a>
-                        <?php else: ?>
-                            <a href="/?page=monitoring_iuran" class="menu-item-box">
-                                <div class="menu-icon-wrapper"><i class="fa-solid fa-chart-pie"></i></div>
-                                <span class="menu-label">Monitoring Iuran</span>
-                            </a>
-                        <?php endif; ?>
+                <div class="penghuni-summary-card">
+                    <span class="badge-tagihan-title">Pembayaran Iuran</span>
+                    <div class="tagihan-info-grid">
+                        <div class="tagihan-info-row">
+                            <span class="info-label">Status Pembayaran</span>
+                            <span class="info-colon">:</span>
+                            <span class="badge-status-pill"><?= $tagihan['iuran']['status'] === 'lunas' ? 'Lunas' : 'Belum Lunas'; ?></span>
+                        </div>
+                        <div class="tagihan-info-row">
+                            <span class="info-label">Tenggat Pembayaran</span>
+                            <span class="info-colon">:</span>
+                            <span class="info-date"><?= $tagihan['iuran']['tenggat']; ?></span>
+                        </div>
                     </div>
                 </div>
-            </main>
+            </div>
+
+            <div class="menu-card-container">
+                <h2 class="menu-heading">Silahkan pilih menu</h2>
+                <div class="menu-grid">
+                    <a href="/?page=tagihan_riwayat" class="menu-item-box">
+                        <div class="menu-icon-wrapper"><i class="fa-solid fa-receipt"></i></div>
+                        <span class="menu-label">Tagihan &amp; Riwayat</span>
+                    </a>
+
+                    <?php if ($is_pj): ?>
+                        <a href="/?page=kelola_iuran" class="menu-item-box">
+                            <div class="menu-icon-wrapper"><i class="fa-solid fa-wallet"></i></div>
+                            <span class="menu-label">Kelola Iuran</span>
+                        </a>
+                    <?php else: ?>
+                        <a href="/?page=monitoring_iuran" class="menu-item-box">
+                            <div class="menu-icon-wrapper"><i class="fa-solid fa-chart-pie"></i></div>
+                            <span class="menu-label">Monitoring<br>Iuran</span>
+                        </a>
+                    <?php endif; ?>
+
+                    <a href="/?page=peraturan_kost" class="menu-item-box">
+                        <div class="menu-icon-wrapper"><i class="fa-solid fa-book-open"></i></div>
+                        <span class="menu-label">Peraturan Kos</span>
+                    </a>
+
+                    <a href="/?page=chat_penghuni" class="menu-item-box">
+                        <div class="menu-icon-wrapper"><i class="fa-solid fa-comments"></i></div>
+                        <span class="menu-label">Chat Penghuni</span>
+                    </a>
+
+                    <?php if ($is_pj): ?>
+                        <a href="/?page=verifikasi_pembayaran" class="menu-item-box">
+                            <div class="menu-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
+                            <span class="menu-label">Verifikasi<br>Pembayaran</span>
+                        </a>
+                    <?php endif; ?>
+                </div>
+            </div>
         </div>
 
         <?php require_once __DIR__ . '/../components/footer.php'; ?>
     </div>
 
-    <!-- LAYOUT DESKTOP -->
     <div class="desktop-dashboard-wrapper">
         <?php require_once __DIR__ . '/../components/sidebar.php'; ?>
 
@@ -147,7 +126,7 @@ function formatTanggalIndo(?string $tanggal): string {
                         </div>
                         <div class="tagihan-detail-row">
                             <span class="lbl">Tenggat</span><span class="colon">:</span>
-                            <span><?= formatTanggalIndo($tagihan['sewa']['tanggal_jatuh_tempo']); ?></span>
+                            <span><?= $tagihan['sewa']['tenggat']; ?></span>
                         </div>
                     </div>
                     <a href="/?page=tagihan_riwayat" class="btn-upload-bukti">Upload Bukti Pembayaran</a>
@@ -162,7 +141,7 @@ function formatTanggalIndo(?string $tanggal): string {
                         </div>
                         <div class="tagihan-detail-row">
                             <span class="lbl">Tenggat</span><span class="colon">:</span>
-                            <span><?= formatTanggalIndo($tagihan['iuran']['tanggal_jatuh_tempo']); ?></span>
+                            <span><?= $tagihan['iuran']['tenggat']; ?></span>
                         </div>
                     </div>
                     <a href="/?page=tagihan_riwayat" class="btn-upload-bukti">Upload Bukti Pembayaran</a>
@@ -187,6 +166,10 @@ function formatTanggalIndo(?string $tanggal): string {
                     <a href="/?page=kelola_iuran" class="desktop-menu-card">
                         <div class="desktop-menu-icon"><i class="fa-solid fa-wallet"></i></div>
                         <span class="desktop-menu-label">Kelola &amp; Monitor<br>Iuran</span>
+                    </a>
+                    <a href="/?page=verifikasi_pembayaran" class="desktop-menu-card">
+                        <div class="desktop-menu-icon"><i class="fa-solid fa-list-check"></i></div>
+                        <span class="desktop-menu-label">Verifikasi<br>Pembayaran</span>
                     </a>
                 <?php else: ?>
                     <a href="/?page=monitoring_iuran" class="desktop-menu-card">

@@ -22,17 +22,19 @@ if (isset($_SESSION['login_error'])) {
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Masuk</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
     <!-- Link CSS Modular -->
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
-<body>
+
+<body class="dashboard-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
+
     <div class="login-card">
         <h1 class="brand-title">SITEMAN - KOS</h1>
         <p class="brand-subtitle">
@@ -43,47 +45,55 @@ if (isset($_SESSION['login_error'])) {
             <div class="alert-error"><?= htmlspecialchars($error); ?></div>
         <?php endif; ?>
 
-        <form action="/api/auth" method="POST" id="loginForm">
+        <p class="role-section-text"><strong>Klik</strong> disini sebagai:</p>
+
+        <div class="role-selection">
+            <a href="/?page=login&role=pemilik"
+                class="btn-role <?= $role === 'pemilik' ? 'active' : ''; ?>">Pemilik Kos</a>
+            <a href="/?page=login&role=penghuni"
+                class="btn-role <?= $role === 'penghuni' ? 'active' : ''; ?>">Penghuni Kos</a>
+        </div>
+
+        <!-- Form action diarahkan langsung ke file /api/auth.php -->
+        <form action="/api/auth.php" method="POST" id="loginForm">
             <input type="hidden" name="role" value="<?= htmlspecialchars($role); ?>">
 
             <?php if ($role === 'penghuni'): ?>
                 <div class="input-wrapper">
-                    <i class="fa-solid fa-home input-icon"></i>
+                    <i class="fa-solid fa-house input-icon"></i>
                     <input type="text" inputmode="numeric" pattern="[0-9]+" name="number"
-                           class="input-field" placeholder="Nomor Kamar" required>
+                        class="input-field" placeholder="Nomor Kamar" required autocomplete="off">
                 </div>
             <?php endif; ?>
 
             <div class="input-wrapper">
                 <i class="fa-solid fa-key input-icon"></i>
                 <input type="password" pattern="[0-9]{6}" inputmode="numeric"
-                       minlength="6" maxlength="6" autocomplete="off" required
-                       name="pin" class="input-field" placeholder="PIN (6 Digit)">
+                    minlength="6" maxlength="6" autocomplete="off" required
+                    name="pin" class="input-field" placeholder="PIN (6 Digit)">
             </div>
+            <!-- link reset pw -->
+            <a href="/?page=reset" class="link-lupa">Lupa kata sandi?</a>
 
             <button type="submit" class="btn-submit" id="submitBtn">
-                <span class="btn-text">Kirim</span>
+                <span class="btn-text">Login</span>
             </button>
         </form>
 
-        <p class="role-section-text"><strong>Klik</strong> disini sebagai:</p>
-
-        <div class="role-selection">
-            <a href="/?page=login&role=pemilik"
-               class="btn-role <?= $role === 'pemilik' ? 'active' : ''; ?>">Pemilik Kos</a>
-            <a href="/?page=login&role=penghuni"
-               class="btn-role <?= $role === 'penghuni' ? 'active' : ''; ?>">Penghuni Kos</a>
-        </div>
     </div>
+    
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', function () {
+        document.getElementById('loginForm').addEventListener('submit', function() {
             const btn = document.getElementById('submitBtn');
-            btn.classList.add('loading');
-            btn.disabled = true;
+            btn.querySelector('.btn-text').textContent = 'Memproses...';
+            // Hindari disabled = true seketika agar request POST tidak digugurkan oleh browser
+            setTimeout(() => {
+                btn.disabled = true;
+            }, 10);
         });
     </script>
 
-    <?php require_once __DIR__ . '/../components/footer.php'; ?>
 </body>
+
 </html>

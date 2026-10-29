@@ -366,12 +366,6 @@ body {
 .dashboard-footer {
   text-align: center;
   margin-top: 24px;
-  color: #2c313a;
-}
-
-body .dashboard-footer {
-  text-align: center;
-  margin-top: 30px;
   color: #4ca5b0;
 }
 
@@ -469,21 +463,18 @@ body .dashboard-footer {
       1px 1px 0 #3a8a94,
       2px 2px 0 #3a8a94,
       3px 3px 0 #3a8a94;
-    text-align: center;
   }
 
   .sidebar-profile {
     display: flex;
     align-items: center;
-    text-align: center;
-    justify-content: center;
     gap: 12px;
-    margin-bottom: 12px;
+    margin-bottom: 36px;
   }
 
   .sidebar-avatar {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background-color: #d8e5e7;
     color: #ffffff;
@@ -495,7 +486,7 @@ body .dashboard-footer {
 
   .sidebar-name {
     color: #ffffff;
-    font-size: 16px;
+    font-size: 18px;
     font-weight: 800;
   }
 
@@ -540,20 +531,31 @@ body .dashboard-footer {
   }
 
   .sidebar-footer {
-    margin-top: 30px;
+    margin-top: auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     text-align: center;
+    padding-top: 20px;
   }
 
   .sidebar-footer-title {
     color: #ffffff;
-    font-size: 11px;
+    font-size: 11.5px;
     font-weight: 800;
     margin: 0;
+    text-align: center;
+    width: 100%;
   }
 
   .sidebar-footer-desc {
     color: rgba(255, 255, 255, 0.85);
-    font-size: 10px;
+    font-size: 10.5px;
+    margin: 3px 0 0 0;
+    text-align: center;
+    width: 100%;
   }
 
   .desktop-content {
@@ -576,4 +578,21 @@ body .dashboard-footer {
     color: #2e626a;
     margin: 0 0 28px 0;
   }
+}
+
+.sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 36px;
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 6px 8px;
+  margin-left: -8px;
+  transition: background-color 0.15s ease;
+}
+
+.sidebar-profile:hover,
+.sidebar-profile.active {
+  background-color: rgba(255, 255, 255, 0.12);
 }

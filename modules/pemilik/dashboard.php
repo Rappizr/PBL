@@ -3,6 +3,33 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+require_once __DIR__ . '/../../config/database.php';
+
+// Hitung pembayaran yang masih menunggu verifikasi
+$stmtPendingPembayaran = $pdo->query("
+    SELECT COUNT(*) AS total
+    FROM pembayaran
+    WHERE status_verifikasi = 'pending'
+");
+$pendingPembayaranCount = (int) $stmtPendingPembayaran->fetchColumn();
+$nama_pemilik = 'Joko Budi';
+
+$kamarTerisi = 13;
+$kamarTotal = 16;
+$pemasukanHarini = 19500000;
+
+function formatTanggal(string $tanggal): string
+{
+    $bulan = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
+    $ts = strtotime($tanggal);
+    return date('d', $ts) . ' ' . $bulan[(int) date('n', $ts)] . ' ' . date('Y', $ts);
+}
+
+function formatRupiah(int $angka): string
+{
+    return 'Rp. ' . number_format($angka, 0, ',', '.');
+}
+
 $pendingPembayaranCount = 3; // Contoh data dummy (atau query DB)
 ?>
 <!DOCTYPE html>
@@ -22,23 +49,24 @@ $pendingPembayaranCount = 3; // Contoh data dummy (atau query DB)
         <div>
             <?php require_once __DIR__ . '/../components/header.php'; ?>
 
+    <div class="mobile-container mobile-dashboard-view">
+        <div>
+            <?php require_once __DIR__ . '/../components/header.php'; ?>
+
             <main class="menu-card-container">
                 <h2 class="menu-heading">Silahkan pilih menu</h2>
                 <div class="menu-grid">
                     <a href="/?page=manajemen_kamar" class="menu-item-box">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-warehouse"></i></div>
-                        <span class="menu-label">Manajemen<br>Kamar & Penghuni</span>
+                        <span class="menu-label">Manajemen<br>Kamar &amp; Penghuni</span>
                     </a>
                     <a href="/?page=arus_kas" class="menu-item-box">
-                        <div class="menu-icon-wrapper"><i class="fa-solid fa-wallet"></i></div>
+                        <div class="menu-icon-wrapper"><i class="fa-solid fa-chart-simple"></i></div>
                         <span class="menu-label">Analisis Kas</span>
                     </a>
                     <a href="/?page=verifikasi_pembayaran" class="menu-item-box">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
                         <span class="menu-label">Verifikasi<br>Pembayaran</span>
-                        <?php if ($pendingPembayaranCount > 0): ?>
-                            <span class="badge-notif"><i class="fa-solid fa-bell"></i> <?= $pendingPembayaranCount ?> Notifikasi</span>
-                        <?php endif; ?>
                     </a>
                     <a href="/?page=kelola_iuran" class="menu-item-box">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-chart-pie"></i></div>

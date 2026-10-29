@@ -25,14 +25,14 @@ $penghuniKos = [
 </head>
 <body class="dashboard-body">
 
-    <!-- LAYOUT MOBILE -->
+<!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
         <div>
             <?php require_once __DIR__ . '/../components/header.php'; ?>
 
             <main class="chat-container">
-                <div class="kamar-title-card" style="margin-bottom: 0;">
-                    <h2>Chat Penghuni</h2>
+                <div class="subpage-banner-card">
+                    <h2 class="subpage-banner-title">Chat Penghuni</h2>
                     <a href="<?= $link_kembali; ?>" class="btn-kembali-banner">
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
@@ -65,7 +65,6 @@ $penghuniKos = [
         <?php require_once __DIR__ . '/../components/footer.php'; ?>
     </div>
 
-    <!-- LAYOUT DESKTOP -->
     <div class="desktop-dashboard-wrapper">
         <?php require_once __DIR__ . '/../components/sidebar.php'; ?>
 

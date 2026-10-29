@@ -8,7 +8,11 @@ $currentPage = $_GET['page'] ?? 'dashboard';
 <aside class="desktop-sidebar">
     <div>
         <h1 class="sidebar-brand">SITEMAN - KOS</h1>
-        
+        <a href="/?page=profile" class="sidebar-profile <?= $currentPage === 'profile' ? 'active' : '' ?>">
+            <div class="sidebar-avatar"><i class="fa-solid fa-user"></i></div>
+            <span class="sidebar-name"><?= htmlspecialchars($nama_user); ?></span>
+        </a>
+
         <nav class="sidebar-nav">
             <?php if ($role_user === 'pemilik'): ?>
                 <a href="/?page=dashboard_pemilik" class="nav-item <?= $currentPage === 'dashboard_pemilik' ? 'active' : '' ?>">
@@ -53,10 +57,13 @@ $currentPage = $_GET['page'] ?? 'dashboard';
     </div>
 
     <div class="sidebar-footer">
+<<<<<<< HEAD
         <div class="sidebar-profile">
             <div class="sidebar-avatar"><i class="fa-solid fa-user"></i></div>
             <span class="sidebar-name"><?= htmlspecialchars($nama_user); ?></span>
         </div>
+=======
+>>>>>>> bd5598bae932d8596aae4d455f5aac815984a7d6
         <p class="sidebar-footer-title">SITEMAN - KOS &copy; 2g2b - 2026</p>
         <p class="sidebar-footer-desc">Sistem Manajemen Operasion Kos</p>
     </div>
