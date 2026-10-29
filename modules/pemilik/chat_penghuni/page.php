@@ -81,7 +81,7 @@ $penghuniKos = [
 
 
     <!-- ==========================================
-         LAYOUT DESKTOP (FIGMA MATCHING)
+         LAYOUT DESKTOP 
          ========================================== -->
     <div class="desktop-dashboard-wrapper">
         <aside class="desktop-sidebar">
