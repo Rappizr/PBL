@@ -1179,6 +1179,90 @@
   transform: translateY(1px);
 }
 
+/* ==========================================================
+   CSS TAMBAHAN UNTUK FILTER TANGGAL & HEADER RIWAYAT
+   ================================================---------- */
+.riwayat-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 12px;
+    max-width: 900px;
+}
+
+.riwayat-header-row .tagihan-section-title {
+    margin: 0 !important;
+}
+
+.filter-range-form-desktop {
+    margin: 0;
+}
+
+.flatpickr-box-wrapper {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 9999px;
+    padding: 6px 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    gap: 8px;
+}
+
+.flatpickr-box-wrapper .date-icon {
+    color: #4ca5b0;
+}
+
+.flatpickr-range-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    width: 180px;
+    cursor: pointer;
+}
+
+.btn-reset-range {
+    background-color: #fbe6e6;
+    color: #d9534f;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.2s;
+}
+
+.btn-reset-range:hover {
+    background-color: #f5c6cb;
+}
+
+/* Styling Card untuk Pesan Kosong */
+.empty-state-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    max-width: 620px;
+    color: #555555;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.empty-state-card .empty-icon {
+    font-size: 20px;
+    color: #4ca5b0;
+}
 /* ==========================================================================
    8. POP-UP MODAL BAYAR & INVOICE
    ========================================================================== */

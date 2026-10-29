@@ -3,8 +3,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$is_pj =$_SESSION['user']['is_pj'] ?? true;
-$nama_penghuni =$_SESSION['user']['nama'] ?? "Mas Dafa";
+$is_pj = $_SESSION['user']['is_pj'] ?? true;
+$nama_penghuni = $_SESSION['user']['nama'] ?? "Mas Dafa";
 
 $daftar_tagihan_saya = [
     [
@@ -26,6 +26,7 @@ $daftar_riwayat = [
         'id'             => 101,
         'judul'          => 'Sewa Bulanan',
         'tanggal'        => '05 September 2026',
+        'tanggal_filter' => '2026-09-05',
         'nominal'        => 1200000,
         'nomor_invoice'  => 'INV/202609/KOS-101',
         'tanggal_terbit' => '01 September 2026',
@@ -37,6 +38,7 @@ $daftar_riwayat = [
         'id'             => 201,
         'judul'          => 'Iuran Bulanan',
         'tanggal'        => '06 September 2026',
+        'tanggal_filter' => '2026-09-06',
         'nominal'        => 50000,
         'nomor_invoice'  => 'INV/202609/KOS-102',
         'tanggal_terbit' => '01 September 2026',
@@ -48,6 +50,7 @@ $daftar_riwayat = [
         'id'             => 103,
         'judul'          => 'Sewa Bulanan',
         'tanggal'        => '10 September 2026',
+        'tanggal_filter' => '2026-09-10',
         'nominal'        => 100000,
         'nomor_invoice'  => 'INV/202609/KOS-103',
         'tanggal_terbit' => '01 September 2026',
@@ -57,14 +60,39 @@ $daftar_riwayat = [
     ]
 ];
 
+// FILTER RENTANG TANGGAL UNTUK RIWAYAT
+$date_range = trim($_GET['date_range'] ?? '');
+if (!preg_match('/^\d{4}-\d{2}-\d{2}( to \d{4}-\d{2}-\d{2})?$/', $date_range)) {
+    $date_range = '';
+}
+
+$tgl_mulai   = '';
+$tgl_selesai = '';
+
+if ($date_range !== '') {
+    $parts       = explode(' to ', $date_range);
+    $tgl_mulai   = trim($parts[0]);
+    $tgl_selesai = trim($parts[1] ?? $tgl_mulai);
+}
+
+// Proses filter array riwayat transaksi
+$daftar_riwayat = array_filter($daftar_riwayat, function ($r) use ($tgl_mulai, $tgl_selesai) {
+    if ($tgl_mulai === '') {
+        return true;
+    }
+    return ($r['tanggal_filter'] >= $tgl_mulai && $r['tanggal_filter'] <= $tgl_selesai);
+});
+
+$is_filtered = ($date_range !== '');
+
 // Deteksi Modal Bayar via Query Parameter URL
 $modal_bayar_id = isset($_GET['bayar_id']) ? (int)$_GET['bayar_id'] : null;
 $tagihan_dipilih = null;
 
 if ($modal_bayar_id) {
-    foreach ($daftar_tagihan_saya as$item) {
-        if ($item['id'] ===$modal_bayar_id) {
-            $tagihan_dipilih =$item;
+    foreach ($daftar_tagihan_saya as $item) {
+        if ($item['id'] === $modal_bayar_id) {
+            $tagihan_dipilih = $item;
             break;
         }
     }
@@ -75,9 +103,9 @@ $modal_invoice_id = isset($_GET['invoice_id']) ? (int)$_GET['invoice_id'] : null
 $invoice_dipilih = null;
 
 if ($modal_invoice_id) {
-    foreach ($daftar_riwayat as$item) {
-        if ($item['id'] ===$modal_invoice_id) {
-            $invoice_dipilih =$item;
+    foreach ($daftar_riwayat as $item) {
+        if ($item['id'] === $modal_invoice_id) {
+            $invoice_dipilih = $item;
             break;
         }
     }
@@ -91,6 +119,9 @@ if ($modal_invoice_id) {
     <title>SITEMAN - KOS | Tagihan &amp; Riwayat</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
+    <!-- Flatpickr CSS untuk kalender range -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
     <!-- Link CSS Modular -->
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
@@ -112,7 +143,7 @@ if ($modal_invoice_id) {
 
                 <h3 class="section-title-white">Tagihan Saya</h3>
                 <div class="section-group">
-                    <?php foreach ($daftar_tagihan_saya as$t): ?>
+                    <?php foreach ($daftar_tagihan_saya as $t): ?>
                         <div class="item-tagihan-card">
                             <div class="item-tagihan-header">
                                 <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']) ?></h4>
@@ -136,28 +167,52 @@ if ($modal_invoice_id) {
                 </div>
 
                 <h3 class="section-title-white">Riwayat Transaksi</h3>
+                
+                <!-- Filter tanggal mobile -->
+                <form method="GET" action="" class="filter-range-form" style="margin-bottom: 12px;">
+                    <input type="hidden" name="page" value="tagihan_riwayat">
+                    <div class="flatpickr-box-wrapper">
+                        <i class="fa-regular fa-calendar date-icon"></i>
+                        <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
+                               placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                        <?php if ($is_filtered): ?>
+                            <a href="/?page=tagihan_riwayat" class="btn-reset-range" title="Reset">
+                                <i class="fa-solid fa-rotate-left"></i> Reset
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </form>
+
                 <div class="section-group">
-                    <?php foreach ($daftar_riwayat as$r): ?>
-                        <div class="item-tagihan-card">
-                            <div class="item-tagihan-header">
-                                <h4 class="item-tagihan-name"><?= htmlspecialchars($r['judul']) ?></h4>
-                                <div class="riwayat-status-actions">
-                                    <span class="badge-status-lunas">Lunas</span>
-                                    <a href="/?page=tagihan_riwayat&invoice_id=<?= $r['id'] ?>" class="btn-invoice-pill">
-                                        <i class="fa-solid fa-file-invoice"></i> Invoice
-                                    </a>
+                    <?php if (empty($daftar_riwayat)): ?>
+                        
+                        <div class="empty-state-card">
+                            <i class="fa-solid fa-folder-open empty-icon"></i>
+                                <span>Tidak ada riwayat transaksi pada rentang tanggal yang dipilih</span>
+                            </div>
+                        <?php else: ?>
+                        <?php foreach ($daftar_riwayat as $r): ?>
+                            <div class="item-tagihan-card">
+                                <div class="item-tagihan-header">
+                                    <h4 class="item-tagihan-name"><?= htmlspecialchars($r['judul']) ?></h4>
+                                    <div class="riwayat-status-actions">
+                                        <span class="badge-status-lunas">Lunas</span>
+                                        <a href="/?page=tagihan_riwayat&invoice_id=<?= $r['id'] ?>" class="btn-invoice-pill">
+                                            <i class="fa-solid fa-file-invoice"></i> Invoice
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="item-tagihan-body">
+                                    <div class="item-tagihan-left">
+                                        <span><?= htmlspecialchars($r['tanggal']) ?></span>
+                                    </div>
+                                    <div class="item-tagihan-right">
+                                        <span class="nominal-highlight">Rp <?= number_format($r['nominal'], 0, ',', '.') ?></span>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="item-tagihan-body">
-                                <div class="item-tagihan-left">
-                                    <span><?= htmlspecialchars($r['tanggal']) ?></span>
-                                </div>
-                                <div class="item-tagihan-right">
-                                    <span class="nominal-highlight">Rp <?= number_format($r['nominal'], 0, ',', '.') ?></span>
-                                </div>
-                            </div>
-                        </div>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </main>
         </div>
@@ -175,7 +230,7 @@ if ($modal_invoice_id) {
 
             <h3 class="tagihan-section-title">Tagihan Saya</h3>
             <div class="desktop-tagihan-grid">
-                <?php foreach ($daftar_tagihan_saya as$t): ?>
+                <?php foreach ($daftar_tagihan_saya as $t): ?>
                     <div class="item-tagihan-card">
                         <div class="item-tagihan-header">
                             <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']) ?></h4>
@@ -198,25 +253,50 @@ if ($modal_invoice_id) {
                 <?php endforeach; ?>
             </div>
 
-            <h3 class="tagihan-section-title">Riwayat Transaksi</h3>
-            <div class="desktop-riwayat-list">
-                <?php foreach ($daftar_riwayat as$r): ?>
-                    <div class="desktop-riwayat-card">
-                        <div class="desktop-riwayat-info">
-                            <h4 class="desktop-riwayat-title"><?= htmlspecialchars($r['judul']) ?></h4>
-                            <span class="desktop-riwayat-date"><?= htmlspecialchars($r['tanggal']) ?></span>
-                        </div>
-                        <div class="desktop-riwayat-right">
-                            <div class="riwayat-status-actions">
-                                <span class="badge-lunas-pill">Lunas</span>
-                                <a href="/?page=tagihan_riwayat&invoice_id=<?= $r['id'] ?>" class="btn-invoice-pill">
-                                    <i class="fa-solid fa-file-invoice"></i> Invoice
-                                </a>
-                            </div>
-                            <span class="desktop-riwayat-nominal">Rp <?= number_format($r['nominal'], 0, ',', '.') ?></span>
-                        </div>
+            <!-- Header Riwayat Transaksi Sejajar dengan Form Filter Tanggal (Desktop) -->
+            <div class="riwayat-header-row">
+                <h3 class="tagihan-section-title">Riwayat Transaksi</h3>
+
+                <form method="GET" action="" class="filter-range-form-desktop">
+                    <input type="hidden" name="page" value="tagihan_riwayat">
+                    <div class="flatpickr-box-wrapper">
+                        <i class="fa-regular fa-calendar date-icon"></i>
+                        <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
+                               placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                        <?php if ($is_filtered): ?>
+                            <a href="/?page=tagihan_riwayat" class="btn-reset-range" title="Reset Filter">
+                                <i class="fa-solid fa-rotate-left"></i> Reset
+                            </a>
+                        <?php endif; ?>
                     </div>
-                <?php endforeach; ?>
+                </form>
+            </div>
+
+            <div class="desktop-riwayat-list">
+                <?php if (empty($daftar_riwayat)): ?>
+                        <div class="empty-state-card">
+                            <i class="fa-solid fa-folder-open empty-icon"></i>
+                            <span>Tidak ada riwayat transaksi pada rentang tanggal yang dipilih</span>
+                        </div>
+                    <?php else: ?>
+                    <?php foreach ($daftar_riwayat as $r): ?>
+                        <div class="desktop-riwayat-card">
+                            <div class="desktop-riwayat-info">
+                                <h4 class="desktop-riwayat-title"><?= htmlspecialchars($r['judul']) ?></h4>
+                                <span class="desktop-riwayat-date"><?= htmlspecialchars($r['tanggal']) ?></span>
+                            </div>
+                            <div class="desktop-riwayat-right">
+                                <div class="riwayat-status-actions">
+                                    <span class="badge-lunas-pill">Lunas</span>
+                                    <a href="/?page=tagihan_riwayat&invoice_id=<?= $r['id'] ?>" class="btn-invoice-pill">
+                                        <i class="fa-solid fa-file-invoice"></i> Invoice
+                                    </a>
+                                </div>
+                                <span class="desktop-riwayat-nominal">Rp <?= number_format($r['nominal'], 0, ',', '.') ?></span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </main>
     </div>
@@ -342,5 +422,20 @@ if ($modal_invoice_id) {
         </div>
     <?php endif; ?>
 
+    <!-- Flatpickr JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            flatpickr(".flatpickr-range-input", {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                onChange: function(selectedDates, dateStr, instance) {
+                    if (selectedDates.length === 2) {
+                        instance.element.form.submit();
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>
