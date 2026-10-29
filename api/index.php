@@ -10,6 +10,11 @@ switch ($page) {
     case 'login':
         require_once __DIR__ . '/../modules/auth/login.php';
         break;
+    
+    // Reset
+    case 'reset':
+        require_once __DIR__ . '/../modules/auth/reset.php';
+        break;
 
     // Pemilik
     case 'dashboard_pemilik':

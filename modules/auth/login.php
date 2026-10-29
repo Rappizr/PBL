@@ -73,6 +73,8 @@ if (isset($_SESSION['login_error'])) {
                     minlength="6" maxlength="6" autocomplete="off" required
                     name="pin" class="input-field" placeholder="PIN (6 Digit)">
             </div>
+            <!-- link reset pw -->
+            <a href="/?page=reset" class="link-lupa">Lupa password?</a>
 
             <button type="submit" class="btn-submit" id="submitBtn">
                 <span class="btn-text">Login</span>
@@ -80,6 +82,7 @@ if (isset($_SESSION['login_error'])) {
         </form>
 
     </div>
+    
 
     <script>
         document.getElementById('loginForm').addEventListener('submit', function() {
