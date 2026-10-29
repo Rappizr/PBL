@@ -32,7 +32,8 @@ if (isset($_SESSION['login_error'])) {
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
-<body>
+<body class="dashboard-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
+
     <div class="login-card">
         <h1 class="brand-title">SITEMAN - KOS</h1>
         <p class="brand-subtitle">
@@ -43,14 +44,15 @@ if (isset($_SESSION['login_error'])) {
             <div class="alert-error"><?= htmlspecialchars($error); ?></div>
         <?php endif; ?>
 
-        <form action="/api/auth" method="POST" id="loginForm">
+        <!-- Form action diarahkan langsung ke file /api/auth.php -->
+        <form action="/api/auth.php" method="POST" id="loginForm">
             <input type="hidden" name="role" value="<?= htmlspecialchars($role); ?>">
 
             <?php if ($role === 'penghuni'): ?>
                 <div class="input-wrapper">
-                    <i class="fa-solid fa-home input-icon"></i>
+                    <i class="fa-solid fa-house input-icon"></i>
                     <input type="text" inputmode="numeric" pattern="[0-9]+" name="number"
-                           class="input-field" placeholder="Nomor Kamar" required>
+                           class="input-field" placeholder="Nomor Kamar" required autocomplete="off">
                 </div>
             <?php endif; ?>
 
@@ -79,11 +81,13 @@ if (isset($_SESSION['login_error'])) {
     <script>
         document.getElementById('loginForm').addEventListener('submit', function () {
             const btn = document.getElementById('submitBtn');
-            btn.classList.add('loading');
-            btn.disabled = true;
+            btn.querySelector('.btn-text').textContent = 'Memproses...';
+            // Hindari disabled = true seketika agar request POST tidak digugurkan oleh browser
+            setTimeout(() => {
+                btn.disabled = true;
+            }, 10);
         });
     </script>
 
-    <?php require_once __DIR__ . '/../components/footer.php'; ?>
 </body>
 </html>

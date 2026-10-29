@@ -25,14 +25,14 @@ $penghuniKos = [
 </head>
 <body class="dashboard-body">
 
-    <!-- LAYOUT MOBILE -->
+<!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
         <div>
             <?php require_once __DIR__ . '/../components/header.php'; ?>
 
             <main class="chat-container">
-                <div class="kamar-title-card" style="margin-bottom: 0;">
-                    <h2>Chat Penghuni</h2>
+                <div class="subpage-banner-card">
+                    <h2 class="subpage-banner-title">Chat Penghuni</h2>
                     <a href="<?= $link_kembali; ?>" class="btn-kembali-banner">
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
@@ -44,7 +44,7 @@ $penghuniKos = [
                 </div>
 
                 <div class="chat-list" id="chatListMobile">
-                    <?php foreach ($penghuniKos as$p): ?>
+                    <?php foreach ($penghuniKos as $p): ?>
                         <div class="chat-card" data-nama="<?= strtolower($p['nama']); ?>" data-kamar="<?= strtolower($p['kamar']); ?>">
                             <div class="chat-info">
                                 <div class="chat-header-row">
@@ -65,14 +65,6 @@ $penghuniKos = [
         <?php require_once __DIR__ . '/../components/footer.php'; ?>
     </div>
 
-<<<<<<< HEAD:modules/pemilik/chat_penghuni/page.php
-
-    <!-- ==========================================
-         LAYOUT DESKTOP 
-         ========================================== -->
-=======
-    <!-- LAYOUT DESKTOP -->
->>>>>>> cc35bd7 (update all):modules/shared/chat_penghuni.php
     <div class="desktop-dashboard-wrapper">
         <?php require_once __DIR__ . '/../components/sidebar.php'; ?>
 

@@ -8,11 +8,13 @@ $modal_aktif  = $_GET['modal'] ?? '';
 
 $daftar_kamar = [
     ['nomor' => '01', 'penghuni' => 'Ridwan', 'status' => 'lunas'],
-    ['nomor' => '02', 'penghuni' => 'Rafi', 'status' => 'lunas'],
-    ['nomor' => '03', 'penghuni' => 'Bahlil', 'status' => 'belum'],
-    ['nomor' => '04', 'penghuni' => 'Belum terisi', 'status' => 'kosong'],
-    ['nomor' => '05', 'penghuni' => 'Joko', 'status' => 'lunas'],
-    ['nomor' => '06', 'penghuni' => 'Bowo', 'status' => 'lunas'],
+    ['nomor' => '02', 'penghuni' => 'Nadia',  'status' => 'lunas'],
+    ['nomor' => '03', 'penghuni' => 'Elena',  'status' => 'belum'],
+    ['nomor' => '04', 'penghuni' => 'Jasper', 'status' => 'lunas'],
+    ['nomor' => '05', 'penghuni' => 'Mira',   'status' => 'lunas'],
+    ['nomor' => '06', 'penghuni' => 'Kiran',  'status' => 'lunas'],
+    ['nomor' => '07', 'penghuni' => 'Lila',   'status' => 'lunas'],
+    ['nomor' => '08', 'penghuni' => 'Kosong', 'status' => 'kosong'],
 ];
 ?>
 <!DOCTYPE html>
@@ -75,32 +77,52 @@ $daftar_kamar = [
 
         <main class="desktop-content">
             <h2 class="desktop-header-title">Manajemen Kamar &amp; Penghuni</h2>
-            <p class="desktop-header-subtitle">Kelola ketersediaan kamar dan data anak kos</p>
+            <p class="desktop-header-subtitle">Manajemen kamar dan penghuni secara realtime</p>
 
-            <div class="desktop-kelola-actions" style="margin-bottom: 24px;">
-                <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_kamar" class="desktop-btn-action">
-                    <span class="icon-kelola-white"><i class="fa-solid fa-plus"></i></span> Tambah Kamar
+            <h3 class="desktop-kamar-section-label">Data terbaru</h3>
+
+            <div class="desktop-kamar-top-actions">
+                <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_kamar" class="kamar-btn-pill-action">
+                    <i class="fa-solid fa-plus"></i> Tambah Kamar
                 </a>
-                <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_penghuni" class="desktop-btn-action">
-                    <span class="icon-kelola-white"><i class="fa-solid fa-user-plus"></i></span> Tambah Penghuni
+                <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_penghuni" class="kamar-btn-pill-action">
+                    <i class="fa-solid fa-plus"></i> Tambah Penghuni
                 </a>
             </div>
 
-            <div class="kamar-grid" style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); max-width: 900px;">
-                <?php foreach ($daftar_kamar as $kamar): ?>
-                    <div class="kamar-card">
-                        <?php if ($kamar['status'] === 'lunas'): ?>
-                            <span class="badge-status badge-lunas">Lunas</span>
-                        <?php elseif ($kamar['status'] === 'belum'): ?>
-                            <span class="badge-status badge-belum">Belum</span>
-                        <?php else: ?>
-                            <span class="badge-status badge-kosong">Kosong</span>
-                        <?php endif; ?>
+            <!-- Box Pembungkus Tosca Utama -->
+            <div class="kamar-desktop-panel">
+                <div class="kamar-desktop-grid-white">
+                    <?php foreach ($daftar_kamar as $kamar): ?>
+                        <div class="kamar-card-white">
+                            <?php if ($kamar['status'] === 'lunas'): ?>
+                                <span class="badge-kamar-status badge-kamar-lunas">Lunas</span>
+                            <?php elseif ($kamar['status'] === 'belum'): ?>
+                                <span class="badge-kamar-status badge-kamar-belum">Belum</span>
+                            <?php else: ?>
+                                <span class="badge-kamar-status badge-kamar-kosong">Kosong</span>
+                            <?php endif; ?>
 
-                        <div class="kamar-nomor"><?= htmlspecialchars($kamar['nomor']) ?></div>
-                        <div class="kamar-nama"><?= htmlspecialchars($kamar['penghuni']) ?></div>
+                            <div class="kamar-card-number"><?= htmlspecialchars($kamar['nomor']) ?></div>
+                            <div class="kamar-card-resident"><?= htmlspecialchars($kamar['penghuni']) ?></div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- Bagian Bawah: Legenda Status & Pagination -->
+                <div class="kamar-desktop-bottom-bar">
+                    <div class="kamar-legend-row">
+                        <span class="legend-item"><span class="legend-color-box color-lunas"></span> Lunas</span>
+                        <span class="legend-item"><span class="legend-color-box color-belum"></span> Belum bayar</span>
+                        <span class="legend-item"><span class="legend-color-box color-kosong"></span> Kosong</span>
                     </div>
-                <?php endforeach; ?>
+
+                    <div class="kamar-pagination-row">
+                        <button type="button" class="kamar-page-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                        <span class="kamar-page-info">1/2</span>
+                        <button type="button" class="kamar-page-btn"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </div>
             </div>
         </main>
     </div>

@@ -3,7 +3,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$pendingPembayaranCount = 3; // Contoh data dummy (atau query DB)
+$kamar_terisi       = "13/16";
+$menunggu_verif     = 4;
+$pemasukan_hari_ini = "Rp. 19,500,000";
+$tgl_kondisi        = "12 September 2026";
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -17,7 +20,6 @@ $pendingPembayaranCount = 3; // Contoh data dummy (atau query DB)
 </head>
 <body class="dashboard-body">
 
-    <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
         <div>
             <?php require_once __DIR__ . '/../components/header.php'; ?>
@@ -27,18 +29,15 @@ $pendingPembayaranCount = 3; // Contoh data dummy (atau query DB)
                 <div class="menu-grid">
                     <a href="/?page=manajemen_kamar" class="menu-item-box">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-warehouse"></i></div>
-                        <span class="menu-label">Manajemen<br>Kamar & Penghuni</span>
+                        <span class="menu-label">Manajemen<br>Kamar &amp; Penghuni</span>
                     </a>
                     <a href="/?page=arus_kas" class="menu-item-box">
-                        <div class="menu-icon-wrapper"><i class="fa-solid fa-wallet"></i></div>
+                        <div class="menu-icon-wrapper"><i class="fa-solid fa-chart-simple"></i></div>
                         <span class="menu-label">Analisis Kas</span>
                     </a>
                     <a href="/?page=verifikasi_pembayaran" class="menu-item-box">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
                         <span class="menu-label">Verifikasi<br>Pembayaran</span>
-                        <?php if ($pendingPembayaranCount > 0): ?>
-                            <span class="badge-notif"><i class="fa-solid fa-bell"></i> <?= $pendingPembayaranCount ?> Notifikasi</span>
-                        <?php endif; ?>
                     </a>
                     <a href="/?page=kelola_iuran" class="menu-item-box">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-chart-pie"></i></div>
@@ -55,37 +54,80 @@ $pendingPembayaranCount = 3; // Contoh data dummy (atau query DB)
         <?php require_once __DIR__ . '/../components/footer.php'; ?>
     </div>
 
-    <!-- LAYOUT DESKTOP -->
     <div class="desktop-dashboard-wrapper">
         <?php require_once __DIR__ . '/../components/sidebar.php'; ?>
 
         <main class="desktop-content">
-            <h2 class="desktop-header-title">Dashboard Pemilik</h2>
-            <p class="desktop-header-subtitle">Ringkasan operasional dan keuangan kos</p>
+            <h2 class="desktop-header-title">Ringkasan Hari Ini</h2>
+            <p class="desktop-header-subtitle">Kondisi kos per <?= $tgl_kondisi; ?></p>
 
-            <h3 class="menu-utama-title">Menu utama</h3>
-            <div class="desktop-menu-grid">
-                <a href="/?page=manajemen_kamar" class="desktop-menu-card">
-                    <div class="desktop-menu-icon"><i class="fa-solid fa-warehouse"></i></div>
-                    <span class="desktop-menu-label">Manajemen<br>Kamar</span>
-                </a>
-                <a href="/?page=arus_kas" class="desktop-menu-card">
-                    <div class="desktop-menu-icon"><i class="fa-solid fa-wallet"></i></div>
-                    <span class="desktop-menu-label">Analisis<br>Kas</span>
-                </a>
-                <a href="/?page=verifikasi_pembayaran" class="desktop-menu-card">
-                    <div class="desktop-menu-icon"><i class="fa-solid fa-list-check"></i></div>
-                    <span class="desktop-menu-label">Verifikasi<br>Bayar</span>
-                </a>
-                <a href="/?page=kelola_iuran" class="desktop-menu-card">
-                    <div class="desktop-menu-icon"><i class="fa-solid fa-chart-pie"></i></div>
-                    <span class="desktop-menu-label">Kelola<br>Iuran</span>
-                </a>
-                <a href="/?page=chat_penghuni" class="desktop-menu-card">
-                    <div class="desktop-menu-icon"><i class="fa-solid fa-comments"></i></div>
-                    <span class="desktop-menu-label">Chat<br>Penghuni</span>
-                </a>
+            <div class="desktop-pemilik-stats-grid">
+                <div class="desktop-pemilik-stat-card">
+                    <span class="stat-box-lbl">Kamar Terisi</span>
+                    <span class="stat-box-val"><?= $kamar_terisi; ?></span>
+                </div>
+                <div class="desktop-pemilik-stat-card">
+                    <span class="stat-box-lbl">Menunggu Verifikasi</span>
+                    <span class="stat-box-val val-danger"><?= $menunggu_verif; ?></span>
+                </div>
+                <div class="desktop-pemilik-stat-card stat-card-wide">
+                    <span class="stat-box-lbl">Pemasukan Hari Ini</span>
+                    <span class="stat-box-val val-money"><?= $pemasukan_hari_ini; ?></span>
+                </div>
             </div>
+
+            <h3 class="desktop-menu-list-title">Menu utama</h3>
+            <div class="desktop-pemilik-menu-list">
+                <a href="/?page=manajemen_kamar" class="pemilik-menu-row-card">
+                    <div class="pemilik-menu-icon-box">
+                        <i class="fa-solid fa-warehouse"></i>
+                    </div>
+                    <div class="pemilik-menu-text">
+                        <h4>Manajemen Kamar &amp; penghuni</h4>
+                        <p>Lihat status kamar dan penyewa</p>
+                    </div>
+                </a>
+
+                <a href="/?page=kelola_iuran" class="pemilik-menu-row-card">
+                    <div class="pemilik-menu-icon-box">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <div class="pemilik-menu-text">
+                        <h4>Monitoring &amp; Tagihan iuran</h4>
+                        <p>Pemasukan, Tunggakan, Kas</p>
+                    </div>
+                </a>
+
+                <a href="/?page=verifikasi_pembayaran" class="pemilik-menu-row-card">
+                    <div class="pemilik-menu-icon-box">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                    <div class="pemilik-menu-text">
+                        <h4>Verifikasi pembayaran</h4>
+                        <p><?= $menunggu_verif; ?> bukti transfer menunggu diverifikasi</p>
+                    </div>
+                </a>
+
+                <a href="/?page=chat_penghuni" class="pemilik-menu-row-card">
+                    <div class="pemilik-menu-icon-box">
+                        <i class="fa-solid fa-comments"></i>
+                    </div>
+                    <div class="pemilik-menu-text">
+                        <h4>Chat penghuni</h4>
+                        <p>Hubungi penghuni langsung melalui Whatsapp</p>
+                    </div>
+                </a>
+
+                <a href="/?page=arus_kas" class="pemilik-menu-row-card">
+                    <div class="pemilik-menu-icon-box">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                    <div class="pemilik-menu-text">
+                        <h4>Analisis Kas</h4>
+                        <p>Monitoring kas</p>
+                    </div>
+                </a>
+            </div>  
         </main>
     </div>
 
