@@ -3,8 +3,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$is_pj = true;
-$nama_penghuni = "Mas Dafa";
+$is_pj =$_SESSION['user']['is_pj'] ?? true;
+$nama_penghuni =$_SESSION['user']['nama'] ?? "Mas Dafa";
 
 $daftar_tagihan_saya = [
     [
@@ -23,33 +23,61 @@ $daftar_tagihan_saya = [
 
 $daftar_riwayat = [
     [
-        'id'      => 101,
-        'judul'   => 'Sewa Bulanan',
-        'tanggal' => '05 September 2026',
-        'nominal' => 1200000
+        'id'             => 101,
+        'judul'          => 'Sewa Bulanan',
+        'tanggal'        => '05 September 2026',
+        'nominal'        => 1200000,
+        'nomor_invoice'  => 'INV/202609/KOS-101',
+        'tanggal_terbit' => '01 September 2026',
+        'jatuh_tempo'    => '11 September 2026',
+        'tanggal_bayar'  => '05 September 2026, 10:15 WIB',
+        'periode_sewa'   => '11 Sep 2026 - 10 Okt 2026'
     ],
     [
-        'id'      => 102,
-        'judul'   => 'Sewa Bulanan',
-        'tanggal' => '06 September 2026',
-        'nominal' => 200000
+        'id'             => 102,
+        'judul'          => 'Sewa Bulanan',
+        'tanggal'        => '06 September 2026',
+        'nominal'        => 200000,
+        'nomor_invoice'  => 'INV/202609/KOS-102',
+        'tanggal_terbit' => '01 September 2026',
+        'jatuh_tempo'    => '11 September 2026',
+        'tanggal_bayar'  => '06 September 2026, 14:30 WIB',
+        'periode_sewa'   => 'Pelunasan Tambahan'
     ],
     [
-        'id'      => 103,
-        'judul'   => 'Sewa Bulanan',
-        'tanggal' => '10 September 2026',
-        'nominal' => 100000
+        'id'             => 103,
+        'judul'          => 'Sewa Bulanan',
+        'tanggal'        => '10 September 2026',
+        'nominal'        => 100000,
+        'nomor_invoice'  => 'INV/202609/KOS-103',
+        'tanggal_terbit' => '01 September 2026',
+        'jatuh_tempo'    => '11 September 2026',
+        'tanggal_bayar'  => '10 September 2026, 19:00 WIB',
+        'periode_sewa'   => 'Pelunasan Tambahan'
     ]
 ];
 
-// Deteksi Tagihan Terpilih via Query Parameter URL
+// Deteksi Modal Bayar via Query Parameter URL
 $modal_bayar_id = isset($_GET['bayar_id']) ? (int)$_GET['bayar_id'] : null;
 $tagihan_dipilih = null;
 
 if ($modal_bayar_id) {
-    foreach ($daftar_tagihan_saya as $item) {
-        if ($item['id'] === $modal_bayar_id) {
-            $tagihan_dipilih = $item;
+    foreach ($daftar_tagihan_saya as$item) {
+        if ($item['id'] ===$modal_bayar_id) {
+            $tagihan_dipilih =$item;
+            break;
+        }
+    }
+}
+
+// Deteksi Modal Invoice via Query Parameter URL
+$modal_invoice_id = isset($_GET['invoice_id']) ? (int)$_GET['invoice_id'] : null;
+$invoice_dipilih = null;
+
+if ($modal_invoice_id) {
+    foreach ($daftar_riwayat as$item) {
+        if ($item['id'] ===$modal_invoice_id) {
+            $invoice_dipilih =$item;
             break;
         }
     }
@@ -62,22 +90,17 @@ if ($modal_bayar_id) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Tagihan &amp; Riwayat</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/styles.css">
+    
+    <!-- Link CSS Modular -->
+    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
 <body class="dashboard-body">
 
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
         <div>
-            <header class="dashboard-header">
-                <h1 class="brand-title-dashboard">SITEMAN - KOS</h1>
-                <div class="kotak-kapsul-pemilik">
-                    <span class="lingkaran-user-abu">
-                        <i class="fa-solid fa-user"></i>
-                    </span>
-                    <span class="tulisan-nama"><?= htmlspecialchars($nama_penghuni); ?></span>
-                </div>
-            </header>
+            <?php require_once __DIR__ . '/../components/header.php'; ?>
 
             <main class="page-content">
                 <div class="subpage-banner-card">
@@ -89,13 +112,12 @@ if ($modal_bayar_id) {
 
                 <h3 class="section-title-white">Tagihan Saya</h3>
                 <div class="section-group">
-                    <?php foreach ($daftar_tagihan_saya as $t): ?>
+                    <?php foreach ($daftar_tagihan_saya as$t): ?>
                         <div class="item-tagihan-card">
                             <div class="item-tagihan-header">
                                 <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']) ?></h4>
                                 <span class="badge-status-krem">Belum bayar</span>
                             </div>
-
                             <div class="item-tagihan-body">
                                 <div class="item-tagihan-left">
                                     <span>Total tagihan</span>
@@ -106,7 +128,6 @@ if ($modal_bayar_id) {
                                     <span><?= htmlspecialchars($t['jatuh_tempo']) ?></span>
                                 </div>
                             </div>
-
                             <a href="/?page=tagihan_riwayat&bayar_id=<?= $t['id'] ?>" class="btn-card-action">
                                 Bayar
                             </a>
@@ -116,13 +137,17 @@ if ($modal_bayar_id) {
 
                 <h3 class="section-title-white">Riwayat Transaksi</h3>
                 <div class="section-group">
-                    <?php foreach ($daftar_riwayat as $r): ?>
+                    <?php foreach ($daftar_riwayat as$r): ?>
                         <div class="item-tagihan-card">
                             <div class="item-tagihan-header">
                                 <h4 class="item-tagihan-name"><?= htmlspecialchars($r['judul']) ?></h4>
-                                <span class="badge-status-lunas">Lunas</span>
+                                <div class="riwayat-status-actions">
+                                    <span class="badge-status-lunas">Lunas</span>
+                                    <a href="/?page=tagihan_riwayat&invoice_id=<?= $r['id'] ?>" class="btn-invoice-pill">
+                                        <i class="fa-solid fa-file-invoice"></i> Invoice
+                                    </a>
+                                </div>
                             </div>
-
                             <div class="item-tagihan-body">
                                 <div class="item-tagihan-left">
                                     <span><?= htmlspecialchars($r['tanggal']) ?></span>
@@ -137,55 +162,12 @@ if ($modal_bayar_id) {
             </main>
         </div>
 
-        <?php require_once __DIR__ . '/../../components/footer.php'; ?>
+        <?php require_once __DIR__ . '/../components/footer.php'; ?>
     </div>
 
     <!-- LAYOUT DESKTOP -->
     <div class="desktop-dashboard-wrapper">
-        <aside class="desktop-sidebar">
-            <div>
-                <h1 class="sidebar-brand">SITEMAN - KOS</h1>
-                
-                <div class="sidebar-profile">
-                    <div class="sidebar-avatar"><i class="fa-solid fa-user"></i></div>
-                    <span class="sidebar-name"><?= htmlspecialchars($nama_penghuni); ?></span>
-                </div>
-
-                <nav class="sidebar-nav">
-                    <a href="/?page=dashboard_penghuni" class="nav-item">
-                        <i class="fa-solid fa-table-cells-large"></i>
-                        <span>Dashboard</span>
-                    </a>
-                    <a href="/?page=tagihan_riwayat" class="nav-item active">
-                        <i class="fa-solid fa-receipt"></i>
-                        <span>Tagihan &amp; Riwayat</span>
-                    </a>
-                    <a href="/?page=monitoring_iuran" class="nav-item">
-                        <i class="fa-solid fa-chart-pie"></i>
-                        <span>Monitoring &amp; Tagihan Iuran</span>
-                    </a>
-                    <a href="/?page=peraturan_kost" class="nav-item">
-                        <i class="fa-solid fa-book-open"></i>
-                        <span>Peraturan Kos</span>
-                    </a>
-                    <a href="/?page=chat_penghuni" class="nav-item">
-                        <i class="fa-solid fa-comments"></i>
-                        <span>Chat Penghuni</span>
-                    </a>
-                    <?php if ($is_pj): ?>
-                        <a href="/?page=kelola_iuran" class="nav-item">
-                            <i class="fa-solid fa-wallet"></i>
-                            <span>Kelola &amp; Monitor Iuran</span>
-                        </a>
-                    <?php endif; ?>
-                </nav>
-            </div>
-
-            <div class="sidebar-footer">
-                <p class="sidebar-footer-title">SITEMAN - KOS &copy; 2g2b - 2026</p>
-                <p class="sidebar-footer-desc">Sistem Manajemen Operasion Kos</p>
-            </div>
-        </aside>
+        <?php require_once __DIR__ . '/../components/sidebar.php'; ?>
 
         <main class="desktop-content">
             <h2 class="desktop-header-title">Tagihan &amp; Riwayat</h2>
@@ -193,13 +175,12 @@ if ($modal_bayar_id) {
 
             <h3 class="tagihan-section-title">Tagihan Saya</h3>
             <div class="desktop-tagihan-grid">
-                <?php foreach ($daftar_tagihan_saya as $t): ?>
+                <?php foreach ($daftar_tagihan_saya as$t): ?>
                     <div class="item-tagihan-card">
                         <div class="item-tagihan-header">
                             <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']) ?></h4>
                             <span class="badge-status-krem">Belum bayar</span>
                         </div>
-
                         <div class="item-tagihan-body">
                             <div class="item-tagihan-left">
                                 <span>Total tagihan</span>
@@ -210,7 +191,6 @@ if ($modal_bayar_id) {
                                 <span><?= htmlspecialchars($t['jatuh_tempo']) ?></span>
                             </div>
                         </div>
-
                         <a href="/?page=tagihan_riwayat&bayar_id=<?= $t['id'] ?>" class="btn-card-action">
                             Bayar
                         </a>
@@ -220,14 +200,19 @@ if ($modal_bayar_id) {
 
             <h3 class="tagihan-section-title">Riwayat Transaksi</h3>
             <div class="desktop-riwayat-list">
-                <?php foreach ($daftar_riwayat as $r): ?>
+                <?php foreach ($daftar_riwayat as$r): ?>
                     <div class="desktop-riwayat-card">
                         <div class="desktop-riwayat-info">
                             <h4 class="desktop-riwayat-title"><?= htmlspecialchars($r['judul']) ?></h4>
                             <span class="desktop-riwayat-date"><?= htmlspecialchars($r['tanggal']) ?></span>
                         </div>
                         <div class="desktop-riwayat-right">
-                            <span class="badge-lunas-pill">Lunas</span>
+                            <div class="riwayat-status-actions">
+                                <span class="badge-lunas-pill">Lunas</span>
+                                <a href="/?page=tagihan_riwayat&invoice_id=<?= $r['id'] ?>" class="btn-invoice-pill">
+                                    <i class="fa-solid fa-file-invoice"></i> Invoice
+                                </a>
+                            </div>
                             <span class="desktop-riwayat-nominal">Rp <?= number_format($r['nominal'], 0, ',', '.') ?></span>
                         </div>
                     </div>
@@ -235,6 +220,81 @@ if ($modal_bayar_id) {
             </div>
         </main>
     </div>
+
+    <!-- POP-UP MODAL INVOICE -->
+    <?php if ($invoice_dipilih): ?>
+        <div class="modal-overlay active">
+            <div class="invoice-wrapper">
+                <header class="invoice-header-row">
+                    <div>
+                        <h1 class="invoice-brand-title">SITEMAN - KOS</h1>
+                        <p class="invoice-brand-sub">Sistem Manajemen Operasion Kos</p>
+                        <p class="invoice-brand-sub">Jl. Semanggi Barat No. 2B, Malang</p>
+                    </div>
+                    <div class="invoice-tag-box">
+                        <h2 class="invoice-main-title">INVOICE SEWA</h2>
+                        <p class="invoice-number"><?= htmlspecialchars($invoice_dipilih['nomor_invoice']); ?></p>
+                        <span class="badge-invoice-status badge-status-paid"><i class="fa-solid fa-circle-check"></i> Lunas</span>
+                    </div>
+                </header>
+
+                <section class="invoice-meta-grid">
+                    <div>
+                        <div class="meta-col-title">Ditagihkan Kepada</div>
+                        <h3 class="meta-text-strong"><?= htmlspecialchars($nama_penghuni); ?></h3>
+                        <p class="meta-text-muted"><i class="fa-solid fa-door-open"></i> Kamar 01</p>
+                        <p class="meta-text-muted"><i class="fa-brands fa-whatsapp"></i> 082764518892</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="meta-col-title">Detail Waktu</div>
+                        <p class="meta-text-muted"><strong>Tgl Terbit:</strong> <?= htmlspecialchars($invoice_dipilih['tanggal_terbit']); ?></p>
+                        <p class="meta-text-muted"><strong>Jatuh Tempo:</strong> <?= htmlspecialchars($invoice_dipilih['jatuh_tempo']); ?></p>
+                        <p class="meta-text-muted"><strong>Periode:</strong> <?= htmlspecialchars($invoice_dipilih['periode_sewa']); ?></p>
+                        <p class="meta-text-muted" style="color: #0b5e39;"><strong>Dibayar:</strong> <?= htmlspecialchars($invoice_dipilih['tanggal_bayar']); ?></p>
+                    </div>
+                </section>
+
+                <table class="invoice-table">
+                    <thead>
+                        <tr>
+                            <th>Deskripsi Tagihan</th>
+                            <th>Nominal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <p class="item-name"><?= htmlspecialchars($invoice_dipilih['judul']); ?></p>
+                                <p class="item-desc"><?= htmlspecialchars($invoice_dipilih['periode_sewa']); ?></p>
+                            </td>
+                            <td>Rp <?= number_format($invoice_dipilih['nominal'], 0, ',', '.'); ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="invoice-summary-row">
+                    <div class="invoice-summary-box">
+                        <span class="summary-total-label">Total Tagihan</span>
+                        <span class="summary-total-value">Rp <?= number_format($invoice_dipilih['nominal'], 0, ',', '.'); ?></span>
+                    </div>
+                </div>
+
+                <div class="invoice-notes-card">
+                    <h4><i class="fa-solid fa-building-columns"></i> Petunjuk Pembayaran:</h4>
+                    <p>Silakan transfer via <strong>Transfer Bank BCA</strong> ke rekening <strong>8271-9920-112 a/n Bapak Kos</strong>. Pembayaran telah diverifikasi lunas.</p>
+                </div>
+
+                <div class="invoice-actions">
+                    <a href="/?page=tagihan_riwayat" class="btn-invoice-back">
+                        <i class="fa-solid fa-xmark"></i> Tutup
+                    </a>
+                    <button type="button" onclick="window.print()" class="btn-invoice-print">
+                        <i class="fa-solid fa-print"></i> Cetak / Simpan PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    <?php endif; ?>
 
     <!-- POP-UP MODAL BAYAR TAGIHAN -->
     <?php if ($tagihan_dipilih): ?>
