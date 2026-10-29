@@ -8,10 +8,10 @@ $currentPage = $_GET['page'] ?? 'dashboard';
 <aside class="desktop-sidebar">
     <div>
         <h1 class="sidebar-brand">SITEMAN - KOS</h1>
-        <div class="sidebar-profile">
+        <a href="/?page=profile" class="sidebar-profile <?= $currentPage === 'profile' ? 'active' : '' ?>">
             <div class="sidebar-avatar"><i class="fa-solid fa-user"></i></div>
             <span class="sidebar-name"><?= htmlspecialchars($nama_user); ?></span>
-        </div>
+        </a>
 
         <nav class="sidebar-nav">
             <?php if ($role_user === 'pemilik'): ?>
