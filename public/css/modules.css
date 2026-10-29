@@ -2228,7 +2228,45 @@
     gap: 12px;
     max-width: 620px;
   }
+  
+  /* nambahin filter desktop */
 
+  /* Pastikan kontainer filter sejajar dan lebarnya dibatasi agar proporsional */
+  .iuran-desktop-filters,
+  .desktop-kelola-filter-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    max-width: 620px; /* Disamakan dengan max-width list penghuni di bawahnya */
+  }
+
+  .iuran-filter-pill {
+    font-size: 12px;
+    font-weight: 800;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  .iuran-filter-pill.active {
+    background-color: #4ca5b0;
+    color: #ffffff;
+  }
+
+  .iuran-filter-pill.inactive {
+    background-color: #ffffff;
+    color: #4ca5b0;
+  }
+
+  /* Batasi lebar maksimal list penghuni agar tampilannya rapi dan tidak selebar layar penuh */
+  .desktop-penghuni-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 620px;
+  }
+  
   .desktop-penghuni-card {
     background-color: #4ca5b0;
     border-radius: 20px;

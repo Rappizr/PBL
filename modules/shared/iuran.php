@@ -99,7 +99,7 @@ $daftar_penghuni = [
     <title>SITEMAN - KOS | <?= htmlspecialchars($judul_halaman); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-     <!-- Flatpickr CSS untuk kalender range -->
+    <!-- Flatpickr CSS untuk kalender range -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
@@ -144,7 +144,7 @@ $daftar_penghuni = [
                         </div>
                     </div>
 
-                     <!-- Filter tanggal mobile -->
+                    <!-- Filter tanggal mobile -->
                     <form method="GET" action="" class="filter-range-form">
                         <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
                         <div class="flatpickr-box-wrapper">
@@ -236,19 +236,19 @@ $daftar_penghuni = [
                     </div>
                 </div>
 
-                <div class="iuran-desktop-actions-row">
-                    <a href="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran" class="iuran-btn-pill-action">
+                <!-- Baris Aksi Tombol Tambah, Saldo, & Form Filter -->
+                <div class="iuran-desktop-actions-row" style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; margin-bottom: 20px;">
+                    <a href="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran" class="iuran-btn-pill-action" style="white-space: nowrap;">
                         <i class="fa-solid fa-plus"></i> Tambah Pengeluaran
                     </a>
-                    <div class="iuran-box-pill-saldo">
+                    <div class="iuran-box-pill-saldo" style="white-space: nowrap;">
                         <i class="fa-solid fa-wallet"></i> Rp. <?= $saldo_kas_iuran; ?>
                     </div>
-                </div>
 
-                <!-- Filter tanggal desktop, di samping bubble saldo -->
-                    <form method="GET" action="" class="filter-range-form-desktop">
+                    <!-- Form Filter Tanggal Desktop -->
+                    <form method="GET" action="" class="filter-range-form-desktop" style="margin: 0;">
                         <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
-                        <div class="flatpickr-box-wrapper">
+                        <div class="flatpickr-box-wrapper" style="margin: 0;">
                             <i class="fa-regular fa-calendar date-icon"></i>
                             <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
                                    placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
@@ -262,6 +262,14 @@ $daftar_penghuni = [
                 </div>
 
                 <div class="desktop-kelola-mutasi-list">
+                <?php if (empty($daftar_transaksi)): ?>
+                    <!-- Tampilan pesan kosong jika tidak ada transaksi -->
+                    <div style="padding: 16px 0; color: #555; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-folder-open" style="font-size: 18px;"></i>
+                        <span>Tidak ada transaksi arus kas pada rentang tanggal yang dipilih</span>
+                    </div>
+                <?php else: ?>
+                    <!-- Jika ada transaksi, tampilkan list seperti biasa -->
                     <?php foreach ($daftar_transaksi as $tx): ?>
                         <div class="desktop-mutasi-card">
                             <div class="desktop-mutasi-left">
@@ -276,7 +284,8 @@ $daftar_penghuni = [
                             </span>
                         </div>
                     <?php endforeach; ?>
-                </div>
+                <?php endif; ?>
+            </div>
 
                 <div class="iuran-desktop-filters">
                     <a href="#" class="iuran-filter-pill active">Semua (13)</a>
@@ -356,6 +365,24 @@ $daftar_penghuni = [
             </div>
         </div>
     <?php endif; ?>
+
+     <!-- Script Flatpickr -->
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.querySelectorAll('.flatpickr-range-input').forEach(function(input) {
+            flatpickr(input, {
+                mode: "range",
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d/m/Y",
+                onClose: function(selectedDates, dateStr, instance) {
+                    if (selectedDates.length === 2) {
+                        instance.element.closest('form').submit();
+                    }
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>
