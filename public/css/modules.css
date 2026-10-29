@@ -1646,10 +1646,9 @@
 }
 
 /* ==========================================================================
-   11. DESKTOP VIEW LENGKAP (MIN-WIDTH: 992PX)
+   11. DESKTOP VIEW 
    ========================================================================== */
 @media (min-width: 992px) {
-  /* Menu Utama Grid Penghuni */
   .menu-utama-title {
     font-size: 24px;
     font-weight: 900;
@@ -1707,7 +1706,6 @@
     line-height: 1.25;
   }
 
-  /* Dashboard Penghuni Tagihan */
   .desktop-tagihan-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
@@ -1784,7 +1782,6 @@
     background-color: #f8fafc;
   }
 
-  /* Dashboard Pemilik Header & Menu List */
   .desktop-menu-list-title {
     font-size: 17px;
     font-weight: 800;
@@ -1824,7 +1821,6 @@
     max-width: 456px;
   }
 
-  /* Section Umum Desktop */
   .desktop-section-title {
     font-size: 18px;
     font-weight: 800;
@@ -1839,7 +1835,6 @@
     margin: 4px 0 24px 0;
   }
 
-  /* Ringkasan Statistik Kartu Tosca */
   .desktop-kelola-stats {
     display: grid;
     grid-template-columns: repeat(2, minmax(240px, 280px));
@@ -1871,7 +1866,6 @@
     margin: 0;
   }
 
-  /* Aksi Baris Desktop Iuran */
   .iuran-desktop-actions-row {
     display: flex;
     gap: 12px;
@@ -1899,7 +1893,6 @@
     background-color: #4196a0;
   }
 
-  /* Mutasi & Riwayat Desktop */
   .desktop-kelola-mutasi-list {
     display: flex;
     flex-direction: column;
@@ -1969,7 +1962,6 @@
     white-space: nowrap;
   }
 
-  /* Filter Bulat Desktop */
   .iuran-desktop-filters,
   .desktop-kelola-filter-row {
     display: flex;
@@ -1996,7 +1988,6 @@
     color: #4ca5b0;
   }
 
-  /* List Tagihan Penghuni Desktop */
   .desktop-penghuni-list {
     display: flex;
     flex-direction: column;
@@ -2067,7 +2058,6 @@
     transform: translateY(-1px);
   }
 
-  /* Desktop Chat Penghuni */
   .desktop-chat-search {
     background-color: #ffffff;
     border-radius: 9999px;
@@ -2149,7 +2139,6 @@
     letter-spacing: 0.3px;
   }
 
-  /* Riwayat Desktop */
   .tagihan-desktop-subtitle {
     font-size: 16px;
     font-weight: 600;
@@ -2229,7 +2218,6 @@
     font-weight: 800;
   }
 
-  /* Peraturan Kos Desktop */
   .peraturan-desktop-subtitle {
     font-size: 15px;
     font-weight: 600;
@@ -2287,7 +2275,6 @@
     margin: 0;
   }
 
-  /* Panel Manajemen Kamar Desktop */
   .desktop-kamar-section-label {
     font-size: 15px;
     font-weight: 800;
