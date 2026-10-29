@@ -58,6 +58,33 @@ $daftar_transaksi = [
     ]
 ];
 
+// FILTER RENTANG TANGGAL (format: YYYY-MM-DD to YYYY-MM-DD)
+$date_range = trim($_GET['date_range'] ?? '');
+
+// Abaikan kalau formatnya aneh
+if (!preg_match('/^\d{4}-\d{2}-\d{2}( to \d{4}-\d{2}-\d{2})?$/', $date_range)) {
+    $date_range = '';
+}
+
+$tgl_mulai   = '';
+$tgl_selesai = '';
+
+if ($date_range !== '') {
+    $parts       = explode(' to ', $date_range);
+    $tgl_mulai   = trim($parts[0]);
+    $tgl_selesai = trim($parts[1] ?? $tgl_mulai);
+}
+
+$daftar_transaksi = array_filter($daftar_transaksi, function ($tx) use ($tgl_mulai, $tgl_selesai) {
+    if ($tgl_mulai === '') {
+        return true;
+    }
+    $tgl_tx = substr($tx['tanggal'], 0, 10);
+    return ($tgl_tx >= $tgl_mulai && $tgl_tx <= $tgl_selesai);
+});
+
+$is_filtered = ($date_range !== '');
+
 $daftar_penghuni = [
     ['nama' => 'Ridwan', 'kamar' => 'Kamar 01', 'nominal' => 'Rp. 450,000', 'no_wa' => '628123456789'],
     ['nama' => 'Raffi',  'kamar' => 'Kamar 02', 'nominal' => 'Rp. 450,000', 'no_wa' => '628123456789'],
@@ -71,6 +98,10 @@ $daftar_penghuni = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | <?= htmlspecialchars($judul_halaman); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+     <!-- Flatpickr CSS untuk kalender range -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
@@ -112,6 +143,21 @@ $daftar_penghuni = [
                             Rp. <?= $saldo_kas_iuran; ?>
                         </div>
                     </div>
+
+                     <!-- Filter tanggal mobile -->
+                    <form method="GET" action="" class="filter-range-form">
+                        <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
+                        <div class="flatpickr-box-wrapper">
+                            <i class="fa-regular fa-calendar date-icon"></i>
+                            <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
+                                   placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                            <?php if ($is_filtered): ?>
+                                <a href="/?page=<?= urlencode($current_page); ?>" class="btn-reset-range" title="Reset">
+                                    <i class="fa-solid fa-rotate-left"></i>
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </form>
                 <?php else: ?>
                     <!-- Fitur Khusus Penghuni Biasa -->
                     <div class="kas-total-card" style="margin-bottom: 4px;">
@@ -197,6 +243,22 @@ $daftar_penghuni = [
                     <div class="iuran-box-pill-saldo">
                         <i class="fa-solid fa-wallet"></i> Rp. <?= $saldo_kas_iuran; ?>
                     </div>
+                </div>
+
+                <!-- Filter tanggal desktop, di samping bubble saldo -->
+                    <form method="GET" action="" class="filter-range-form-desktop">
+                        <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
+                        <div class="flatpickr-box-wrapper">
+                            <i class="fa-regular fa-calendar date-icon"></i>
+                            <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
+                                   placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                            <?php if ($is_filtered): ?>
+                                <a href="/?page=<?= urlencode($current_page); ?>" class="btn-reset-range" title="Reset Filter">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </form>
                 </div>
 
                 <div class="desktop-kelola-mutasi-list">
