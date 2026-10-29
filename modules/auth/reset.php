@@ -103,7 +103,7 @@ if ($sukses) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SITEMAN - KOS | Ubah Kata sandi</title>
+    <title>SITEMAN - KOS | Ubah kata sandi</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <!-- Link CSS Modular -->
@@ -114,7 +114,7 @@ if ($sukses) {
 
     <div class="login-card">
         <h1 class="brand-title">SITEMAN - KOS</h1>
-        <p class="brand-subtitle">Ubah Kata sandi</p>
+        <p class="brand-subtitle">Ubah kata sandi</p>
 
         <?php if ($error !== ''): ?>
             <div class="alert-error"><?= htmlspecialchars($error); ?></div>
