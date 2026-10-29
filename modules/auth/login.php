@@ -74,7 +74,7 @@ if (isset($_SESSION['login_error'])) {
                     name="pin" class="input-field" placeholder="PIN (6 Digit)">
             </div>
             <!-- link reset pw -->
-            <a href="/?page=reset" class="link-lupa">Lupa password?</a>
+            <a href="/?page=reset" class="link-lupa">Lupa kata sandi?</a>
 
             <button type="submit" class="btn-submit" id="submitBtn">
                 <span class="btn-text">Login</span>
