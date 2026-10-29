@@ -2048,9 +2048,33 @@
     gap: 4px;
     box-shadow: 4px 5px 0px #c8924b;
     box-sizing: border-box;
+    text-decoration: none;
+    transition: transform 0.15s ease;
+  }
+
+   .desktop-pemilik-stat-car {
+    background-color: #ffffff;
+    border-radius: 20px;
+    padding: 16px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 4px 5px 0px #c8924b;
+    box-sizing: border-box;
+    text-decoration: none;
+    transition: transform 0.15s ease;
+  }
+
+  .desktop-pemilik-stat-card:hover {
+    transform: translateY(-3px);
   }
 
   .desktop-pemilik-stat-card.stat-card-wide {
+    grid-column: 1 / -1;
+    max-width: 456px;
+  }
+
+   .desktop-pemilik-stat-car.stat-card-wide {
     grid-column: 1 / -1;
     max-width: 456px;
   }
