@@ -1311,6 +1311,162 @@
   font-weight: 800;
 }
 
+/* ==========================================================================
+   PROFILE PAGE
+   ========================================================================== */
+.profile-card {
+  background-color: #4ca5b0;
+  border-radius: 22px;
+  padding: 22px 18px;
+  box-shadow: 4px 6px 0px #c8924b;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.profile-avatar-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  box-shadow: 3px 4px 0px rgba(0, 0, 0, 0.12);
+}
+
+.profile-avatar-lg {
+  width: 88px;
+  height: 88px;
+  font-size: 34px;
+}
+
+.profile-role-badge {
+  background-color: #f7d5b8;
+  color: #684323;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 14px;
+  border-radius: 9999px;
+}
+
+.profile-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background-color: rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 10px 14px;
+}
+
+.profile-info-label {
+  color: #e8f6f8;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.profile-info-label i {
+  width: 16px;
+  text-align: center;
+  opacity: 0.9;
+}
+
+.profile-info-value {
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  text-align: right;
+  word-break: break-all;
+}
+
+.profile-muted {
+  opacity: 0.75;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.profile-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  border-radius: 16px;
+  padding: 14px 18px;
+  box-shadow: 3px 4px 0px #c8924b;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 800;
+  transition: transform 0.1s ease, background-color 0.15s ease;
+}
+
+.profile-action-btn:hover {
+  background-color: #4295a0;
+}
+
+.profile-action-btn:active {
+  transform: translateY(1px);
+}
+
+.profile-action-icon {
+  width: 32px;
+  height: 32px;
+  background: #ffffff;
+  color: #4ca5b0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 992px) {
+  .profile-desktop-grid {
+    display: grid;
+    grid-template-columns: minmax(320px, 420px) minmax(240px, 320px);
+    gap: 24px;
+    align-items: start;
+    max-width: 780px;
+  }
+
+  .profile-card-desktop {
+    margin-bottom: 0;
+  }
+
+  .profile-actions-desktop {
+    margin-bottom: 0;
+  }
+}
+
 .badge-status-paid {
   background-color: #cbfae4;
   color: #0b5e39;

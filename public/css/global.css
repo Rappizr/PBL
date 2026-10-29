@@ -579,3 +579,20 @@ body {
     margin: 0 0 28px 0;
   }
 }
+
+.sidebar-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 36px;
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 6px 8px;
+  margin-left: -8px;
+  transition: background-color 0.15s ease;
+}
+
+.sidebar-profile:hover,
+.sidebar-profile.active {
+  background-color: rgba(255, 255, 255, 0.12);
+}

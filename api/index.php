@@ -49,6 +49,9 @@ switch ($page) {
         session_destroy();
         header('Location: /?page=login');
         exit;
+    case 'profile':
+        require_once __DIR__ . '/../modules/shared/profile.php';
+        break;
 
     default:
         http_response_code(404);
