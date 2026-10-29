@@ -4,59 +4,45 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $page = $_GET['page'] ?? 'login';
-$role = $_SESSION['user']['role'] ?? 'penghuni'; // Deteksi role pengguna aktif
+$role = $_SESSION['user']['role'] ?? 'penghuni';
 
 switch ($page) {
     case 'login':
         require_once __DIR__ . '/../modules/auth/login.php';
         break;
 
+    // Pemilik
     case 'dashboard_pemilik':
         require_once __DIR__ . '/../modules/pemilik/dashboard.php';
         break;
-
-    case 'dashboard_penghuni':
-    case 'penghuni-dashboard':
-        require_once __DIR__ . '/../modules/penghuni_Pj/dashboard.php';
-        break;
-
-    case 'verifikasi_pembayaran':
-    case 'verifikasi_bayar':
-        require_once __DIR__ . '/../modules/pemilik/verifikasi_bayar/page.php';
-        break;
-
-    case 'arus_kas':
-        require_once __DIR__ . '/../modules/pemilik/analisis_kas/page.php';
-        break;
-
     case 'manajemen_kamar':
-        require_once __DIR__ . '/../modules/pemilik/manajemen_kamar/page.php'; 
+        require_once __DIR__ . '/../modules/pemilik/manajemen_kamar.php';
         break;
-    
-    case 'kelola_iuran':
-    case 'pj-kelola-iuran':
-        require_once __DIR__ . '/../modules/pemilik/kelola_iuran/page.php';
+    case 'arus_kas':
+        require_once __DIR__ . '/../modules/pemilik/analisis_kas.php';
         break;
-    
-    case 'chat_penghuni':
-        // Arahkan otomatis berdasarkan role yang sedang login
-        if ($role === 'pemilik') {
-            require_once __DIR__ . '/../modules/pemilik/chat_penghuni/page.php';
-        } else {
-            require_once __DIR__ . '/../modules/penghuni_Pj/chat_penghuni/page.php';
-        }
+    case 'verifikasi_pembayaran':
+        require_once __DIR__ . '/../modules/pemilik/verifikasi_bayar.php';
         break;
-        
+
+    // Penghuni
+    case 'dashboard_penghuni':
+        require_once __DIR__ . '/../modules/penghuni/dashboard.php';
+        break;
     case 'tagihan_riwayat':
-        require_once __DIR__ . '/../modules/penghuni_Pj/tagihan_riwayat/page.php';
+        require_once __DIR__ . '/../modules/penghuni/tagihan_riwayat.php';
         break;
-    
     case 'peraturan_kost':
-        require_once __DIR__ . '/../modules/penghuni_Pj/peraturan_kost/page.php';
+        require_once __DIR__ . '/../modules/penghuni/peraturan_kost.php';
         break;
-    
+
+    // Bersama (Shared)
+    case 'chat_penghuni':
+        require_once __DIR__ . '/../modules/shared/chat_penghuni.php';
+        break;
+    case 'kelola_iuran':
     case 'monitoring_iuran':
-        require_once __DIR__ . '/../modules/penghuni_Pj/monitoring_iuran/page.php';
+        require_once __DIR__ . '/../modules/shared/iuran.php';
         break;
 
     case 'logout':

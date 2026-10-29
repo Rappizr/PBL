@@ -1,4 +1,8 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
 $role  = $_GET['role'] ?? 'penghuni';
 $error = '';
 
@@ -23,7 +27,10 @@ if (isset($_SESSION['login_error'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Masuk</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/styles.css">
+    
+    <!-- Link CSS Modular -->
+    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
 <body>
     <div class="login-card">
@@ -77,6 +84,6 @@ if (isset($_SESSION['login_error'])) {
         });
     </script>
 
-<?php require_once __DIR__ . '/../components/footer.php'; ?>
+    <?php require_once __DIR__ . '/../components/footer.php'; ?>
 </body>
 </html>

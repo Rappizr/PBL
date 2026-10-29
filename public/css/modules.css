@@ -1,0 +1,2115 @@
+/* ==========================================================================
+   1. AUTH (LOGIN & PILIH ROLE)
+   ========================================================================== */
+.login-card {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 360px;
+  padding: 35px 28px;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+  text-align: center;
+  margin-top: 60px;
+}
+
+.brand-title {
+  font-family: "Jockey One", sans-serif;
+  font-size: 28px;
+  letter-spacing: 1px;
+  color: #4ca5b0;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.error-title {
+  font-family: "Jockey One", sans-serif;
+  font-size: 28px;
+  letter-spacing: 1px;
+  color: #212529;
+  margin-bottom: 4px;
+}
+
+.brand-subtitle {
+  font-size: 14px;
+  color: #4ca5b0;
+  margin-bottom: 24px;
+}
+
+.input-wrapper,
+.input-group {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.input-icon,
+.input-wrapper i,
+.input-group i {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6c757d;
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px 14px 12px 42px;
+  border: 1px solid #d1d5db;
+  background-color: #ededed;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #333333;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-field:focus {
+  border-color: #2b303a;
+  background-color: #ffffff;
+}
+
+.btn-submit {
+  width: 100%;
+  padding: 13px;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 15px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 8px;
+  margin-bottom: 24px;
+  transition: background-color 0.2s;
+}
+
+.btn-submit:hover {
+  background-color: #3b8892;
+}
+
+.role-section-text {
+  font-size: 14px;
+  color: #4ca5b0;
+  text-align: left;
+  margin-bottom: 12px;
+}
+
+.role-section-text strong {
+  font-weight: 700;
+}
+
+.role-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-role {
+  width: 100%;
+  padding: 12px;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  font-weight: 700;
+  font-size: 14px;
+  border: 1.5px solid #4ca5b0;
+  border-radius: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+  transition: all 0.2s ease;
+}
+
+.btn-role:hover {
+  background-color: #f0fdfa;
+}
+
+.btn-role.active,
+.btn-role.btn-role-active {
+  background-color: #4ca5b0;
+  color: #ffffff;
+  border-color: #4ca5b0;
+}
+
+.alert-error {
+  background-color: #f8d7da;
+  color: #842029;
+  border: 1px solid #f5c2c7;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+/* ==========================================================================
+   2. DASHBOARD MENU GRID (MOBILE & DESKTOP)
+   ========================================================================== */
+.menu-card-container {
+  background-color: #4ca5b0;
+  border-radius: 24px;
+  padding: 22px 18px 24px 18px;
+  margin-top: 24px;
+  box-shadow: 4px 4px 0px #41260070;
+}
+
+.menu-heading {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+@media (min-width: 600px) and (max-width: 991px) {
+  .menu-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 16px !important;
+  }
+}
+
+.menu-item-box {
+  background-color: #e8ecef;
+  border-radius: 20px;
+  padding: 18px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  min-height: 115px;
+  box-shadow: 4px 4px 0px #367d87;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.menu-item-box:hover {
+  transform: translateY(-2px);
+  background-color: #ffffff;
+}
+
+.menu-item-box:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 3px 0px #367d87;
+}
+
+.menu-icon-wrapper {
+  font-size: 34px;
+  color: #4ca5b0;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.menu-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: #4ca5b0;
+  text-align: center;
+  line-height: 1.25;
+}
+
+.badge-notif {
+  margin-top: 6px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.penghuni-summary-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.tagihan-dark-card {
+  background-color: #4ca5b0;
+  border-radius: 22px;
+  padding: 16px 18px;
+  box-shadow: 5px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tagihan-pill-label {
+  display: inline-block;
+  align-self: flex-start;
+  background-color: #ffffff;
+  color: #1a1e24;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.tagihan-meta-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.meta-row {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: #ffffff;
+}
+
+.meta-label {
+  font-weight: 700;
+  min-width: 135px;
+}
+
+.meta-colon {
+  font-weight: 700;
+  margin-right: 8px;
+}
+
+.meta-value {
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+}
+
+.status-badge-white {
+  background-color: #ffffff;
+  color: #1a1e24;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.status-badge-green {
+  background-color: #83f0bd;
+  color: #0b5e39;
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+.meta-value.date-text {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+@media (min-width: 992px) {
+  .menu-utama-title {
+    font-size: 24px;
+    font-weight: 900;
+    color: #164f58;
+    margin: 0 0 18px 0;
+  }
+
+  .desktop-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 150px);
+    gap: 20px;
+  }
+
+  .desktop-menu-card {
+    background-color: #ffffff;
+    border-radius: 20px;
+    height: 150px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-decoration: none;
+    box-shadow: 4px 6px 0px #c8924b;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+    box-sizing: border-box;
+  }
+
+  .desktop-menu-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 4px 9px 0px #c8924b;
+  }
+
+  .desktop-menu-card:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 3px 0px #c8924b;
+  }
+
+  .desktop-menu-icon {
+    font-size: 34px;
+    color: #4ca5b0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .desktop-menu-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: #1a4d55;
+    text-align: center;
+    line-height: 1.25;
+  }
+
+  .desktop-tagihan-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 22px;
+    margin-bottom: 34px;
+    max-width: 900px;
+  }
+
+  .desktop-tagihan-card {
+    background-color: #4ca5b0;
+    border-radius: 20px;
+    padding: 18px 22px;
+    box-shadow: 4px 6px 0px #c8924b;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .tagihan-badge-white {
+    background-color: #ffffff;
+    color: #111e22;
+    font-size: 11.5px;
+    font-weight: 800;
+    padding: 4px 12px;
+    border-radius: 9999px;
+    align-self: flex-start;
+  }
+
+  .tagihan-details {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .tagihan-detail-row {
+    display: flex;
+    align-items: center;
+  }
+
+  .tagihan-detail-row .lbl {
+    min-width: 140px;
+  }
+
+  .tagihan-detail-row .colon {
+    margin-right: 8px;
+  }
+
+  .tagihan-pill-warning {
+    background-color: #ffffd5;
+    color: #4c4929;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .btn-upload-bukti {
+    background-color: #ffffff;
+    color: #4ca5b0;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 8px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    align-self: flex-start;
+    box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.15);
+    transition: transform 0.1s ease;
+  }
+
+  .btn-upload-bukti:hover {
+    background-color: #f8fafc;
+  }
+}
+
+/* ==========================================================================
+   3. MANAJEMEN KAMAR (MOBILE & DESKTOP)
+   ========================================================================== */
+.kamar-title-card {
+  background-color: #4ca5b0;
+  border-radius: 26px;
+  padding: 20px 20px 22px;
+  margin-bottom: 16px;
+  box-shadow: 5px 6px 0px #c8924b;
+}
+
+.kamar-title-card h2 {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 14px;
+}
+
+.kamar-actions {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.kamar-actions .btn-add-outline {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  border: none;
+  border-radius: 14px;
+  padding: 10px 8px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 4px 5px 0px #c8924b;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+
+.btn-add-outline .plus-icon {
+  width: 18px;
+  height: 18px;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.kamar-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.kamar-card {
+  background-color: #4ca5b0;
+  border-radius: 22px;
+  padding: 18px 16px;
+  position: relative;
+  min-height: 105px;
+  box-shadow: 5px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.kamar-nomor {
+  color: #ffffff;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.kamar-nama {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.badge-status {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 9px;
+  border-radius: 6px;
+}
+
+.badge-lunas {
+  background-color: #93f5c7;
+  color: #0d5635;
+}
+
+.badge-belum {
+  background-color: #ffeed3;
+  color: #7c4103;
+}
+
+.badge-kosong {
+  background-color: transparent;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   4. ANALISIS KAS & KELOLA IURAN (MOBILE & DESKTOP)
+   ========================================================================== */
+.kas-container,
+.kelola-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.kas-banner-card {
+  background-color: #4ca5b0;
+  border-radius: 26px;
+  padding: 18px 20px;
+  box-shadow: 4px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.kas-banner-title {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.kas-total-card {
+  background-color: #4ca5b0;
+  border-radius: 24px;
+  padding: 16px 20px;
+  box-shadow: 4px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kas-total-label {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.kas-total-value {
+  color: #ffffff;
+  font-size: 23px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.kas-transaksi-list,
+.kelola-transaksi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.kas-transaksi-card,
+.kelola-transaksi-card {
+  background-color: #4ca5b0;
+  border-radius: 20px;
+  padding: 12px 14px;
+  box-shadow: 4px 5px 0px #c8924b;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.kas-transaksi-left,
+.kelola-tx-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.kas-icon-box,
+.kelola-tx-icon {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.kas-transaksi-info,
+.kelola-tx-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kas-item-title,
+.kelola-tx-info h4 {
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 800;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kas-item-date,
+.kelola-tx-info span {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.kas-nominal-pill,
+.kelola-nominal-green {
+  background-color: #8ce3b9;
+  color: #116843;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.kelola-nominal-red {
+  background-color: #ffeed3;
+  color: #b91c1c;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+.kas-filter-row,
+.kelola-filter-row {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 2px 0;
+  overflow-x: auto;
+}
+
+.filter-pill {
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 7px 16px;
+  border-radius: 9999px;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.filter-pill.active {
+  background-color: #4ca5b0;
+  color: #ffffff;
+}
+
+.filter-pill.inactive {
+  background-color: #ffffff;
+  color: #4ca5b0;
+}
+
+.kas-penghuni-list,
+.kelola-penghuni-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.kas-penghuni-card,
+.kelola-penghuni-card {
+  background-color: #4ca5b0;
+  border-radius: 22px;
+  padding: 14px 16px;
+  box-shadow: 4px 5px 0px #c8924b;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.kas-penghuni-info,
+.kelola-penghuni-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.kas-penghuni-top,
+.kelola-penghuni-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kas-penghuni-name,
+.kelola-penghuni-name {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.kas-penghuni-nominal,
+.kelola-penghuni-nominal {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.kelola-stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.kelola-stat-card {
+  background-color: #4ca5b0;
+  border-radius: 18px;
+  padding: 14px;
+  box-shadow: 4px 5px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.kelola-stat-label {
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.kelola-stat-value {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.kelola-action-row {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-kelola-action,
+.box-kelola-saldo {
+  flex: 1;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow: 3px 4px 0px #c8924b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.icon-kelola-white {
+  width: 22px;
+  height: 22px;
+  background: #ffffff;
+  color: #4ca5b0;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+/* ==========================================================================
+   5. DESKTOP VIEW LENGKAP: KELOLA, ANALISIS, CHAT & KAMAR
+   ========================================================================== */
+@media (min-width: 992px) {
+  .desktop-section-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a4d55;
+    margin: 18px 0 14px 0;
+  }
+
+  .kelola-desktop-subtitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2b545b;
+    margin: 4px 0 24px 0;
+  }
+
+  /* Dua Tombol Aksi Desktop (Tambah Kamar, Tambah Pengeluaran, Saldo) */
+  .desktop-kelola-actions {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    max-width: 620px;
+  }
+
+  .desktop-btn-action,
+  .desktop-box-saldo {
+    flex: 1;
+    background-color: #4ca5b0;
+    color: #ffffff;
+    border-radius: 16px;
+    padding: 10px 18px;
+    box-shadow: 4px 5px 0px #c8924b;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    font-weight: 800;
+    text-decoration: none;
+    box-sizing: border-box;
+    transition: transform 0.1s ease;
+  }
+
+  .desktop-btn-action:hover {
+    background-color: #4295a0;
+  }
+
+  .desktop-btn-action:active {
+    transform: translateY(1px);
+  }
+
+  /* Ringkasan Kartu Desktop */
+  .desktop-kelola-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(240px, 280px));
+    gap: 20px;
+    margin-bottom: 22px;
+  }
+
+  .desktop-kelola-stat-card {
+    background-color: #4ca5b0;
+    border-radius: 20px;
+    padding: 16px 20px;
+    box-shadow: 4px 6px 0px #c8924b;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .desktop-kelola-stat-label {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .desktop-kelola-stat-val {
+    color: #ffffff;
+    font-size: 26px;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  /* Mutasi & Riwayat Arus Kas Desktop */
+  .desktop-kelola-mutasi-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 620px;
+    margin-bottom: 28px;
+  }
+
+  .desktop-mutasi-card {
+    background-color: #4ca5b0;
+    border-radius: 20px;
+    padding: 14px 18px;
+    box-shadow: 4px 5px 0px #c8924b;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .desktop-mutasi-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .desktop-mutasi-icon {
+    width: 32px;
+    height: 32px;
+    background-color: #ffffff;
+    color: #4ca5b0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .desktop-mutasi-info h4 {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 800;
+    margin: 0 0 2px 0;
+  }
+
+  .desktop-mutasi-info span {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .desktop-mutasi-badge {
+    background-color: #ffeed3;
+    color: #b91c1c;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 6px 14px;
+    border-radius: 12px;
+  }
+
+  .desktop-kelola-filter-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .desktop-penghuni-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 620px;
+  }
+
+  .desktop-penghuni-card {
+    background-color: #4ca5b0;
+    border-radius: 20px;
+    padding: 14px 18px;
+    box-shadow: 4px 5px 0px #c8924b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .desktop-penghuni-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .desktop-penghuni-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .desktop-penghuni-top h4 {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .desktop-penghuni-nominal {
+    color: #ffffff;
+    font-size: 12.5px;
+    font-weight: 700;
+  }
+
+  /* Desktop Chat Penghuni */
+  .desktop-chat-search {
+    background-color: #ffffff;
+    border-radius: 9999px;
+    padding: 8px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 2px 3px 0px #c8924b;
+    margin-bottom: 24px;
+    width: fit-content;
+    min-width: 260px;
+  }
+
+  .desktop-chat-search .search-icon {
+    color: #1a4d55;
+    font-size: 14px;
+  }
+
+  .desktop-chat-search input {
+    border: none;
+    outline: none;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a4d55;
+    background: transparent;
+    width: 100%;
+  }
+
+  .desktop-chat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 620px;
+    width: 100%;
+  }
+
+  .desktop-chat-card {
+    background-color: #4ca5b0;
+    border-radius: 18px;
+    padding: 14px 22px;
+    box-shadow: 4px 5px 0px #c8924b;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+  }
+
+  .desktop-chat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 4px 7px 0px #c8924b;
+  }
+
+  .desktop-chat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .desktop-chat-header-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .desktop-chat-nama {
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: 800;
+  }
+
+  .desktop-badge-kamar {
+    background-color: #ffffff;
+    color: #4ca5b0;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 10px;
+    border-radius: 9999px;
+  }
+
+  .desktop-chat-telp {
+    color: #ffffff;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+}
+
+/* ==========================================================================
+   6. VERIFIKASI PEMBAYARAN (MOBILE & DESKTOP)
+   ========================================================================== */
+.verifikasi-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.verifikasi-container .banner-card {
+  background-color: #4ca5b0;
+  border-radius: 26px;
+  padding: 20px 20px 22px;
+  box-shadow: 5px 6px 0px #c8924b;
+}
+
+.verifikasi-container .banner-title {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+.verifikasi-container .btn-kembali {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+/* Pembungkus daftar kartu dengan gap flex yang aktif */
+.verifikasi-container .card-list,
+.card-list {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  width: 100% !important;
+  max-width: 650px;
+}
+
+.verifikasi-card {
+  background-color: #4ca5b0;
+  border-radius: 22px;
+  padding: 14px;
+  box-shadow: 5px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+  margin-bottom: 0 !important;
+}
+
+.verifikasi-card-body {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.bukti-wrapper {
+  position: relative !important;
+  width: 86px !important;
+  height: 86px !important;
+  flex-shrink: 0 !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+.bukti-img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
+.btn-zoom {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #4ca5b0 !important;
+  text-decoration: none !important;
+  font-size: 13px !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
+  z-index: 10 !important;
+}
+
+.detail-wrapper {
+  flex: 1 !important;
+  min-height: 86px !important;
+  background-color: #ffffff !important;
+  border-radius: 18px !important;
+  padding: 10px 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  gap: 3px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.user-info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nama-penghuni {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a1e24;
+}
+
+.badge-kamar {
+  background-color: #f7d498;
+  color: #5a3804;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.nominal-text {
+  font-size: 16px;
+  font-weight: 900;
+  color: #1a1e24;
+}
+
+.metode-tanggal {
+  font-size: 11px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.verifikasi-card-footer {
+  display: flex !important;
+  gap: 10px !important;
+  width: 100% !important;
+  align-items: center !important;
+}
+
+.btn-action {
+  flex: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 8px 6px !important;
+  border-radius: 12px !important;
+  font-size: 12.5px !important;
+  font-weight: 800 !important;
+  border: none !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.18) !important;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease !important;
+}
+
+.btn-action:active {
+  transform: translate(1px, 1px) !important;
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.18) !important;
+}
+
+.btn-chat {
+  background-color: #fdf5ea !important;
+  color: #2b1f09 !important;
+}
+
+.btn-decline {
+  background-color: #ffd6d9 !important;
+  color: #8c0c16 !important;
+}
+
+.btn-approve {
+  background-color: #cbfae4 !important;
+  color: #0b5e39 !important;
+}
+
+/* ==========================================================================
+   7. CHAT PENGHUNI (MOBILE)
+   ========================================================================== */
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.search-wrapper i {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #3b7b84;
+}
+
+.search-input {
+  width: 100%;
+  background-color: #ffffff;
+  border: none;
+  border-radius: 9999px;
+  padding: 12px 18px 12px 42px;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+}
+
+.chat-card {
+  background-color: #4ca5b0;
+  border-radius: 20px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 5px 6px 0px #c8924b;
+}
+
+.chat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.chat-header-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-nama {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.chat-wa {
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   8. TAGIHAN & RIWAYAT & POPUP MODAL
+   ========================================================================== */
+.subpage-banner-card {
+  background-color: #4ca5b0;
+  border-radius: 24px;
+  padding: 16px 20px;
+  box-shadow: 4px 6px 0px #c8924b;
+  margin-bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.subpage-banner-title {
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.section-title-white {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0 0 12px 2px;
+  text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.3);
+}
+
+.section-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.item-tagihan-card {
+  background-color: #4ca5b0;
+  border-radius: 22px;
+  padding: 16px 18px;
+  box-shadow: 4px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.item-tagihan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.item-tagihan-name {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.badge-status-krem {
+  background-color: #f7d5b8;
+  color: #684323;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
+}
+
+.badge-status-lunas {
+  background-color: #8ce3b9;
+  color: #116843;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
+}
+
+.riwayat-status-actions {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.btn-invoice-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 5px !important;
+  background-color: #ffffff !important;
+  color: #1a4d55 !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  padding: 3px 12px !important;
+  border-radius: 9999px !important;
+  text-decoration: none !important;
+  box-shadow: 2px 2px 0px rgba(0, 0, 0, 0.15) !important;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease !important;
+}
+
+.btn-invoice-pill i {
+  font-size: 11px !important;
+  color: #4ca5b0 !important;
+}
+
+.item-tagihan-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 12.5px;
+  color: #ffffff;
+}
+
+.item-tagihan-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item-tagihan-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  font-weight: 700;
+}
+
+.nominal-highlight {
+  font-size: 14.5px;
+  font-weight: 800;
+}
+
+.btn-card-action {
+  display: block;
+  width: 100%;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  text-align: center;
+  font-size: 14.5px;
+  font-weight: 800;
+  padding: 9px 0;
+  border-radius: 9999px;
+  text-decoration: none;
+  box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s ease;
+}
+
+.btn-card-action:active {
+  transform: translateY(1px);
+}
+
+/* Riwayat Desktop */
+@media (min-width: 992px) {
+  .tagihan-desktop-subtitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #2b545b;
+    margin: 4px 0 24px 0;
+  }
+
+  .tagihan-section-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1a4d55;
+    margin: 0 0 14px 0;
+  }
+
+  .desktop-tagihan-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(320px, 380px));
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+
+  .desktop-riwayat-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 784px;
+  }
+
+  .desktop-riwayat-card {
+    background-color: #4ca5b0;
+    border-radius: 20px;
+    padding: 16px 20px;
+    box-shadow: 4px 5px 0px #c8924b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .desktop-riwayat-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .desktop-riwayat-title {
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .desktop-riwayat-date {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .desktop-riwayat-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .badge-lunas-pill {
+    background-color: #8ce3b9;
+    color: #0d5635;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 12px;
+    border-radius: 9999px;
+  }
+
+  .desktop-riwayat-nominal {
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 800;
+  }
+}
+
+/* ==========================================================================
+   POPUP MODAL OVERLAY (HANYA MUNCUL JIKA .active)
+   ========================================================================== */
+.modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background-color: rgba(0, 0, 0, 0.6) !important;
+  display: none !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 99999 !important;
+  padding: 16px !important;
+}
+
+.modal-overlay.active {
+  display: flex !important;
+}
+
+/* Modal Bayar Card */
+.modal-bayar-card {
+  background-color: #f3ca81 !important;
+  width: 100% !important;
+  max-width: 360px !important;
+  border-radius: 24px !important;
+  padding: 24px 20px !important;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  box-sizing: border-box !important;
+}
+
+.modal-bayar-title {
+  color: #1a4d55 !important;
+  font-size: 19px !important;
+  font-weight: 800 !important;
+  margin: 0 !important;
+}
+
+.modal-ringkasan-box {
+  background-color: #ffffff !important;
+  border-radius: 16px !important;
+  padding: 12px 16px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+.modal-ringkasan-top {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+}
+
+.modal-ringkasan-jenis,
+.modal-ringkasan-nominal {
+  color: #1a4d55 !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  margin: 0 !important;
+}
+
+.modal-ringkasan-batas {
+  color: #4b5563 !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+}
+
+.modal-rekening-wrapper,
+.modal-upload-wrapper {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+
+.modal-rekening-label {
+  color: #374151 !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+.modal-rekening-val {
+  background-color: #ffffff !important;
+  border-radius: 9999px !important;
+  padding: 10px 16px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08) !important;
+}
+
+.modal-upload-box {
+  background-color: #ffffff !important;
+  border-radius: 16px !important;
+  border: 2px dashed #4ca5b0 !important;
+  height: 120px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  cursor: pointer !important;
+  position: relative !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08) !important;
+}
+
+.modal-upload-box input[type="file"] {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+}
+
+.modal-upload-text {
+  color: #4ca5b0 !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+}
+
+.modal-bayar-actions {
+  display: flex !important;
+  gap: 12px !important;
+  margin-top: 6px !important;
+  width: 100% !important;
+}
+
+.btn-bayar-batal {
+  flex: 1 !important;
+  background-color: #ffffff !important;
+  color: #3b7b84 !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  padding: 10px 0 !important;
+  border-radius: 9999px !important;
+  text-decoration: none !important;
+  text-align: center !important;
+  box-shadow: 3px 4px 0px #c8924b !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.btn-bayar-kirim {
+  flex: 1 !important;
+  background-color: #4ca5b0 !important;
+  color: #ffffff !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  padding: 10px 0 !important;
+  border-radius: 9999px !important;
+  border: none !important;
+  cursor: pointer !important;
+  text-align: center !important;
+  box-shadow: 3px 4px 0px #c8924b !important;
+}
+
+/* Modal Invoice */
+.invoice-wrapper {
+  width: 100%;
+  max-width: 680px;
+  max-height: 90vh;
+  overflow-y: auto;
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 32px 28px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  color: #1e293b;
+}
+
+.invoice-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 2px dashed #cbd5e1;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.invoice-brand-title {
+  font-family: "Jockey One", sans-serif;
+  font-size: 28px;
+  color: #4ca5b0;
+  margin: 0 0 4px 0;
+  text-transform: uppercase;
+}
+
+.invoice-brand-sub {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  margin: 0;
+}
+
+.invoice-tag-box {
+  text-align: right;
+}
+
+.invoice-main-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #1a4d55;
+  margin: 0 0 4px 0;
+}
+
+.invoice-number {
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+  margin: 0;
+}
+
+.badge-invoice-status {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.badge-status-paid {
+  background-color: #cbfae4;
+  color: #0b5e39;
+}
+
+.invoice-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+  font-size: 13px;
+}
+
+.meta-col-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #4ca5b0;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.meta-text-strong {
+  font-size: 15px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.meta-text-muted {
+  font-size: 12px;
+  color: #64748b;
+  margin: 2px 0;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.invoice-table th {
+  background-color: #f1f5f9;
+  color: #1a4d55;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 10px 14px;
+  text-align: left;
+}
+
+.invoice-table th:last-child,
+.invoice-table td:last-child {
+  text-align: right;
+}
+
+.invoice-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 13px;
+}
+
+.item-name {
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 2px 0;
+}
+
+.item-desc {
+  font-size: 11px;
+  color: #64748b;
+  margin: 0;
+}
+
+.invoice-summary-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 24px;
+}
+
+.invoice-summary-box {
+  min-width: 240px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  padding: 12px 18px;
+  border-radius: 14px;
+  box-shadow: 3px 4px 0px #c8924b;
+}
+
+.summary-total-label {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.summary-total-value {
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.invoice-notes-card {
+  background-color: #f8fafc;
+  border-radius: 14px;
+  padding: 14px 18px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 20px;
+}
+
+.invoice-notes-card h4 {
+  font-size: 12px;
+  font-weight: 800;
+  color: #1a4d55;
+  margin: 0 0 4px 0;
+}
+
+.invoice-notes-card p {
+  font-size: 11.5px;
+  color: #475569;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.invoice-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.btn-invoice-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ffffff;
+  color: #4ca5b0;
+  border: 2px solid #4ca5b0;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.btn-invoice-print {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  border: none;
+  padding: 9px 20px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 2px 3px 0px #c8924b;
+}
+
+/* ==========================================================================
+   9. PERATURAN KOS
+   ========================================================================== */
+.peraturan-card-wrapper {
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 24px 20px;
+  box-shadow: 5px 6px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.peraturan-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.peraturan-icon-col {
+  flex-shrink: 0;
+  width: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #2b303a;
+  font-size: 24px;
+}
+
+.peraturan-title {
+  color: #11141a;
+  font-size: 14.5px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.peraturan-desc {
+  color: #555b66;
+  font-size: 12.5px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+@media (min-width: 992px) {
+  .peraturan-desktop-subtitle {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2e626a;
+    margin-top: 4px;
+    margin-bottom: 28px !important;
+  }
+
+  .desktop-rules-container {
+    background-color: #ffffff;
+    border-radius: 20px;
+    padding: 12px 32px;
+    box-shadow: 4px 6px 0px #c8924b;
+    max-width: 850px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .rule-item {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 24px 0;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .rule-item:last-child {
+    border-bottom: none;
+  }
+
+  .rule-icon-box {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background-color: #4ca5b0;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+  }
+
+  .rule-title {
+    font-size: 17px;
+    font-weight: 800;
+    color: #1a4d55;
+    margin: 0;
+  }
+
+  .rule-desc {
+    font-size: 13.5px;
+    color: #4a5568;
+    line-height: 1.5;
+    margin: 0;
+  }
+}
