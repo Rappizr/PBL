@@ -596,3 +596,36 @@ body {
 .sidebar-profile.active {
   background-color: rgba(255, 255, 255, 0.12);
 }
+
+/* iuran filter */
+/* Untuk baris header riwayat pada halaman Monitoring Iuran agar sejajar dengan card di atasnya */
+.iuran-desktop-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    width: 100%;
+    max-width: 520px; /* Disesuaikan dengan lebar card Saldo Bersih di atasnya */
+}
+
+/* Untuk menyamakan lebar empty state card agar lurus dengan card atasnya */
+.empty-state-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 520px; /* Disamakan juga agar ujung kanannya lurus */
+    color: #555555;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.empty-state-card .empty-icon {
+    font-size: 20px;
+    color: #4ca5b0;
+}

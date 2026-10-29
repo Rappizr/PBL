@@ -143,21 +143,6 @@ $daftar_penghuni = [
                             Rp. <?= $saldo_kas_iuran; ?>
                         </div>
                     </div>
-
-                    <!-- Filter tanggal mobile -->
-                    <form method="GET" action="" class="filter-range-form">
-                        <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
-                        <div class="flatpickr-box-wrapper">
-                            <i class="fa-regular fa-calendar date-icon"></i>
-                            <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
-                                   placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
-                            <?php if ($is_filtered): ?>
-                                <a href="/?page=<?= urlencode($current_page); ?>" class="btn-reset-range" title="Reset">
-                                    <i class="fa-solid fa-rotate-left"></i>
-                                </a>
-                            <?php endif; ?>
-                        </div>
-                    </form>
                 <?php else: ?>
                     <!-- Fitur Khusus Penghuni Biasa -->
                     <div class="kas-total-card" style="margin-bottom: 4px;">
@@ -167,22 +152,44 @@ $daftar_penghuni = [
                     <h3 class="section-title-white" style="font-size: 15px; margin: 10px 0 4px 2px;">Riwayat Transaksi Iuran</h3>
                 <?php endif; ?>
 
+                <!-- Filter tanggal (tampil untuk semua role) -->
+                <form method="GET" action="" class="filter-range-form">
+                    <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
+                    <div class="flatpickr-box-wrapper">
+                        <i class="fa-regular fa-calendar date-icon"></i>
+                        <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
+                               placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                        <?php if ($is_filtered): ?>
+                            <a href="/?page=<?= urlencode($current_page); ?>" class="btn-reset-range" title="Reset">
+                                <i class="fa-solid fa-rotate-left"></i>
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </form>
+
                 <!-- Riwayat Transaksi (Dilihat oleh Semua Role) -->
                 <div class="kelola-transaksi-list">
-                    <?php foreach ($daftar_transaksi as $tx): ?>
-                        <div class="kelola-transaksi-card">
-                            <div class="kelola-tx-left">
-                                <div class="kelola-tx-icon"><i class="<?= $tx['icon']; ?>"></i></div>
-                                <div class="kelola-tx-info">
-                                    <h4 class="kelola-tx-title"><?= htmlspecialchars($tx['judul']); ?></h4>
-                                    <span class="kelola-tx-date"><?= htmlspecialchars($tx['tanggal']); ?></span>
-                                </div>
-                            </div>
-                            <span class="<?= $tx['tipe'] === 'keluar' ? 'kelola-nominal-red' : 'kelola-nominal-green'; ?>">
-                                <?= htmlspecialchars($tx['nominal']); ?>
-                            </span>
+                    <?php if (empty($daftar_transaksi)): ?>
+                        <div class="empty-state-card">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span>Tidak ada riwayat transaksi pada rentang tanggal yang dipilih</span>
                         </div>
-                    <?php endforeach; ?>
+                    <?php else: ?>
+                        <?php foreach ($daftar_transaksi as $tx): ?>
+                            <div class="kelola-transaksi-card">
+                                <div class="kelola-tx-left">
+                                    <div class="kelola-tx-icon"><i class="<?= $tx['icon']; ?>"></i></div>
+                                    <div class="kelola-tx-info">
+                                        <h4 class="kelola-tx-title"><?= htmlspecialchars($tx['judul']); ?></h4>
+                                        <span class="kelola-tx-date"><?= htmlspecialchars($tx['tanggal']); ?></span>
+                                    </div>
+                                </div>
+                                <span class="<?= $tx['tipe'] === 'keluar' ? 'kelola-nominal-red' : 'kelola-nominal-green'; ?>">
+                                    <?= htmlspecialchars($tx['nominal']); ?>
+                                </span>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
 
                 <?php if ($can_manage): ?>
@@ -262,30 +269,28 @@ $daftar_penghuni = [
                 </div>
 
                 <div class="desktop-kelola-mutasi-list">
-                <?php if (empty($daftar_transaksi)): ?>
-                    <!-- Tampilan pesan kosong jika tidak ada transaksi -->
-                    <div style="padding: 16px 0; color: #555; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-folder-open" style="font-size: 18px;"></i>
-                        <span>Tidak ada transaksi arus kas pada rentang tanggal yang dipilih</span>
-                    </div>
-                <?php else: ?>
-                    <!-- Jika ada transaksi, tampilkan list seperti biasa -->
-                    <?php foreach ($daftar_transaksi as $tx): ?>
-                        <div class="desktop-mutasi-card">
-                            <div class="desktop-mutasi-left">
-                                <div class="desktop-mutasi-icon"><i class="<?= $tx['icon']; ?>"></i></div>
-                                <div class="desktop-mutasi-info">
-                                    <h4><?= htmlspecialchars($tx['judul']); ?></h4>
-                                    <span><?= htmlspecialchars($tx['tanggal']); ?></span>
-                                </div>
-                            </div>
-                            <span class="<?= $tx['tipe'] === 'keluar' ? 'desktop-mutasi-badge-red' : 'desktop-mutasi-badge-green'; ?>">
-                                <?= htmlspecialchars($tx['nominal']); ?>
-                            </span>
+                    <?php if (empty($daftar_transaksi)): ?>
+                        <div class="empty-state-card">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span>Tidak ada riwayat transaksi pada rentang tanggal yang dipilih</span>
                         </div>
-                    <?php endforeach; ?>
-                <?php endif; ?>
-            </div>
+                    <?php else: ?>
+                        <?php foreach ($daftar_transaksi as $tx): ?>
+                            <div class="desktop-mutasi-card">
+                                <div class="desktop-mutasi-left">
+                                    <div class="desktop-mutasi-icon"><i class="<?= $tx['icon']; ?>"></i></div>
+                                    <div class="desktop-mutasi-info">
+                                        <h4><?= htmlspecialchars($tx['judul']); ?></h4>
+                                        <span><?= htmlspecialchars($tx['tanggal']); ?></span>
+                                    </div>
+                                </div>
+                                <span class="<?= $tx['tipe'] === 'keluar' ? 'desktop-mutasi-badge-red' : 'desktop-mutasi-badge-green'; ?>">
+                                    <?= htmlspecialchars($tx['nominal']); ?>
+                                </span>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
 
                 <div class="iuran-desktop-filters">
                     <a href="#" class="iuran-filter-pill active">Semua (13)</a>
@@ -312,28 +317,52 @@ $daftar_penghuni = [
 
             <?php else: ?>
                 <!-- Desktop View Penghuni Biasa -->
-                <div class="desktop-kelola-stat-card" style="max-width: 250px; margin-bottom: 22px;">
+                <div class="desktop-kelola-stat-card" style="max-width: 280px; margin-bottom: 24px;">
                     <span class="desktop-kelola-stat-label">Saldo Bersih</span>
                     <span class="desktop-kelola-stat-val">Rp. <?= $saldo_kas_iuran; ?></span>
                 </div>
 
-                <h3 class="desktop-section-title" style="margin-bottom: 14px;">Riwayat Transaksi Iuran</h3>
+                <!-- Baris Judul & Filter Tanggal Sejajar Rapi di Bawah Card Saldo -->
+                <div class="iuran-header-row">
+                    <h3 class="desktop-section-title" style="margin: 0;">Riwayat Transaksi Iuran</h3>
+
+                    <form method="GET" action="" class="filter-range-form-desktop" style="margin: 0;">
+                        <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
+                        <div class="flatpickr-box-wrapper" style="margin: 0;">
+                            <i class="fa-regular fa-calendar date-icon"></i>
+                            <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
+                                   placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                            <?php if ($is_filtered): ?>
+                                <a href="/?page=<?= urlencode($current_page); ?>" class="btn-reset-range" title="Reset Filter">
+                                    <i class="fa-solid fa-rotate-left"></i> Reset
+                                </a>
+                            <?php endif; ?>
+                        </div>
+                    </form>
+                </div>
 
                 <div class="desktop-kelola-mutasi-list">
-                    <?php foreach ($daftar_transaksi as $tx): ?>
-                        <div class="desktop-mutasi-card">
-                            <div class="desktop-mutasi-left">
-                                <div class="desktop-mutasi-icon"><i class="<?= $tx['icon']; ?>"></i></div>
-                                <div class="desktop-mutasi-info">
-                                    <h4><?= htmlspecialchars($tx['judul']); ?></h4>
-                                    <span><?= htmlspecialchars($tx['tanggal']); ?></span>
-                                </div>
-                            </div>
-                            <span class="<?= $tx['tipe'] === 'keluar' ? 'desktop-mutasi-badge-red' : 'desktop-mutasi-badge-green'; ?>">
-                                <?= htmlspecialchars($tx['nominal']); ?>
-                            </span>
+                    <?php if (empty($daftar_transaksi)): ?>
+                        <div class="empty-state-card">
+                            <i class="fa-solid fa-folder-open"></i>
+                            <span>Tidak ada riwayat transaksi pada rentang tanggal yang dipilih</span>
                         </div>
-                    <?php endforeach; ?>
+                    <?php else: ?>
+                        <?php foreach ($daftar_transaksi as $tx): ?>
+                            <div class="desktop-mutasi-card">
+                                <div class="desktop-mutasi-left">
+                                    <div class="desktop-mutasi-icon"><i class="<?= $tx['icon']; ?>"></i></div>
+                                    <div class="desktop-mutasi-info">
+                                        <h4><?= htmlspecialchars($tx['judul']); ?></h4>
+                                        <span><?= htmlspecialchars($tx['tanggal']); ?></span>
+                                    </div>
+                                </div>
+                                <span class="<?= $tx['tipe'] === 'keluar' ? 'desktop-mutasi-badge-red' : 'desktop-mutasi-badge-green'; ?>">
+                                    <?= htmlspecialchars($tx['nominal']); ?>
+                                </span>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             <?php endif; ?>
         </main>
@@ -366,7 +395,7 @@ $daftar_penghuni = [
         </div>
     <?php endif; ?>
 
-     <!-- Script Flatpickr -->
+    <!-- Script Flatpickr -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         document.querySelectorAll('.flatpickr-range-input').forEach(function(input) {

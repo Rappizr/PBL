@@ -748,6 +748,33 @@
   font-size: 12px;
 }
 
+/* Baris Header Saldo dan Filter Tanggal Monitoring Iuran */
+.iuran-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    width: 100%;
+    max-width: 620px; /* Disesuaikan agar lurus pas dengan batas card di bawahnya */
+}
+
+/* Lebar Empty State Card agar lurus serasi */
+.desktop-kelola-mutasi-list .empty-state-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 620px;
+    color: #555555;
+    font-size: 14px;
+    font-weight: 600;
+}
+
 /* ==========================================================================
    5. VERIFIKASI PEMBAYARAN (MOBILE & DESKTOP)
    ========================================================================== */
@@ -1190,7 +1217,8 @@
     margin-bottom: 12px;
     flex-wrap: wrap;
     gap: 12px;
-    max-width: 900px;
+    max-width: 800px;
+    padding-right: 24px;
 }
 
 .riwayat-header-row .tagihan-section-title {
@@ -1253,10 +1281,11 @@
     align-items: center;
     gap: 12px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    max-width: 620px;
+    max-width: 824px;
     color: #555555;
     font-size: 14px;
     font-weight: 600;
+    margin-top: 12px;
 }
 
 .empty-state-card .empty-icon {

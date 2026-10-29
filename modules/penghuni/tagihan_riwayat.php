@@ -274,11 +274,11 @@ if ($modal_invoice_id) {
 
             <div class="desktop-riwayat-list">
                 <?php if (empty($daftar_riwayat)): ?>
-                        <div class="empty-state-card">
-                            <i class="fa-solid fa-folder-open empty-icon"></i>
-                            <span>Tidak ada riwayat transaksi pada rentang tanggal yang dipilih</span>
-                        </div>
-                    <?php else: ?>
+                    <div class="empty-state-card">
+                        <i class="fa-solid fa-folder-open empty-icon"></i>
+                        <span>Tidak ada riwayat transaksi pada rentang tanggal yang dipilih</span>
+                    </div>
+                <?php else: ?>
                     <?php foreach ($daftar_riwayat as $r): ?>
                         <div class="desktop-riwayat-card">
                             <div class="desktop-riwayat-info">
