@@ -34,10 +34,10 @@ $daftar_riwayat = [
         'periode_sewa'   => '11 Sep 2026 - 10 Okt 2026'
     ],
     [
-        'id'             => 102,
-        'judul'          => 'Sewa Bulanan',
+        'id'             => 201,
+        'judul'          => 'Iuran Bulanan',
         'tanggal'        => '06 September 2026',
-        'nominal'        => 200000,
+        'nominal'        => 50000,
         'nomor_invoice'  => 'INV/202609/KOS-102',
         'tanggal_terbit' => '01 September 2026',
         'jatuh_tempo'    => '11 September 2026',
