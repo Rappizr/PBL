@@ -5,11 +5,12 @@ if (session_status() === PHP_SESSION_NONE) {
 
 $kamar_terisi       = "13/16";
 $menunggu_verif     = 4;
-$pemasukan_hari_ini = "Rp. 19,500,000";
-$tgl_kondisi        = "12 September 2026";
+$pemasukan_tahun_ini = "Rp. 19,500,000";
+$tahun               = "2026";
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,6 +19,7 @@ $tgl_kondisi        = "12 September 2026";
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
+
 <body class="dashboard-body">
 
     <div class="mobile-container mobile-dashboard-view">
@@ -58,21 +60,21 @@ $tgl_kondisi        = "12 September 2026";
         <?php require_once __DIR__ . '/../components/sidebar.php'; ?>
 
         <main class="desktop-content">
-            <h2 class="desktop-header-title">Ringkasan Hari Ini</h2>
-            <p class="desktop-header-subtitle">Kondisi kos per <?= $tgl_kondisi; ?></p>
+            <h2 class="desktop-header-title">Ringkasan Tahun <?= $tahun ?></h2>
+            <p class="desktop-header-subtitle">Kondisi kos per tahun <?= $tahun; ?></p>
 
             <div class="desktop-pemilik-stats-grid">
-                <div class="desktop-pemilik-stat-card">
+                <a href="/?page=manajemen_kamar" class="desktop-pemilik-stat-card">
                     <span class="stat-box-lbl">Kamar Terisi</span>
                     <span class="stat-box-val"><?= $kamar_terisi; ?></span>
-                </div>
-                <div class="desktop-pemilik-stat-card">
+                </a>
+                <a href="/?page=verifikasi_pembayaran" class="desktop-pemilik-stat-card">
                     <span class="stat-box-lbl">Menunggu Verifikasi</span>
                     <span class="stat-box-val val-danger"><?= $menunggu_verif; ?></span>
-                </div>
-                <div class="desktop-pemilik-stat-card stat-card-wide">
-                    <span class="stat-box-lbl">Pemasukan Hari Ini</span>
-                    <span class="stat-box-val val-money"><?= $pemasukan_hari_ini; ?></span>
+                </a>
+                <div class="desktop-pemilik-stat-car stat-card-wide">
+                    <span class="stat-box-lbl">Pemasukan Tahun Ini</span>
+                    <span class="stat-box-val val-money"><?= $pemasukan_tahun_ini; ?></span>
                 </div>
             </div>
 
@@ -127,9 +129,10 @@ $tgl_kondisi        = "12 September 2026";
                         <p>Monitoring kas</p>
                     </div>
                 </a>
-            </div>  
+            </div>
         </main>
     </div>
 
 </body>
+
 </html>
