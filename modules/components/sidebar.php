@@ -1,6 +1,6 @@
 <?php
 // modules/components/sidebar.php
-$role_user  = $_SESSION['user']['role'] ?? 'penghuni';
+$role_user  = $_SESSION['user']['role'] ?? 'pemilik';
 $is_pj      = $_SESSION['user']['is_pj'] ?? false;
 $nama_user  = $_SESSION['user']['nama'] ?? ($role_user === 'pemilik' ? 'Bapak Kos' : 'Mas Dafa');
 $currentPage = $_GET['page'] ?? 'dashboard';
