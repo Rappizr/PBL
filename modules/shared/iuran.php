@@ -244,7 +244,7 @@ $daftar_penghuni = [
                 </div>
 
                 <!-- Baris Aksi Tombol Tambah, Saldo, & Form Filter -->
-                <div class="iuran-desktop-actions-row" style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; margin-bottom: 20px;">
+                    <div style="display: flex; align-items: center; gap: 10px; width: 100%; max-width: 824px; margin-bottom: 20px;">
                     <a href="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran" class="iuran-btn-pill-action" style="white-space: nowrap;">
                         <i class="fa-solid fa-plus"></i> Tambah Pengeluaran
                     </a>
@@ -253,12 +253,12 @@ $daftar_penghuni = [
                     </div>
 
                     <!-- Form Filter Tanggal Desktop -->
-                    <form method="GET" action="" class="filter-range-form-desktop" style="margin: 0;">
+                    <form method="GET" action="" class="filter-range-form-desktop" style="margin: 0 0 0 auto; max-width: 280px; width: 100%;">
                         <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
-                        <div class="flatpickr-box-wrapper" style="margin: 0;">
+                        <div class="flatpickr-box-wrapper" style="margin: 0; width: 100%;">
                             <i class="fa-regular fa-calendar date-icon"></i>
                             <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
-                                   placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                                   placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly style="width: 100%;">
                             <?php if ($is_filtered): ?>
                                 <a href="/?page=<?= urlencode($current_page); ?>" class="btn-reset-range" title="Reset Filter">
                                     <i class="fa-solid fa-rotate-left"></i> Reset

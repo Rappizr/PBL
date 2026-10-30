@@ -769,10 +769,12 @@
     gap: 12px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     width: 100%;
-    max-width: 620px;
+    max-width: 800px;
     color: #555555;
     font-size: 14px;
     font-weight: 600;
+    margin-top: 12px;
+    margin-bottom: 16px;
 }
 
 /* ==========================================================================
@@ -1223,53 +1225,6 @@
 
 .riwayat-header-row .tagihan-section-title {
     margin: 0 !important;
-}
-
-.filter-range-form-desktop {
-    margin: 0;
-}
-
-.flatpickr-box-wrapper {
-    display: flex;
-    align-items: center;
-    background: #ffffff;
-    border-radius: 9999px;
-    padding: 6px 14px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    gap: 8px;
-}
-
-.flatpickr-box-wrapper .date-icon {
-    color: #4ca5b0;
-}
-
-.flatpickr-range-input {
-    border: none;
-    outline: none;
-    background: transparent;
-    font-size: 13px;
-    font-weight: 600;
-    color: #333;
-    width: 180px;
-    cursor: pointer;
-}
-
-.btn-reset-range {
-    background-color: #fbe6e6;
-    color: #d9534f;
-    padding: 4px 10px;
-    border-radius: 9999px;
-    font-size: 12px;
-    font-weight: 700;
-    text-decoration: none;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: background 0.2s;
-}
-
-.btn-reset-range:hover {
-    background-color: #f5c6cb;
 }
 
 /* Styling Card untuk Pesan Kosong */
@@ -2239,9 +2194,12 @@
 
   .iuran-desktop-actions-row {
     display: flex;
-    gap: 12px;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
     margin-bottom: 20px;
-    max-width: 620px;
+    width: 100%;
+    max-width: 824px;
   }
 
   .iuran-btn-pill-action,
@@ -2869,7 +2827,7 @@
 }
 
 /* ==========================================================================
-   FLATPICKR RANGE 
+   FLATPICKR RANGE
    ========================================================================== */
 .filter-range-form {
   width: 100%;
@@ -2888,20 +2846,33 @@
 
 .filter-range-form-desktop {
   margin: 0 !important;
+  flex-shrink: 0;
 }
 
+/* Di baris tombol aksi (Kelola Iuran), filter didorong ke kanan */
+.iuran-desktop-actions-row .filter-range-form-desktop {
+  margin-left: auto !important;
+}
+
+/* ===== Pill filter: ikon + tanggal + tombol Reset, semuanya dalam 1 pill ===== */
 .flatpickr-box-wrapper {
   position: relative;
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   background-color: #ffffff;
   border-radius: 9999px;
-  padding: 6px 16px;
+  padding: 5px 6px 5px 16px; /* sisi kanan lebih kecil supaya Reset pas di dalam pill */
   box-shadow: 2px 3px 0px #c8924b;
   border: 1.5px solid #4ca5b0;
-  gap: 8px;
   box-sizing: border-box;
-  max-width: 100%; /* Mencegah overflow di mobile */
+  max-width: 100%;
+}
+
+/* Mobile: pill selebar form, isi menyesuaikan */
+.filter-range-form .flatpickr-box-wrapper {
+  display: flex;
+  width: 100%;
 }
 
 .flatpickr-box-wrapper .date-icon {
@@ -2911,9 +2882,14 @@
   flex-shrink: 0;
 }
 
-/* Target input asli maupun input generate dari Flatpickr */
+/* Input asli maupun input hasil generate Flatpickr (altInput) */
 .flatpickr-box-wrapper input,
 .flatpickr-box-wrapper .flatpickr-input {
+  flex: 1 1 auto;
+  min-width: 0 !important;       /* boleh mengecil, jadi Reset tidak terdorong keluar */
+  width: 200px !important;       /* lebar ideal untuk "dd/mm/yyyy to dd/mm/yyyy" */
+  margin: 0 !important;
+  padding: 0 !important;
   border: none !important;
   outline: none !important;
   background: transparent !important;
@@ -2922,32 +2898,33 @@
   font-size: 12.5px !important;
   font-weight: 700 !important;
   cursor: pointer;
-  min-width: 215px !important; /* Cukup luas untuk teks "DD/MM/YYYY to DD/MM/YYYY" */
-  width: auto !important;
+  text-overflow: ellipsis;
 }
 
+.flatpickr-box-wrapper input[type="hidden"] {
+  display: none !important;
+}
+
+/* Tombol Reset: nempel rapi di dalam pill */
 .btn-reset-range {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 9999px;
   background-color: #ffeed3;
   color: #c91818;
   font-size: 11.5px;
   font-weight: 800;
+  line-height: 1;
   text-decoration: none;
-  box-shadow: 1px 2px 0px rgba(0, 0, 0, 0.1);
-  transition:
-    transform 0.1s ease,
-    background-color 0.15s ease;
   white-space: nowrap;
   flex-shrink: 0;
+  transition: background-color 0.15s ease;
 }
 
 .btn-reset-range:hover {
-  transform: translateY(-1px);
   background-color: #ffe3b8;
 }
 

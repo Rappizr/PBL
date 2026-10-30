@@ -103,7 +103,7 @@ $daftar_penghuni = [
 
                 <div class="kas-transaksi-list">
                     <?php if (empty($daftar_transaksi)): ?>
-                        <div class="empty-state-tx">
+                        <div class="empty-state-card">
                             <i class="fa-regular fa-folder-open"></i>
                             <p>Tidak ada transaksi pada rentang tanggal ini</p>
                         </div>
@@ -191,7 +191,7 @@ $daftar_penghuni = [
 
             <div class="desktop-kelola-mutasi-list">
                 <?php if (empty($daftar_transaksi)): ?>
-                    <div class="empty-state-tx-desktop">
+                    <div class="empty-state-card">
                         <i class="fa-regular fa-folder-open"></i>
                         <p>Tidak ada transaksi arus kas pada rentang tanggal yang dipilih</p>
                     </div>
