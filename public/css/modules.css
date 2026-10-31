@@ -748,6 +748,33 @@
   font-size: 12px;
 }
 
+/* Baris Header Saldo dan Filter Tanggal Monitoring Iuran */
+.iuran-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    width: 100%;
+    max-width: 620px; /* Disesuaikan agar lurus pas dengan batas card di bawahnya */
+}
+
+/* Lebar Empty State Card agar lurus serasi */
+.desktop-kelola-mutasi-list .empty-state-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    width: 100%;
+    max-width: 620px;
+    color: #555555;
+    font-size: 14px;
+    font-weight: 600;
+}
+
 /* ==========================================================================
    5. VERIFIKASI PEMBAYARAN (MOBILE & DESKTOP)
    ========================================================================== */
@@ -1179,6 +1206,92 @@
   transform: translateY(1px);
 }
 
+/* ==========================================================
+   CSS TAMBAHAN UNTUK FILTER TANGGAL & HEADER RIWAYAT
+   ================================================---------- */
+.riwayat-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 24px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 12px;
+    max-width: 800px;
+    padding-right: 24px;
+}
+
+.riwayat-header-row .tagihan-section-title {
+    margin: 0 !important;
+}
+
+.filter-range-form-desktop {
+    margin: 0;
+}
+
+.flatpickr-box-wrapper {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 9999px;
+    padding: 6px 14px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    gap: 8px;
+}
+
+.flatpickr-box-wrapper .date-icon {
+    color: #4ca5b0;
+}
+
+.flatpickr-range-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: #333;
+    width: 180px;
+    cursor: pointer;
+}
+
+.btn-reset-range {
+    background-color: #fbe6e6;
+    color: #d9534f;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.2s;
+}
+
+.btn-reset-range:hover {
+    background-color: #f5c6cb;
+}
+
+/* Styling Card untuk Pesan Kosong */
+.empty-state-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    max-width: 824px;
+    color: #555555;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 12px;
+}
+
+.empty-state-card .empty-icon {
+    font-size: 20px;
+    color: #4ca5b0;
+}
 /* ==========================================================================
    FLATPICKR RANGE FILTER (TAGIHAN & RIWAYAT)
    ========================================================================== */
@@ -2402,7 +2515,45 @@
     gap: 12px;
     max-width: 620px;
   }
+  
+  /* nambahin filter desktop */
 
+  /* Pastikan kontainer filter sejajar dan lebarnya dibatasi agar proporsional */
+  .iuran-desktop-filters,
+  .desktop-kelola-filter-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    max-width: 620px; /* Disamakan dengan max-width list penghuni di bawahnya */
+  }
+
+  .iuran-filter-pill {
+    font-size: 12px;
+    font-weight: 800;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    text-decoration: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  }
+
+  .iuran-filter-pill.active {
+    background-color: #4ca5b0;
+    color: #ffffff;
+  }
+
+  .iuran-filter-pill.inactive {
+    background-color: #ffffff;
+    color: #4ca5b0;
+  }
+
+  /* Batasi lebar maksimal list penghuni agar tampilannya rapi dan tidak selebar layar penuh */
+  .desktop-penghuni-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 620px;
+  }
+  
   .desktop-penghuni-card {
     background-color: #4ca5b0;
     border-radius: 20px;
