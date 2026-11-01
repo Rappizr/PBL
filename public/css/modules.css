@@ -1248,6 +1248,154 @@
     color: #4ca5b0;
 }
 /* ==========================================================================
+   FLATPICKR RANGE FILTER (TAGIHAN & RIWAYAT)
+   ========================================================================== */
+.filter-range-form {
+  width: 100%;
+  margin: 6px 0 14px 0;
+}
+
+/* Wrapper Judul 'Riwayat Transaksi' dan Kalender di Desktop agar Sejajar */
+.desktop-range-filter-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  max-width: 784px !important;
+  margin-top: 24px !important;
+  margin-bottom: 18px !important;
+  gap: 16px;
+}
+
+.filter-range-form-desktop {
+  margin: 0 !important;
+}
+
+/* Kotak Kapsul Input Kalender */
+.flatpickr-box-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 9999px;
+  padding: 6px 16px;
+  box-shadow: 2px 3px 0px #c8924b;
+  border: 1.5px solid #4ca5b0;
+  gap: 8px;
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.flatpickr-box-wrapper .date-icon {
+  color: #4ca5b0;
+  font-size: 14px;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+/* Input Teks Kalender (Rentang Tanggal) */
+.flatpickr-box-wrapper input,
+.flatpickr-box-wrapper .flatpickr-input {
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  color: #1a4d55 !important;
+  font-family: inherit;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  cursor: pointer;
+  min-width: 215px !important;
+  width: auto !important;
+}
+
+/* Tombol Reset Filter */
+.btn-reset-range {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background-color: #ffeed3;
+  color: #c91818;
+  font-size: 11.5px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 1px 2px 0px rgba(0, 0, 0, 0.1);
+  transition:
+    transform 0.1s ease,
+    background-color 0.15s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.btn-reset-range:hover {
+  transform: translateY(-1px);
+  background-color: #ffe3b8;
+}
+
+.btn-reset-range:active {
+  transform: translateY(1px);
+}
+
+/* Tampilan Jika Data Riwayat Kosong */
+.empty-state-tx,
+.empty-state-tx-desktop {
+  background-color: #4ca5b0;
+  border-radius: 20px;
+  padding: 24px 16px;
+  text-align: center;
+  color: #ffffff;
+  box-shadow: 4px 5px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.empty-state-tx-desktop {
+  max-width: 784px;
+  margin-bottom: 24px;
+}
+
+.empty-state-tx i,
+.empty-state-tx-desktop i {
+  font-size: 28px;
+  opacity: 0.85;
+}
+
+.empty-state-tx p,
+.empty-state-tx-desktop p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Kustomisasi Pop-up Kalender Flatpickr (Warna Tosca & Bayangan Oranye) */
+.flatpickr-calendar {
+  border-radius: 18px !important;
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.15),
+    3px 5px 0px #c8924b !important;
+  border: 1.5px solid #4ca5b0 !important;
+  font-family: inherit !important;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange {
+  background: #4ca5b0 !important;
+  border-color: #4ca5b0 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+.flatpickr-day.inRange {
+  background: #d8f1f5 !important;
+  border-color: #d8f1f5 !important;
+  color: #1a4d55 !important;
+}
+/* ==========================================================================
    8. POP-UP MODAL BAYAR & INVOICE
    ========================================================================== */
 .modal-bayar-card {
@@ -1571,7 +1719,9 @@
   text-decoration: none;
   font-size: 14px;
   font-weight: 800;
-  transition: transform 0.1s ease, background-color 0.15s ease;
+  transition:
+    transform 0.1s ease,
+    background-color 0.15s ease;
 }
 
 .profile-action-btn:hover {
@@ -2120,7 +2270,7 @@
     transition: transform 0.15s ease;
   }
 
-   .desktop-pemilik-stat-car {
+  .desktop-pemilik-stat-car {
     background-color: #ffffff;
     border-radius: 20px;
     padding: 16px 22px;
@@ -2142,7 +2292,7 @@
     max-width: 456px;
   }
 
-   .desktop-pemilik-stat-car.stat-card-wide {
+  .desktop-pemilik-stat-car.stat-card-wide {
     grid-column: 1 / -1;
     max-width: 456px;
   }
