@@ -51,7 +51,7 @@ $tahun               = "2026";
                     </a>
                     <a href="/?page=edit_tatib" class="menu-item-box">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-book-open"></i></div>
-                        <span class="menu-label">Ta</span>
+                        <span class="menu-label">Manajemen Peraturan kos</span>
                     </a>
                 </div>
             </main>
