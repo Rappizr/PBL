@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Sertakan logika dan data dari shared/tatibkos.php
-require_once __DIR__ . '/../shared/tatibkos.php';
+require_once __DIR__ . '/../shared/tatib_kos.php';
 
 $current_page = $_GET['page'] ?? 'peraturan_kost';
 $modal_type   = $_GET['modal'] ?? null; // 'tambah', 'edit', 'hapus'
