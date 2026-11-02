@@ -149,14 +149,12 @@ if ($modal === 'tambah_peraturan') {
             <h2 class="desktop-header-title">Manajemen Peraturan Kos</h2>
             <p class="peraturan-desktop-subtitle">Peraturan kos wajib ditaati oleh seluruh penghuni</p>
 
-            <!-- [BARU] Pesan hasil aksi (berhasil/gagal) -->
             <?php if ($pesan): ?>
             <p class="peraturan-flash <?= $pesan['tipe'] === 'sukses' ? 'sukses' : 'gagal'; ?>">
                 <?= htmlspecialchars($pesan['teks']); ?>
             </p>
             <?php endif; ?>
 
-            <!-- [BARU] Tombol Tambah Peraturan -->
             <div class="peraturan-toolbar">
                 <a href="/?page=edit_tatib&modal=tambah_peraturan" class="peraturan-tambah-btn">
                     <span class="plus"><i class="fa-solid fa-plus"></i></span> Tambah Peraturan
@@ -164,7 +162,6 @@ if ($modal === 'tambah_peraturan') {
             </div>
 
             <div class="desktop-rules-container">
-                <!-- [BARU] Tampilan kalau belum ada peraturan sama sekali -->
                 <?php if (empty($peraturan_list)): ?>
                 <p class="peraturan-kosong">Belum ada peraturan. Klik "Tambah Peraturan" untuk membuat yang pertama.</p>
                 <?php endif; ?>
@@ -179,7 +176,6 @@ if ($modal === 'tambah_peraturan') {
                         <p class="rule-desc"><?= htmlspecialchars($p['deskripsi']) ?></p>
                     </div>
 
-                    <!-- [BARU] Ikon edit dan hapus (kanan atas tiap peraturan) -->
                     <div class="rule-actions">
                         <a href="/?page=edit_tatib&modal=edit_peraturan&id=<?= (int) $p['id']; ?>"
                             class="rule-action-btn" title="Edit"
@@ -198,7 +194,7 @@ if ($modal === 'tambah_peraturan') {
         </main>
     </div>
 
-    <!-- [BARU] MODAL TAMBAH / EDIT (satu form untuk dua fungsi) -->
+    <!-- MODAL TAMBAH / EDIT -->
     <?php if ($mode_form): ?>
     <div class="modal-overlay active">
         <div class="modal-card">
@@ -243,7 +239,7 @@ if ($modal === 'tambah_peraturan') {
     </div>
     <?php endif; ?>
 
-    <!-- [BARU] MODAL KONFIRMASI HAPUS (dikirim lewat POST, bukan link biasa) -->
+    <!-- MODAL KONFIRMASI HAPUS -->
     <?php if ($modal === 'hapus_peraturan' && $peraturan_aktif): ?>
     <div class="modal-overlay active">
         <div class="modal-card">
