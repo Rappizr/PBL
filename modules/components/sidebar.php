@@ -42,9 +42,6 @@ $currentPage = $_GET['page'] ?? 'dashboard';
                 <i class="fa-solid fa-book-open"></i><span>Peraturan Kos</span>
             </a>
             <?php endif; ?>
-            <a href="/?page=edit_tatib" class="nav-item <?= $currentPage === 'edit_tatib' ? 'active' : '' ?>">
-                <i class="fa-solid fa-book-open"></i><span>Manajemen Peraturan Kos</span>
-            </a>
 
             <!-- Menu Bersama -->
             <a href="/?page=chat_penghuni" class="nav-item <?= $currentPage === 'chat_penghuni' ? 'active' : '' ?>">
@@ -61,6 +58,9 @@ $currentPage = $_GET['page'] ?? 'dashboard';
                 <i class="fa-solid fa-chart-pie"></i><span>Monitoring Iuran</span>
             </a>
             <?php endif; ?>
+            <a href="/?page=edit_tatib" class="nav-item <?= $currentPage === 'edit_tatib' ? 'active' : '' ?>">
+                <i class="fa-solid fa-book-open"></i><span>Manajemen Peraturan Kos</span>
+            </a>
         </nav>
     </div>
 
