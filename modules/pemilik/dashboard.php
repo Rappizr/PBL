@@ -133,6 +133,16 @@ $tahun               = "2026";
                         <p>Monitoring kas</p>
                     </div>
                 </a>
+
+                <a href="/?page=edit_tatib" class="pemilik-menu-row-card">
+                    <div class="pemilik-menu-icon-box">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                    </div>
+                    <div class="pemilik-menu-text">
+                        <h4>Manajemen Peraturan Kos</h4>
+                        <p>Mengatur Peraturan Kos</p>
+                    </div>
+                </a>
             </div>
         </main>
     </div>

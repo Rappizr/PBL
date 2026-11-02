@@ -41,6 +41,9 @@ switch ($page) {
     case 'peraturan_kost':
         require_once __DIR__ . '/../modules/penghuni/peraturan_kost.php';
         break;
+    case 'edit_tatib':
+        require_once __DIR__ . '/../modules/pemilik/edit_tatib.php';
+        break;
 
     // Bersama (Shared)
     case 'chat_penghuni':

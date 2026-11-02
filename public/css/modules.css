@@ -3162,3 +3162,131 @@ a.kotak-kapsul-pemilik:active {
   transform: scale(0.96);
   opacity: 0.9;
 }
+
+/* ==========================================================================
+   [BARU] MANAJEMEN PERATURAN KOS: tombol kelola, ikon edit/hapus, pesan
+   ========================================================================== */
+
+/* ---- Bagian desktop saja ---- */
+@media (min-width: 992px) {
+
+  /* [BARU] Pembungkus tombol "Tambah Peraturan" */
+  .peraturan-toolbar {
+    margin-bottom: 16px;
+  }
+
+  /* [BARU] Tombol "Tambah Peraturan" (teal, bayangan cokelat seperti di figma) */
+  .peraturan-tambah-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background-color: #4ca5b0;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    box-shadow: 3px 4px 0px #c8924b;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+
+  .peraturan-tambah-btn:active {
+    transform: translate(2px, 2px);          /* efek tertekan */
+    box-shadow: 1px 2px 0px #c8924b;
+  }
+
+  .peraturan-tambah-btn .plus {
+    width: 16px;
+    height: 16px;
+    background-color: #ffffff;
+    color: #4ca5b0;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+  }
+
+  /* [BARU] Teks peraturan mengisi sisa ruang, sehingga ikon edit/hapus terdorong ke kanan */
+  .rule-text-box {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* [BARU] Wadah ikon edit + hapus, rata atas sesuai figma */
+  .rule-actions {
+    align-self: flex-start;
+    display: flex;
+    gap: 10px;
+  }
+
+  .rule-action-btn {
+    padding: 4px;
+    color: #4a5568;
+    font-size: 15px;
+    text-decoration: none;
+    transition: color 0.15s ease, transform 0.15s ease;
+  }
+
+  .rule-action-btn:hover {
+    color: #1a4d55;
+    transform: scale(1.15);
+  }
+
+  .rule-action-btn.hapus:hover {
+    color: #b42318;                          /* merah saat kursor di atas ikon hapus */
+  }
+
+  /* [BARU] Pesan berhasil / gagal di atas daftar */
+  .peraturan-flash {
+    max-width: 850px;
+    margin-bottom: 14px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .peraturan-flash.sukses {
+    background-color: #d3fbe7;
+    color: #0d5635;
+  }
+
+  .peraturan-flash.gagal {
+    background-color: #ffd6d6;
+    color: #b42318;
+  }
+
+  /* [BARU] Tampilan saat daftar kosong */
+  .peraturan-kosong {
+    padding: 28px 0;
+    text-align: center;
+    color: #4a5568;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+/* ---- Bagian di luar @media: modal ikut tampil di semua ukuran layar ---- */
+
+/* [BARU] Teks konfirmasi di modal hapus */
+.modal-konfirmasi {
+  font-size: 14px;
+  color: #333333;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+/* [BARU] Kolom deskripsi (textarea) dan pilihan ikon (select) di modal
+   dibuat selebar kolom teks lain dan memakai font yang sama */
+textarea.modal-input,
+select.modal-input {
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+textarea.modal-input {
+  resize: vertical;
+}
