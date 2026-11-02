@@ -181,7 +181,7 @@ if ($modal === 'tambah_peraturan') {
                 </a>
             </div>
 
-            <!-- TABEL DESKTOP FIGMA -->
+            <!-- TABEL DESKTOP -->
             <div class="tatib-table-card">
                 <div class="tatib-table-header">
                     <span>Peraturan</span>
