@@ -96,7 +96,7 @@ $peraturan_list = [
 
         <main class="desktop-content">
             <h2 class="desktop-header-title">Peraturan Kos</h2>
-            <p class="peraturan-desktop-subtitle">Tata tertib yang berlaku untuk seluruh penghuni kos</p>
+            <p class="peraturan-desktop-subtitle">Peraturan kos wajib ditaati oleh seluruh penghuni</p>
 
             <div class="desktop-rules-container">
                 <?php foreach ($peraturan_list as $p): ?>
