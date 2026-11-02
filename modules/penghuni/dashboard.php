@@ -3,6 +3,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// Cek apakah akun adalah PJ / Ketua Kos
 $is_pj = !empty($_SESSION['user']['is_pj']) || !empty($_SESSION['user']['is_ketua_kos']);
 
 $tagihan = [
@@ -32,6 +33,7 @@ $tagihan = [
         <div>
             <?php require_once __DIR__ . '/../components/header.php'; ?>
 
+            <!-- Ringkasan Tagihan Penghuni / PJ -->
             <div class="penghuni-mobile-summary">
                 <div class="penghuni-summary-card">
                     <span class="badge-tagihan-title">Pembayaran Sewa</span>
@@ -66,42 +68,50 @@ $tagihan = [
                 </div>
             </div>
 
+            <!-- Grid Menu Utama (Urutan sesuai desain mockup PJ) -->
             <div class="menu-card-container">
                 <h2 class="menu-heading">Silahkan pilih menu</h2>
                 <div class="menu-grid">
+                    
+                    <!-- 1. Tagihan & Riwayat -->
                     <a href="/?page=tagihan_riwayat" class="menu-item-box">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-receipt"></i></div>
                         <span class="menu-label">Tagihan &amp; Riwayat</span>
                     </a>
 
+                    <!-- 2. Kelola Iuran (Khusus PJ) / Monitoring Iuran (Penghuni biasa) -->
                     <?php if ($is_pj): ?>
-                        <a href="/?page=kelola_iuran" class="menu-item-box">
+                        <a href="/?page=iuran" class="menu-item-box">
                             <div class="menu-icon-wrapper"><i class="fa-solid fa-wallet"></i></div>
                             <span class="menu-label">Kelola Iuran</span>
                         </a>
                     <?php else: ?>
-                        <a href="/?page=monitoring_iuran" class="menu-item-box">
+                        <a href="/?page=iuran" class="menu-item-box">
                             <div class="menu-icon-wrapper"><i class="fa-solid fa-chart-pie"></i></div>
                             <span class="menu-label">Monitoring<br>Iuran</span>
                         </a>
                     <?php endif; ?>
 
+                    <!-- 3. Peraturan Kos -->
                     <a href="/?page=peraturan_kost" class="menu-item-box">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-book-open"></i></div>
                         <span class="menu-label">Peraturan Kos</span>
                     </a>
 
+                    <!-- 4. Chat Penghuni -->
                     <a href="/?page=chat_penghuni" class="menu-item-box">
-                        <div class="menu-icon-wrapper"><i class="fa-solid fa-comments"></i></div>
+                        <div class="menu-icon-wrapper"><i class="fa-solid fa-comment-dots"></i></div>
                         <span class="menu-label">Chat Penghuni</span>
                     </a>
 
+                    <!-- 5. Verifikasi Pembayaran (Hanya tampil jika akun PJ) -->
                     <?php if ($is_pj): ?>
-                        <a href="/?page=verifikasi_pembayaran" class="menu-item-box">
+                        <a href="/?page=verifikasi_bayar" class="menu-item-box">
                             <div class="menu-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
                             <span class="menu-label">Verifikasi<br>Pembayaran</span>
                         </a>
                     <?php endif; ?>
+
                 </div>
             </div>
         </div>
@@ -109,6 +119,7 @@ $tagihan = [
         <?php require_once __DIR__ . '/../components/footer.php'; ?>
     </div>
 
+    <!-- Tampilan Desktop View -->
     <div class="desktop-dashboard-wrapper">
         <?php require_once __DIR__ . '/../components/sidebar.php'; ?>
 
@@ -154,27 +165,33 @@ $tagihan = [
                     <div class="desktop-menu-icon"><i class="fa-solid fa-receipt"></i></div>
                     <span class="desktop-menu-label">Tagihan &amp;<br>Riwayat</span>
                 </a>
+
+                <?php if ($is_pj): ?>
+                    <a href="/?page=iuran" class="desktop-menu-card">
+                        <div class="desktop-menu-icon"><i class="fa-solid fa-wallet"></i></div>
+                        <span class="desktop-menu-label">Kelola &amp; Monitor<br>Iuran</span>
+                    </a>
+                <?php else: ?>
+                    <a href="/?page=iuran" class="desktop-menu-card">
+                        <div class="desktop-menu-icon"><i class="fa-solid fa-chart-pie"></i></div>
+                        <span class="desktop-menu-label">Monitoring &amp;<br>Tagihan Iuran</span>
+                    </a>
+                <?php endif; ?>
+
                 <a href="/?page=peraturan_kost" class="desktop-menu-card">
                     <div class="desktop-menu-icon"><i class="fa-solid fa-book-open"></i></div>
                     <span class="desktop-menu-label">Peraturan<br>Kos</span>
                 </a>
+
                 <a href="/?page=chat_penghuni" class="desktop-menu-card">
-                    <div class="desktop-menu-icon"><i class="fa-solid fa-comments"></i></div>
+                    <div class="desktop-menu-icon"><i class="fa-solid fa-comment-dots"></i></div>
                     <span class="desktop-menu-label">Chat<br>Penghuni</span>
                 </a>
+
                 <?php if ($is_pj): ?>
-                    <a href="/?page=kelola_iuran" class="desktop-menu-card">
-                        <div class="desktop-menu-icon"><i class="fa-solid fa-wallet"></i></div>
-                        <span class="desktop-menu-label">Kelola &amp; Monitor<br>Iuran</span>
-                    </a>
-                    <a href="/?page=verifikasi_pembayaran" class="desktop-menu-card">
+                    <a href="/?page=verifikasi_bayar" class="desktop-menu-card">
                         <div class="desktop-menu-icon"><i class="fa-solid fa-list-check"></i></div>
                         <span class="desktop-menu-label">Verifikasi<br>Pembayaran</span>
-                    </a>
-                <?php else: ?>
-                    <a href="/?page=monitoring_iuran" class="desktop-menu-card">
-                        <div class="desktop-menu-icon"><i class="fa-solid fa-chart-pie"></i></div>
-                        <span class="desktop-menu-label">Monitoring &amp;<br>Tagihan Iuran</span>
                     </a>
                 <?php endif; ?>
             </div>

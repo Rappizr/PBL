@@ -28,13 +28,15 @@ if (isset($_SESSION['login_error'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Masuk</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
     <!-- Link CSS Modular -->
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
 
-<body class="dashboard-body" style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px;">
+<body class="login-body">
+
+    <!-- Penyeimbang atas -->
+    <div class="auth-spacer"></div>
 
     <div class="login-card">
         <h1 class="brand-title">SITEMAN - KOS</h1>
@@ -73,6 +75,7 @@ if (isset($_SESSION['login_error'])) {
                     minlength="6" maxlength="6" autocomplete="off" required
                     name="pin" class="input-field" placeholder="PIN (6 Digit)">
             </div>
+            
             <!-- link reset pw -->
             <a href="/?page=reset" class="link-lupa">Lupa kata sandi?</a>
 
@@ -82,13 +85,17 @@ if (isset($_SESSION['login_error'])) {
         </form>
 
     </div>
-    
+
+    <!-- Penyeimbang bawah -->
+    <div class="auth-spacer"></div>
+
+    <!-- Komponen Footer -->
+    <?php require_once __DIR__ . '/../components/footer.php'; ?>
 
     <script>
         document.getElementById('loginForm').addEventListener('submit', function() {
             const btn = document.getElementById('submitBtn');
             btn.querySelector('.btn-text').textContent = 'Memproses...';
-            // Hindari disabled = true seketika agar request POST tidak digugurkan oleh browser
             setTimeout(() => {
                 btn.disabled = true;
             }, 10);

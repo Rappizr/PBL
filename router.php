@@ -30,11 +30,14 @@ if ($uri === '/api/auth') {
 }
 
 // Pretty URLs → front controller
+// Pretty URLs → front controller
 $map = [
-    '/login'              => 'login',
-    '/logout'             => 'logout',
-    '/dashboard/pemilik'  => 'dashboard_pemilik',
-    '/dashboard/penghuni' => 'dashboard_penghuni',
+    '/login'               => 'login',
+    '/logout'              => 'logout',
+    '/dashboard/pemilik'   => 'dashboard_pemilik',
+    '/dashboard/penghuni'  => 'dashboard_penghuni',
+    '/iuran'               => 'iuran',
+    '/verifikasi-bayar'    => 'verifikasi_bayar',
 ];
 
 if (isset($map[$uri])) {

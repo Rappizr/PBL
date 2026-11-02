@@ -26,6 +26,7 @@ switch ($page) {
     case 'arus_kas':
         require_once __DIR__ . '/../modules/pemilik/analisis_kas.php';
         break;
+    case 'verifikasi_bayar':          // <-- Ditambahkan sebagai alias
     case 'verifikasi_pembayaran':
         require_once __DIR__ . '/../modules/pemilik/verifikasi_bayar.php';
         break;
@@ -45,6 +46,7 @@ switch ($page) {
     case 'chat_penghuni':
         require_once __DIR__ . '/../modules/shared/chat_penghuni.php';
         break;
+    case 'iuran':                     // <-- Ditambahkan sebagai alias
     case 'kelola_iuran':
     case 'monitoring_iuran':
         require_once __DIR__ . '/../modules/shared/iuran.php';

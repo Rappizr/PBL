@@ -1,6 +1,20 @@
 /* ==========================================================================
    1. AUTH (LOGIN & PILIH ROLE)
    ========================================================================== */
+body.login-body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+.auth-spacer {
+  flex: 1;
+}
+
 .login-card {
   background-color: #ffffff;
   width: 100%;
@@ -9,6 +23,7 @@
   border-radius: 16px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   text-align: center;
+  margin: 0 auto;
 }
 
 .brand-title {
@@ -611,6 +626,18 @@
   white-space: nowrap;
 }
 
+.kelola-nominal-green {
+  background-color: #8ce3b9 !important;
+  color: #0b5e39 !important;
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  padding: 6px 12px !important;
+  border-radius: 12px !important;
+  white-space: nowrap !important;
+  display: inline-block;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
 .kas-filter-row,
 .kelola-filter-row {
   display: flex;
@@ -750,31 +777,31 @@
 
 /* Baris Header Saldo dan Filter Tanggal Monitoring Iuran */
 .iuran-header-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 16px;
-    margin-bottom: 8px;
-    width: 100%;
-    max-width: 620px; /* Disesuaikan agar lurus pas dengan batas card di bawahnya */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  width: 100%;
+  max-width: 620px; /* Disesuaikan agar lurus pas dengan batas card di bawahnya */
 }
 
 /* Lebar Empty State Card agar lurus serasi */
 .desktop-kelola-mutasi-list .empty-state-card {
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 20px 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    width: 100%;
-    max-width: 800px;
-    color: #555555;
-    font-size: 14px;
-    font-weight: 600;
-    margin-top: 12px;
-    margin-bottom: 16px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 800px;
+  color: #555555;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 12px;
+  margin-bottom: 16px;
 }
 
 /* ==========================================================================
@@ -1212,40 +1239,40 @@
    CSS TAMBAHAN UNTUK FILTER TANGGAL & HEADER RIWAYAT
    ================================================---------- */
 .riwayat-header-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 24px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
-    gap: 12px;
-    max-width: 800px;
-    padding-right: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 12px;
+  max-width: 800px;
+  padding-right: 24px;
 }
 
 .riwayat-header-row .tagihan-section-title {
-    margin: 0 !important;
+  margin: 0 !important;
 }
 
 /* Styling Card untuk Pesan Kosong */
 .empty-state-card {
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 20px 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    max-width: 824px;
-    color: #555555;
-    font-size: 14px;
-    font-weight: 600;
-    margin-top: 12px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  max-width: 824px;
+  color: #555555;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 12px;
 }
 
 .empty-state-card .empty-icon {
-    font-size: 20px;
-    color: #4ca5b0;
+  font-size: 20px;
+  color: #4ca5b0;
 }
 /* ==========================================================================
    FLATPICKR RANGE FILTER (TAGIHAN & RIWAYAT)
@@ -2482,7 +2509,7 @@
     gap: 12px;
     max-width: 620px;
   }
-  
+
   /* nambahin filter desktop */
 
   /* Pastikan kontainer filter sejajar dan lebarnya dibatasi agar proporsional */
@@ -2520,7 +2547,7 @@
     gap: 12px;
     max-width: 620px;
   }
-  
+
   .desktop-penghuni-card {
     background-color: #4ca5b0;
     border-radius: 20px;
@@ -3045,8 +3072,8 @@
 .flatpickr-box-wrapper input,
 .flatpickr-box-wrapper .flatpickr-input {
   flex: 1 1 auto;
-  min-width: 0 !important;       /* boleh mengecil, jadi Reset tidak terdorong keluar */
-  width: 200px !important;       /* lebar ideal untuk "dd/mm/yyyy to dd/mm/yyyy" */
+  min-width: 0 !important; /* boleh mengecil, jadi Reset tidak terdorong keluar */
+  width: 200px !important; /* lebar ideal untuk "dd/mm/yyyy to dd/mm/yyyy" */
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;
