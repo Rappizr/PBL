@@ -29,9 +29,7 @@ $currentPage = $_GET['page'] ?? 'dashboard';
                 class="nav-item <?= $currentPage === 'verifikasi_pembayaran' ? 'active' : '' ?>">
                 <i class="fa-solid fa-list-check"></i><span>Verifikasi Bayar</span>
             </a>
-            <a href="/?page=edit_tatib" class="nav-item <?= $currentPage === 'edit_tatib' ? 'active' : '' ?>">
-                <i class="fa-solid fa-clipboard-list"></i><span>Manajemen Peraturan Kos</span>
-            </a>
+
             <?php else: ?>
             <a href="/?page=dashboard_penghuni"
                 class="nav-item <?= $currentPage === 'dashboard_penghuni' ? 'active' : '' ?>">
@@ -44,6 +42,9 @@ $currentPage = $_GET['page'] ?? 'dashboard';
                 <i class="fa-solid fa-book-open"></i><span>Peraturan Kos</span>
             </a>
             <?php endif; ?>
+            <a href="/?page=edit_tatib" class="nav-item <?= $currentPage === 'edit_tatib' ? 'active' : '' ?>">
+                <i class="fa-solid fa-book-open"></i><span>Manajemen Peraturan Kos</span>
+            </a>
 
             <!-- Menu Bersama -->
             <a href="/?page=chat_penghuni" class="nav-item <?= $currentPage === 'chat_penghuni' ? 'active' : '' ?>">
