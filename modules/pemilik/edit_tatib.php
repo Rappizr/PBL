@@ -13,8 +13,8 @@ if ($role_user !== 'pemilik') {
 
 $nama_user     = $_SESSION['user']['nama'] ?? 'Bapak Kos';
 $halaman_aktif = 'edit_tatib';
-$modal    = $_GET['modal'] ?? '';
-$id_aktif = (int) ($_GET['id'] ?? 0);
+$modal         = $_GET['modal'] ?? '';
+$id_aktif      = (int) ($_GET['id'] ?? 0);
 
 $pilihan_ikon = [
     'fa-solid fa-clock'        => 'Jam / waktu',
@@ -31,7 +31,6 @@ $pilihan_ikon = [
 $pesan = $_SESSION['flash_tatib'] ?? null;
 unset($_SESSION['flash_tatib']);
 
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $aksi      = $_POST['aksi'] ?? '';
     $id_post   = (int) ($_POST['id'] ?? 0);
@@ -44,39 +43,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $valid = $judul !== '' && $deskripsi !== ''
-          && mb_strlen($judul) <= 80 && mb_strlen($deskripsi) <= 400;
+          && mb_strlen($judul) <= 255 && mb_strlen($deskripsi) <= 255;
 
     try {
         if ($aksi === 'tambah' && $valid) {
-            // CREATE
-            $stmt = $pdo->prepare('INSERT INTO tatib (judul, deskripsi, ikon) VALUES (:judul, :deskripsi, :ikon)');
+            // CREATE - Menyesuaikan kolom peraturan_kos (peraturan, deskripsi, icon, create_time)
+            $stmt = $pdo->prepare('INSERT INTO peraturan_kos (peraturan, deskripsi, icon, create_time) VALUES (:judul, :deskripsi, :ikon, CURRENT_DATE)');
             $stmt->execute([':judul' => $judul, ':deskripsi' => $deskripsi, ':ikon' => $ikon]);
             $_SESSION['flash_tatib'] = ['tipe' => 'sukses', 'teks' => 'Peraturan berhasil ditambahkan.'];
 
         } elseif ($aksi === 'edit' && $id_post > 0 && $valid) {
             // UPDATE
-            $stmt = $pdo->prepare('UPDATE tatib SET judul = :judul, deskripsi = :deskripsi, ikon = :ikon WHERE id = :id');
+            $stmt = $pdo->prepare('UPDATE peraturan_kos SET peraturan = :judul, deskripsi = :deskripsi, icon = :ikon WHERE id = :id');
             $stmt->execute([':judul' => $judul, ':deskripsi' => $deskripsi, ':ikon' => $ikon, ':id' => $id_post]);
             $_SESSION['flash_tatib'] = ['tipe' => 'sukses', 'teks' => 'Peraturan berhasil diperbarui.'];
 
         } elseif ($aksi === 'hapus' && $id_post > 0) {
             // DELETE
-            $stmt = $pdo->prepare('DELETE FROM tatib WHERE id = :id');
+            $stmt = $pdo->prepare('DELETE FROM peraturan_kos WHERE id = :id');
             $stmt->execute([':id' => $id_post]);
             $_SESSION['flash_tatib'] = ['tipe' => 'sukses', 'teks' => 'Peraturan berhasil dihapus.'];
 
         } else {
-            $_SESSION['flash_tatib'] = ['tipe' => 'gagal', 'teks' => 'Data tidak valid. Judul maks. 80 dan deskripsi maks. 400 karakter.'];
+            $_SESSION['flash_tatib'] = ['tipe' => 'gagal', 'teks' => 'Data tidak valid atau melebihi batas karakter.'];
         }
     } catch (PDOException $e) {
-        $_SESSION['flash_tatib'] = ['tipe' => 'gagal', 'teks' => 'Gagal menyimpan ke database.'];
+        $_SESSION['flash_tatib'] = ['tipe' => 'gagal', 'teks' => 'Gagal menyimpan ke database: ' . $e->getMessage()];
     }
 
     header('Location: /?page=edit_tatib');
     exit;
 }
 
-$peraturan_list = $pdo->query('SELECT id, peraturan AS judul, deskripsi FROM peraturan_kos ORDER BY id')->fetchAll();
+// Ambil data dari tabel peraturan_kos, petakan kolom 'peraturan' ke 'judul' dan 'icon'
+$peraturan_raw = $pdo->query('SELECT id, peraturan AS judul, deskripsi, icon FROM peraturan_kos ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+$peraturan_list = [];
+foreach ($peraturan_raw as $r) {
+    if (empty($r['icon'])) {
+        $r['icon'] = 'fa-solid fa-circle-info';
+    }
+    $peraturan_list[] = $r;
+}
 
 $peraturan_aktif = null;
 foreach ($peraturan_list as $r) {
@@ -115,7 +122,6 @@ if ($modal === 'tambah_peraturan') {
             <main class="page-content">
                 <div class="subpage-banner-card">
                     <h2 class="subpage-banner-title">Manajemen Peraturan Kos</h2>
-                    <!-- [DIUBAH] tombol Kembali ke dashboard pemilik (sebelumnya dashboard_penghuni) -->
                     <a href="/?page=dashboard_pemilik" class="btn-kembali-banner">
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
@@ -125,7 +131,6 @@ if ($modal === 'tambah_peraturan') {
                     <?php foreach ($peraturan_list as $rule): ?>
                     <div class="peraturan-item">
                         <div class="peraturan-icon-col">
-                            <!-- [DIUBAH] ikon kini di-escape dengan htmlspecialchars -->
                             <i class="<?= htmlspecialchars($rule['icon']) ?>"></i>
                         </div>
                         <div class="peraturan-content">
@@ -208,13 +213,13 @@ if ($modal === 'tambah_peraturan') {
 
                 <div class="modal-field">
                     <label class="modal-label" for="judul">Judul</label>
-                    <input type="text" id="judul" name="judul" class="modal-input" maxlength="80" required
+                    <input type="text" id="judul" name="judul" class="modal-input" maxlength="255" required
                         value="<?= $mode_form === 'edit' ? htmlspecialchars($peraturan_aktif['judul']) : ''; ?>">
                 </div>
 
                 <div class="modal-field">
                     <label class="modal-label" for="deskripsi">Deskripsi</label>
-                    <textarea id="deskripsi" name="deskripsi" class="modal-input" rows="4" maxlength="400"
+                    <textarea id="deskripsi" name="deskripsi" class="modal-input" rows="4" maxlength="255"
                         required><?= $mode_form === 'edit' ? htmlspecialchars($peraturan_aktif['deskripsi']) : ''; ?></textarea>
                 </div>
 
