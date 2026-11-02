@@ -3,25 +3,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-
-// Hubungkan ke file logika shared/tatibkos.php tempat CRUD dan array data berada
-require_once __DIR__ . '/../shared/tatib_kos.php';
-
-$current_page = $_GET['page'] ?? 'peraturan_kost';
-$modal_type   = $_GET['modal'] ?? null; // 'tambah', 'edit', 'hapus'
-$edit_id      = intval($_GET['id'] ?? 0);
-
-$edit_data = null;
-if ($modal_type === 'edit' || $modal_type === 'hapus') {
-    foreach ($_SESSION['daftar_peraturan'] as $p) {
-        if ($p['id'] === $edit_id) {
-            $edit_data = $p;
-            break;
-        }
-    }
-}
-?> 
-
 $peraturan_list = [
     [
         'icon' => 'fa-solid fa-smoking',
