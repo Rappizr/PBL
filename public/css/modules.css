@@ -3115,3 +3115,23 @@
   border-color: #d8f1f5 !important;
   color: #1a4d55 !important;
 }
+
+/* ==========================================================================
+   HEADER LINK KE PROFIL (MOBILE)
+   ========================================================================== */
+a.kotak-kapsul-pemilik {
+  text-decoration: none !important;
+  cursor: pointer !important;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  transition:
+    transform 0.1s ease,
+    opacity 0.15s ease;
+}
+
+a.kotak-kapsul-pemilik:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
