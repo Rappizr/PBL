@@ -1,0 +1,180 @@
+-- public.kamar definition
+
+-- Drop table
+
+-- DROP TABLE public.kamar;
+
+CREATE TABLE public.kamar (
+	id serial4 NOT NULL,
+	no_kamar varchar(20) NOT NULL,
+	status_kamar varchar(20) DEFAULT 'kosong'::character varying NOT NULL,
+	CONSTRAINT kamar_no_kamar_key UNIQUE (no_kamar),
+	CONSTRAINT kamar_pkey PRIMARY KEY (id),
+	CONSTRAINT kamar_status_kamar_check CHECK (((status_kamar)::text = ANY ((ARRAY['kosong'::character varying, 'terisi'::character varying, 'maintenance'::character varying])::text[])))
+);
+
+
+-- public.kategori_iuran definition
+
+-- Drop table
+
+-- DROP TABLE public.kategori_iuran;
+
+CREATE TABLE public.kategori_iuran (
+	id serial4 NOT NULL,
+	nama_iuran varchar(100) NOT NULL,
+	nominal numeric(12, 2) NOT NULL,
+	CONSTRAINT kategori_iuran_pkey PRIMARY KEY (id)
+);
+
+
+-- public.pemilik definition
+
+-- Drop table
+
+-- DROP TABLE public.pemilik;
+
+CREATE TABLE public.pemilik (
+	id serial4 NOT NULL,
+	pin varchar(10) NOT NULL,
+	nama varchar(100) NOT NULL,
+	no_wa varchar(20) NULL,
+	no_rekening varchar(50) NULL,
+	email varchar(100) NULL,
+	CONSTRAINT pemilik_email_key UNIQUE (email),
+	CONSTRAINT pemilik_pkey PRIMARY KEY (id)
+);
+
+
+-- public.penghuni definition
+
+-- Drop table
+
+-- DROP TABLE public.penghuni;
+
+CREATE TABLE public.penghuni (
+	id serial4 NOT NULL,
+	foto_ktp text NULL,
+	is_ketua_kos bool DEFAULT false NULL,
+	nama varchar(100) NOT NULL,
+	pin varchar(10) NOT NULL,
+	status_akun varchar(20) DEFAULT 'aktif'::character varying NULL,
+	kontak_wali varchar(20) NULL,
+	no_wa varchar(20) NULL,
+	email varchar(255) NULL,
+	CONSTRAINT penghuni_pkey PRIMARY KEY (id),
+	CONSTRAINT penghuni_status_akun_check CHECK (((status_akun)::text = ANY ((ARRAY['aktif'::character varying, 'nonaktif'::character varying, 'pending'::character varying])::text[])))
+);
+
+
+-- public.peraturan_kos definition
+
+-- Drop table
+
+-- DROP TABLE public.peraturan_kos;
+
+CREATE TABLE public.peraturan_kos (
+	id int4 GENERATED ALWAYS AS IDENTITY( INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START 1 CACHE 1 NO CYCLE) NOT NULL,
+	create_time date NULL,
+	peraturan varchar(255) NULL,
+	deskripsi varchar(255) NULL,
+	CONSTRAINT peraturan_kos_pkey PRIMARY KEY (id)
+);
+
+
+-- public.penghuni_kamar definition
+
+-- Drop table
+
+-- DROP TABLE public.penghuni_kamar;
+
+CREATE TABLE public.penghuni_kamar (
+	id serial4 NOT NULL,
+	kamar_id int4 NOT NULL,
+	penghuni_id int4 NOT NULL,
+	status_kamar varchar(20) DEFAULT 'aktif'::character varying NULL,
+	harga_sewa numeric(12, 2) NOT NULL,
+	tanggal_masuk date NOT NULL,
+	tanggal_selesai date NULL,
+	skema_sewa varchar(30) DEFAULT 'bulanan'::character varying NULL,
+	CONSTRAINT penghuni_kamar_pkey PRIMARY KEY (id),
+	CONSTRAINT penghuni_kamar_skema_sewa_check CHECK (((skema_sewa)::text = ANY ((ARRAY['harian'::character varying, 'mingguan'::character varying, 'bulanan'::character varying, 'tahunan'::character varying])::text[]))),
+	CONSTRAINT penghuni_kamar_status_kamar_check CHECK (((status_kamar)::text = ANY ((ARRAY['aktif'::character varying, 'selesai'::character varying, 'batal'::character varying])::text[]))),
+	CONSTRAINT penghuni_kamar_kamar_id_fkey FOREIGN KEY (kamar_id) REFERENCES public.kamar(id) ON DELETE CASCADE,
+	CONSTRAINT penghuni_kamar_penghuni_id_fkey FOREIGN KEY (penghuni_id) REFERENCES public.penghuni(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_penghuni_kamar_kamar ON public.penghuni_kamar USING btree (kamar_id);
+CREATE INDEX idx_penghuni_kamar_penghuni ON public.penghuni_kamar USING btree (penghuni_id);
+
+
+-- public.tagihan definition
+
+-- Drop table
+
+-- DROP TABLE public.tagihan;
+
+CREATE TABLE public.tagihan (
+	id serial4 NOT NULL,
+	penghuni_kamar_id int4 NOT NULL,
+	kategori_iuran_id int4 NULL,
+	tanggal_jatuh_tempo date NOT NULL,
+	status_tagihan varchar(20) DEFAULT 'belum_bayar'::character varying NULL,
+	total_tagihan numeric(12, 2) NOT NULL,
+	periode_tagihan varchar(20) NULL,
+	CONSTRAINT tagihan_pkey PRIMARY KEY (id),
+	CONSTRAINT tagihan_status_tagihan_check CHECK (((status_tagihan)::text = ANY ((ARRAY['belum_bayar'::character varying, 'sebagian'::character varying, 'lunas'::character varying, 'terlambat'::character varying])::text[]))),
+	CONSTRAINT tagihan_kategori_iuran_id_fkey FOREIGN KEY (kategori_iuran_id) REFERENCES public.kategori_iuran(id) ON DELETE SET NULL,
+	CONSTRAINT tagihan_penghuni_kamar_id_fkey FOREIGN KEY (penghuni_kamar_id) REFERENCES public.penghuni_kamar(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_tagihan_penghuni_kamar ON public.tagihan USING btree (penghuni_kamar_id);
+
+
+-- public.pembayaran definition
+
+-- Drop table
+
+-- DROP TABLE public.pembayaran;
+
+CREATE TABLE public.pembayaran (
+	id serial4 NOT NULL,
+	tagihan_id int4 NOT NULL,
+	pemilik_id int4 NULL,
+	bukti_pembayaran text NULL,
+	jumlah_bayar numeric(12, 2) NOT NULL,
+	metode_bayar varchar(30) DEFAULT 'transfer'::character varying NULL,
+	tanggal_bayar timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	status_verifikasi varchar(20) DEFAULT 'pending'::character varying NULL,
+	no_kwitansi varchar(50) NULL,
+	CONSTRAINT pembayaran_metode_bayar_check CHECK (((metode_bayar)::text = ANY ((ARRAY['transfer'::character varying, 'tunai'::character varying, 'qris'::character varying, 'lainnya'::character varying])::text[]))),
+	CONSTRAINT pembayaran_no_kwitansi_key UNIQUE (no_kwitansi),
+	CONSTRAINT pembayaran_pkey PRIMARY KEY (id),
+	CONSTRAINT pembayaran_status_verifikasi_check CHECK (((status_verifikasi)::text = ANY ((ARRAY['pending'::character varying, 'diterima'::character varying, 'ditolak'::character varying])::text[]))),
+	CONSTRAINT pembayaran_pemilik_id_fkey FOREIGN KEY (pemilik_id) REFERENCES public.pemilik(id) ON DELETE SET NULL,
+	CONSTRAINT pembayaran_tagihan_id_fkey FOREIGN KEY (tagihan_id) REFERENCES public.tagihan(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_pembayaran_tagihan ON public.pembayaran USING btree (tagihan_id);
+
+
+-- public.buku_kas definition
+
+-- Drop table
+
+-- DROP TABLE public.buku_kas;
+
+CREATE TABLE public.buku_kas (
+	id serial4 NOT NULL,
+	keterangan text NULL,
+	tipe_transaksi varchar(20) NOT NULL,
+	nominal numeric(12, 2) NOT NULL,
+	tanggal_transaksi timestamp DEFAULT CURRENT_TIMESTAMP NULL,
+	pemilik_id int4 NULL,
+	penghuni_id int4 NULL,
+	pembayaran_id int4 NULL,
+	CONSTRAINT buku_kas_pembayaran_id_key UNIQUE (pembayaran_id),
+	CONSTRAINT buku_kas_pkey PRIMARY KEY (id),
+	CONSTRAINT buku_kas_tipe_transaksi_check CHECK (((tipe_transaksi)::text = ANY ((ARRAY['pemasukan'::character varying, 'pengeluaran'::character varying])::text[]))),
+	CONSTRAINT buku_kas_pembayaran_id_fkey FOREIGN KEY (pembayaran_id) REFERENCES public.pembayaran(id) ON DELETE SET NULL,
+	CONSTRAINT buku_kas_pemilik_id_fkey FOREIGN KEY (pemilik_id) REFERENCES public.pemilik(id) ON DELETE SET NULL,
+	CONSTRAINT buku_kas_penghuni_id_fkey FOREIGN KEY (penghuni_id) REFERENCES public.penghuni(id) ON DELETE SET NULL
+);
+CREATE INDEX idx_buku_kas_tanggal ON public.buku_kas USING btree (tanggal_transaksi);
