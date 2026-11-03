@@ -52,15 +52,15 @@ $currentPage = $_GET['page'] ?? 'dashboard';
             <a href="/?page=kelola_iuran" class="nav-item <?= $currentPage === 'kelola_iuran' ? 'active' : '' ?>">
                 <i class="fa-solid fa-chart-pie"></i><span>Kelola Iuran</span>
             </a>
+            <a href="/?page=edit_tatib" class="nav-item <?= $currentPage === 'edit_tatib' ? 'active' : '' ?>">
+                <i class="fa-solid fa-book-open"></i><span>Manajemen Peraturan Kos</span>
+            </a>
             <?php else: ?>
             <a href="/?page=monitoring_iuran"
                 class="nav-item <?= $currentPage === 'monitoring_iuran' ? 'active' : '' ?>">
                 <i class="fa-solid fa-chart-pie"></i><span>Monitoring Iuran</span>
             </a>
             <?php endif; ?>
-            <a href="/?page=edit_tatib" class="nav-item <?= $currentPage === 'edit_tatib' ? 'active' : '' ?>">
-                <i class="fa-solid fa-book-open"></i><span>Manajemen Peraturan Kos</span>
-            </a>
         </nav>
     </div>
 
