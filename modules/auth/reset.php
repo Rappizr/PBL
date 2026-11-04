@@ -13,19 +13,18 @@ if (isset($_SESSION['user']) && !empty($_SESSION['user']['role'])) {
     exit;
 }
 
-// Hubungkan file koneksi database dan pengirim email (mundur 2 level folder jika di modules/auth/)
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../config/mail.php';
 
 const PIN_PANJANG = 6;
-const RESET_BERLAKU_DETIK = 600; // 10 menit
+const RESET_BERLAKU_DETIK = 300; // 5 Menit (300 detik)
 
 // Token CSRF
 if (empty($_SESSION['csrf_reset'])) {
     $_SESSION['csrf_reset'] = bin2hex(random_bytes(16));
 }
 
-// Tombol ulangi proses reset
+// Tombol ulangi / batalkan proses reset
 if (isset($_GET['batal'])) {
     unset(
         $_SESSION['reset_email'],
@@ -38,16 +37,13 @@ if (isset($_GET['batal'])) {
     exit;
 }
 
-// Fungsi cek akun di database PostgreSQL (cek tabel pemilik & penghuni)
 function cari_akun_database(PDO $pdo, string $email): ?array
 {
-    // 1. Cek tabel pemilik
     $stmt = $pdo->prepare("SELECT id, nama, email, 'pemilik' AS role FROM pemilik WHERE LOWER(email) = :email LIMIT 1");
     $stmt->execute(['email' => $email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($user) return $user;
 
-    // 2. Cek tabel penghuni
     $stmt = $pdo->prepare("SELECT id, nama, email, 'penghuni' AS role FROM penghuni WHERE LOWER(email) = :email LIMIT 1");
     $stmt->execute(['email' => $email]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -70,14 +66,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $email = strtolower(trim($_POST['email'] ?? ''));
 
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $error = 'Format email tidak valid.';
+                $error = 'Format email tidak valid. Silakan periksa kembali penulisan alamat email Anda.';
             } else {
                 $akun = cari_akun_database($pdo, $email);
 
                 if ($akun === null) {
-                    $error = 'Email tidak terdaftar di sistem.';
+                    $error = 'Email tidak terdaftar di sistem. Silakan periksa kembali email Anda.';
                 } else {
-                    // Buat 6 digit angka OTP acak
                     $otp = str_pad((string)random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
 
                     if (kirim_email_otp($akun['email'], $akun['nama'], $otp)) {
@@ -87,9 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['reset_id']     = $akun['id'];
                         $_SESSION['reset_expire'] = time() + RESET_BERLAKU_DETIK;
                     } else {
-                        // Tampilkan pesan error teknis asli dari PHPMailer
                         $detail_error = $_SESSION['debug_mail_error'] ?? 'Tidak ada log error.';
-                        $error = 'Gagal kirim OTP: ' . $detail_error;
+                        $error = 'Gagal mengirim kode OTP: ' . $detail_error;
                         unset($_SESSION['debug_mail_error']);
                     }   
                 }
@@ -103,14 +97,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $sandi      = trim($_POST['sandi'] ?? '');
 
             if ($email_sesi === '' || ($_SESSION['reset_expire'] ?? 0) < time()) {
-                $error = 'Waktu verifikasi habis. Silakan masukkan email lagi.';
-                unset($_SESSION['reset_email'], $_SESSION['reset_otp'], $_SESSION['reset_expire']);
+                $error = 'Waktu verifikasi habis. Kode OTP telah kedaluwarsa.';
+                unset($_SESSION['reset_email'], $_SESSION['reset_otp'], $_SESSION['reset_expire'], $_SESSION['reset_table'], $_SESSION['reset_id']);
             } elseif ($otp_input !== ($_SESSION['reset_otp'] ?? '')) {
                 $error = 'Kode OTP verifikasi salah.';
             } elseif (!preg_match('/^\d{' . PIN_PANJANG . '}$/', $sandi)) {
                 $error = 'PIN baru harus ' . PIN_PANJANG . ' digit angka.';
             } else {
-                // Update PIN ke tabel database PostgreSQL
                 $tabel = $_SESSION['reset_table'] === 'pemilik' ? 'pemilik' : 'penghuni';
                 $stmt  = $pdo->prepare("UPDATE {$tabel} SET pin = :pin WHERE id = :id");
                 $stmt->execute([
@@ -118,7 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'id'  => $_SESSION['reset_id']
                 ]);
 
-                // Bersihkan session reset
                 unset(
                     $_SESSION['reset_email'],
                     $_SESSION['reset_otp'],
@@ -136,10 +128,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Menentukan tahapan form: 1 = Email, 2 = Input OTP + PIN, 3 = Sukses
 $langkah = 1;
+$sisa_detik = 0;
+
 if ($sukses) {
     $langkah = 3;
 } elseif (!empty($_SESSION['reset_email']) && ($_SESSION['reset_expire'] ?? 0) >= time()) {
     $langkah = 2;
+    $sisa_detik = max(0, $_SESSION['reset_expire'] - time());
 }
 ?>
 <!DOCTYPE html>
@@ -153,6 +148,8 @@ if ($sukses) {
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
 <body class="login-body">
+
+    <div class="auth-spacer"></div>
 
     <div class="login-card">
         <h1 class="brand-title">SITEMAN - KOS</h1>
@@ -183,28 +180,69 @@ if ($sukses) {
             <!-- LANGKAH 2: VERIFIKASI OTP & PIN BARU -->
             <p class="reset-info">Kode dikirim ke: <strong><?= htmlspecialchars($_SESSION['reset_email']); ?></strong></p>
 
-            <form action="" method="POST">
+            <!-- KOTAK TIMER HITUNG MUNDUR -->
+            <div class="otp-timer-box" style="margin-bottom: 14px; font-size: 13px; font-weight: 700; color: #1a4d55; background: #e8f6f8; padding: 8px 12px; border-radius: 8px; border: 1px solid #4ca5b0;">
+                <i class="fa-solid fa-clock-rotate-left"></i> Sisa Waktu: <span id="countdownDisplay" style="color: #c91818;">05:00</span>
+            </div>
+
+            <form action="" method="POST" id="formResetOtp">
                 <input type="hidden" name="csrf" value="<?= $_SESSION['csrf_reset']; ?>">
                 <input type="hidden" name="aksi" value="simpan_sandi">
 
                 <div class="input-wrapper">
                     <i class="fa-solid fa-shield-halved input-icon"></i>
-                    <input type="text" name="otp" class="input-field" placeholder="6 Digit Kode OTP"
+                    <input type="text" name="otp" id="inputOtp" class="input-field" placeholder="6 Digit Kode OTP"
                            pattern="[0-9]{6}" inputmode="numeric" maxlength="6" required autofocus>
                 </div>
 
                 <div class="input-wrapper">
                     <i class="fa-solid fa-key input-icon"></i>
-                    <input type="password" name="sandi" class="input-field" placeholder="PIN Baru (6 Digit)"
+                    <input type="password" name="sandi" id="inputSandi" class="input-field" placeholder="PIN Baru (6 Digit)"
                            pattern="[0-9]{<?= PIN_PANJANG; ?>}" inputmode="numeric"
                            minlength="<?= PIN_PANJANG; ?>" maxlength="<?= PIN_PANJANG; ?>"
                            autocomplete="new-password" required>
                 </div>
                 <p class="input-hint">Cek Inbox atau folder Spam email Anda.</p>
 
-                <button type="submit" class="btn-submit">Verifikasi &amp; Simpan</button>
+                <button type="submit" class="btn-submit" id="btnSubmitOtp">Verifikasi &amp; Simpan</button>
             </form>
-            <a href="/?page=reset&batal=1" class="link-kembali">Bukan email ini? Ulangi</a>
+
+            <a href="/?page=reset&batal=1" class="link-kembali" id="linkUlangi">Bukan email ini? Ulangi</a>
+
+            <script>
+                let timeLeft = <?= (int)$sisa_detik; ?>;
+                const display = document.getElementById('countdownDisplay');
+                const btnSubmit = document.getElementById('btnSubmitOtp');
+                const inputOtp = document.getElementById('inputOtp');
+                const inputSandi = document.getElementById('inputSandi');
+                const linkUlangi = document.getElementById('linkUlangi');
+
+                function updateCountdown() {
+                    if (timeLeft <= 0) {
+                        display.textContent = 'Kedaluwarsa';
+                        display.style.color = '#c91818';
+
+                        btnSubmit.disabled = true;
+                        btnSubmit.style.opacity = '0.5';
+                        btnSubmit.style.cursor = 'not-allowed';
+                        inputOtp.disabled = true;
+                        inputSandi.disabled = true;
+
+                        linkUlangi.textContent = 'Waktu habis! Klik di sini untuk kirim ulang kode';
+                        linkUlangi.style.color = '#c91818';
+                        linkUlangi.style.fontWeight = 'bold';
+                        return;
+                    }
+
+                    const minutes = Math.floor(timeLeft / 60);
+                    const seconds = timeLeft % 60;
+                    display.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    timeLeft--;
+                    setTimeout(updateCountdown, 1000);
+                }
+
+                updateCountdown();
+            </script>
 
         <?php else: ?>
             <!-- LANGKAH 3: SUKSES -->
@@ -213,6 +251,8 @@ if ($sukses) {
             <a href="/?page=login" class="btn-submit btn-as-link">Ke halaman login</a>
         <?php endif; ?>
     </div>
+
+    <div class="auth-spacer"></div>
 
     <?php require_once __DIR__ . '/../components/footer.php'; ?>
 </body>
