@@ -440,6 +440,18 @@ body.login-body {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  text-decoration: none;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+
+/* Efek tombol melesak ke dalam saat disentuh di HP */
+.kamar-card:active {
+  transform: translate(2px, 3px) scale(0.98);
+  box-shadow: 2px 2px 0px #c8924b;
 }
 
 .kamar-nomor {
@@ -2893,8 +2905,32 @@ body.login-body {
     flex-direction: column;
     justify-content: flex-end;
     min-height: 105px;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
     box-sizing: border-box;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+    box-shadow:
+      0 4px 0px #c8924b,
+      0 6px 12px rgba(0, 0, 0, 0.08);
+    transition:
+      transform 0.1s ease,
+      box-shadow 0.1s ease;
+  }
+
+  /* Mengapung sedikit keluar saat kursor di atasnya */
+  .kamar-card-white:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 6px 0px #c8924b,
+      0 8px 16px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Masuk / tertekan ke dalam saat diklik */
+  .kamar-card-white:active {
+    transform: translateY(3px);
+    box-shadow:
+      0 1px 0px #c8924b,
+      0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   .kamar-card-number {
@@ -3403,4 +3439,1063 @@ select.modal-input {
 
 textarea.modal-input {
   resize: vertical;
+}
+
+/* ==========================================================================
+   MODAL TAMBAH PENGHUNI (PERSIS MOCKUP)
+   ========================================================================== */
+.modal-card-penghuni-custom {
+  background-color: #f0c375;
+  width: 95%;
+  max-width: 480px !important; /* Diperlebar dari 380px */
+  border-radius: 28px;
+  padding: 24px 22px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+  box-sizing: border-box;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.modal-penghuni-title {
+  color: #1a4d55;
+  font-size: 20px;
+  font-weight: 900;
+  margin: 0 0 16px 0;
+  text-align: left;
+}
+
+.form-penghuni-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  width: 100%;
+}
+
+.field-group-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.label-custom {
+  color: #1a4d55;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.input-custom-pill,
+.select-custom-pill {
+  width: 100%;
+  background-color: #ffffff;
+  border: 1.5px solid transparent;
+  border-radius: 9999px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a4d55;
+  outline: none;
+  box-sizing: border-box;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.2s;
+}
+
+.input-custom-pill::placeholder {
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.input-custom-pill:focus,
+.select-custom-pill:focus {
+  border-color: #3b8892;
+}
+
+.select-custom-pill {
+  appearance: auto;
+  cursor: pointer;
+}
+
+/* Row Tanggal Mulai & Selesai */
+.row-tanggal-custom {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.row-tanggal-custom .flex-1 {
+  flex: 1;
+}
+
+.input-date-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.date-input {
+  padding: 9px 12px;
+  text-align: center;
+  font-size: 12.5px;
+}
+
+.input-readonly-dashed {
+  background-color: #ffffff;
+  border: 1.5px dashed #4ca5b0;
+  color: #1a4d55;
+  font-weight: 800;
+  cursor: default;
+}
+
+/* Upload Area Garis Putus-Putus */
+.upload-area-custom {
+  position: relative;
+  background-color: #ffffff;
+  border: 2px dashed #4ca5b0;
+  border-radius: 20px;
+  height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.upload-area-custom input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-icon-circle {
+  color: #4ca5b0;
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-text-custom {
+  color: #4ca5b0;
+  font-size: 12px;
+  font-weight: 800;
+  margin: 0;
+  pointer-events: none;
+}
+
+/* Tombol Aksi Batal & Simpan */
+.actions-custom-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.btn-custom-pill {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  box-sizing: border-box;
+  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.12);
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+
+.btn-custom-pill:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.12);
+}
+
+.btn-batal-custom {
+  background-color: #ffffff;
+  color: #1a4d55;
+}
+
+.btn-simpan-custom {
+  background-color: #4ca5b0;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   MODAL DETAIL KAMAR (WARNA KUNING EMAS IDENTIK DENGAN MOCKUP)
+   ========================================================================== */
+.modal-card-detail-kamar {
+  background-color: #f0c375;
+  width: 95%;
+  max-width: 480px !important; /* Diperlebar dari 375px */
+  border-radius: 28px;
+  padding: 24px 24px 26px;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.detail-kamar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.detail-kamar-title {
+  color: #1a4d55;
+  font-size: 20px;
+  font-weight: 900;
+  margin: 0;
+}
+
+.badge-detail-kamar {
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 4px 14px;
+  border-radius: 9999px;
+}
+
+.badge-terisi {
+  background-color: #fce1b8;
+  color: #7c4103;
+}
+
+.badge-kosong-detail {
+  background-color: #ffffff;
+  color: #1a4d55;
+}
+
+.detail-kamar-form {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  width: 100%;
+}
+
+.detail-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+
+.detail-label {
+  color: #1a4d55;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.detail-input-pill,
+.detail-select-pill {
+  width: 100%;
+  background-color: #ffffff;
+  border: 1.5px solid transparent;
+  border-radius: 9999px;
+  padding: 10px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1a4d55;
+  outline: none;
+  box-sizing: border-box;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.detail-input-pill:focus,
+.detail-select-pill:focus {
+  border-color: #3b8892;
+}
+
+.detail-select-pill {
+  cursor: pointer;
+}
+
+.detail-row-dates {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.detail-input-pill.date-box {
+  padding: 9px 12px;
+  text-align: center;
+  font-size: 12.5px;
+}
+
+.detail-input-pill.dashed-border {
+  border: 1.5px dashed #4ca5b0;
+  background-color: #ffffff;
+  cursor: default;
+}
+
+/* Tombol Aksi Bertingkat Vertikal */
+.detail-actions-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.btn-detail-pill {
+  width: 100%;
+  padding: 11px 0;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.1s ease;
+}
+
+.btn-detail-pill:active {
+  transform: translateY(1px);
+}
+
+.btn-detail-simpan {
+  background-color: #4ca5b0;
+  color: #ffffff;
+}
+
+.btn-detail-hapus {
+  background-color: #ffd6d9;
+  color: #8c0c16;
+}
+
+.btn-detail-batal {
+  background-color: #ffffff;
+  color: #1a4d55;
+}
+
+/* ==========================================================================
+   MODAL KONFIRMASI HAPUS PENGHUNI (KUSTOM)
+   ========================================================================== */
+.modal-card-konfirmasi-kamar {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 340px;
+  border-radius: 24px;
+  padding: 24px 20px;
+  text-align: center;
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.konfirmasi-icon-wrapper {
+  width: 58px;
+  height: 58px;
+  background-color: #ffd6d9;
+  color: #c91818;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin: 0 auto 14px;
+}
+
+.konfirmasi-title {
+  color: #1a4d55;
+  font-size: 19px;
+  font-weight: 900;
+  margin: 0 0 8px;
+}
+
+.konfirmasi-desc {
+  color: #4b5563;
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.konfirmasi-desc strong {
+  color: #1a4d55;
+}
+
+.konfirmasi-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-konfirmasi-batal {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 9999px;
+  background-color: #ededed;
+  color: #4b5563;
+  font-size: 13.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-konfirmasi-batal:hover {
+  background-color: #e0e0e0;
+}
+
+.btn-konfirmasi-hapus {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 9999px;
+  background-color: #c91818;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.1s ease,
+    background-color 0.15s ease;
+}
+
+.btn-konfirmasi-hapus:hover {
+  background-color: #b01414;
+}
+
+.btn-konfirmasi-hapus:active {
+  transform: translateY(1px);
+}
+
+/* Overlay Utama untuk Semua Modal */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.modal-overlay.active {
+  display: flex !important;
+}
+
+/* Modal Konfirmasi Hapus wajib di lapisan paling depan */
+#modalKonfirmasiHapus.active {
+  display: flex !important;
+  z-index: 1100 !important;
+}
+
+/* ==========================================================================
+   INPUT KURS RUPIAH MODAL KAMAR
+   ========================================================================== */
+.kamar-input-rp-box {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  background-color: #ffffff !important;
+  border-radius: 9999px !important;
+  padding: 0 14px !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
+  border: 1.5px solid transparent !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.kamar-input-rp-box:focus-within {
+  border-color: #3b8892 !important;
+}
+
+.kamar-rp-label {
+  font-size: 12.5px !important;
+  font-weight: 800 !important;
+  color: #4ca5b0 !important;
+  margin-right: 6px !important;
+  user-select: none !important;
+}
+
+.kamar-rp-field {
+  flex: 1 !important;
+  width: 100% !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  padding: 10px 0 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #1a4d55 !important;
+  font-family: inherit !important;
+}
+
+.kamar-rp-field::placeholder {
+  color: #9ca3af !important;
+  font-weight: 600 !important;
+}
+
+/* Hapus panah naik-turun bawaan type=number */
+.kamar-rp-field::-webkit-inner-spin-button,
+.kamar-rp-field::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+.kamar-rp-field {
+  -moz-appearance: textfield !important;
+}
+
+/* ==========================================================================
+   CLASS PENGGANTI INLINE STYLE MANAJEMEN KAMAR
+   ========================================================================== */
+
+/* Alert Error */
+.alert-error-kamar {
+  margin-bottom: 14px;
+}
+
+.alert-error-kamar-desktop {
+  max-width: 820px;
+  margin-bottom: 16px;
+}
+
+/* Penyesuaian Baris Aksi */
+.kamar-actions {
+  flex-wrap: wrap;
+}
+
+/* Tombol Skema Sewa (Emas Kontras) */
+.btn-skema-highlight {
+  background-color: #f0c375 !important;
+  color: #1a4d55 !important;
+  border: 1.5px solid #1a4d55 !important;
+}
+
+.kamar-btn-skema-action {
+  background-color: #f0c375 !important;
+  color: #1a4d55 !important;
+  border: 1.5px solid #1a4d55 !important;
+}
+
+/* Empty State Kamar */
+.kamar-empty-state-mobile {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 20px;
+  margin: 0;
+}
+
+.kamar-empty-state-desktop {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 24px;
+  margin: 0;
+}
+
+/* ==========================================================================
+   MODAL KELOLA SKEMA SEWA (FULL EXTERNAL CSS)
+   ========================================================================== */
+.modal-skema-container {
+  max-width: 440px !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+
+.modal-skema-sub {
+  font-size: 12px;
+  color: #1a4d55;
+  margin: 0 0 14px;
+  font-weight: 600;
+}
+
+/* Card Form Input Skema Baru */
+.skema-form-card {
+  background-color: #ffffff;
+  padding: 14px;
+  border-radius: 18px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.skema-form-heading {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a4d55;
+}
+
+.skema-group-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.skema-label-sm {
+  font-size: 11px;
+}
+
+.skema-input-sm {
+  border: 1px solid #d1d5db !important;
+  padding: 8px 14px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.skema-grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+
+.skema-select-sm {
+  border: 1px solid #d1d5db !important;
+  padding: 8px 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.btn-skema-submit {
+  padding: 10px 0 !important;
+  margin-top: 4px !important;
+  font-size: 13px !important;
+  width: 100% !important;
+}
+
+/* Daftar List Skema */
+.skema-list-label {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #1a4d55;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.skema-scroll-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.skema-item-box {
+  background-color: #ffffff;
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.skema-item-name {
+  font-weight: 800;
+  font-size: 13px;
+  color: #1a4d55;
+}
+
+.skema-item-detail {
+  font-size: 11px;
+  color: #4ca5b0;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.btn-trash-skema {
+  background-color: #ffd6d9;
+  color: #8c0c16;
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-trash-skema:hover {
+  background-color: #fca5a5;
+}
+
+.btn-trash-skema i {
+  font-size: 13px;
+}
+
+.btn-tutup-skema {
+  width: 100% !important;
+  text-align: center;
+  display: block;
+  padding: 10px 0;
+  text-decoration: none;
+}
+
+/* Layer Modal Konfirmasi Hapus Skema */
+.modal-confirm-skema {
+  z-index: 1200 !important;
+}
+
+/* Notifikasi Sukses Aksi Kamar & Skema */
+.notif-sukses-kamar {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1.5px solid #6ee7b7;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  animation: fadeInDown 0.25s ease-out;
+}
+
+.notif-sukses-kamar i {
+  font-size: 16px;
+  color: #059669;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Grup Aksi List Skema */
+.skema-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Tombol Edit Skema (Kuning Lembut) */
+.btn-edit-skema {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-edit-skema:hover {
+  background-color: #fde68a;
+}
+
+.btn-edit-skema i {
+  font-size: 13px;
+}
+
+/* Tombol Batal Edit */
+.btn-batal-edit-skema {
+  background-color: #ededed;
+  color: #4b5563;
+  padding: 8px 0;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  display: none;
+  width: 100%;
+}
+
+/* Utility Detail Kamar */
+.detail-input-readonly {
+  background-color: #f3f4f6 !important;
+}
+
+.detail-col-half {
+  flex: 1;
+}
+
+.kamar-empty-title {
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Tata Letak Input Ganda (Dual Field Row) */
+.row-input-dual {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+/* Tombol Pindah Kamar di Modal Detail */
+.btn-detail-pindah {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #bae6fd !important;
+}
+
+.btn-detail-pindah:hover {
+  background-color: #bae6fd !important;
+}
+
+/* Modal Pindah Kamar */
+.pindah-icon-wrapper {
+  width: 58px;
+  height: 58px;
+  background-color: #e0f2fe;
+  color: #0284c7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto 14px;
+}
+
+.btn-konfirmasi-pindah {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 9999px;
+  background-color: #0284c7;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-konfirmasi-pindah:hover:not(:disabled) {
+  background-color: #0369a1;
+}
+
+.btn-konfirmasi-pindah:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.p-bottom-sm {
+  margin-bottom: 16px;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.ktp-preview-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #ffffff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 9999px;
+  padding: 6px 16px 6px 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.ktp-preview-box:hover {
+  border-color: #0284c7;
+  background-color: #f0f9ff;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.15);
+}
+
+.ktp-thumbnail-wrapper {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background-color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ktp-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ktp-preview-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  text-align: left;
+}
+
+.ktp-preview-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.ktp-preview-title i {
+  color: #0284c7;
+  margin-right: 4px;
+}
+
+.ktp-preview-hint {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.ktp-zoom-icon {
+  font-size: 15px;
+  color: #0284c7;
+  margin-left: 4px;
+}
+
+.ktp-empty-state {
+  cursor: default;
+  background-color: #f3f4f6;
+  border: 1.5px dashed #cbd5e1;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 10px 14px;
+  justify-content: center;
+}
+
+.ktp-empty-state:hover {
+  border-color: #cbd5e1;
+  background-color: #f3f4f6;
+  box-shadow: none;
+}
+
+.ktp-empty-icon {
+  font-size: 16px;
+  color: #94a3b8;
+}
+
+.modal-lightbox-overlay {
+  z-index: 99999 !important;
+  background-color: rgba(15, 23, 42, 0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+  padding: 16px;
+}
+
+.modal-lightbox-overlay.active {
+  display: flex !important;
+}
+
+.modal-card-lightbox {
+  background-color: #ffffff;
+  border-radius: 18px;
+  max-width: 620px;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+  animation: modalScaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lightbox-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.lightbox-title {
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lightbox-title i {
+  color: #0284c7;
+}
+
+.btn-close-lightbox {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s ease;
+}
+
+.btn-close-lightbox:hover {
+  color: #ef4444;
+}
+
+.lightbox-body {
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #0f172a;
+  min-height: 240px;
+}
+
+.lightbox-img {
+  max-width: 100%;
+  max-height: 70vh;
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  object-fit: contain;
+}
+
+@keyframes modalScaleUp {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
