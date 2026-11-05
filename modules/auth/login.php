@@ -28,14 +28,12 @@ if (isset($_SESSION['login_error'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Masuk</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Link CSS Modular -->
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
 
 <body class="login-body">
 
-    <!-- Penyeimbang atas -->
     <div class="auth-spacer"></div>
 
     <div class="login-card">
@@ -57,7 +55,6 @@ if (isset($_SESSION['login_error'])) {
                 class="btn-role <?= $role === 'penghuni' ? 'active' : ''; ?>">Penghuni Kos</a>
         </div>
 
-        <!-- Form action diarahkan langsung ke file /api/auth.php -->
         <form action="/api/auth.php" method="POST" id="loginForm">
             <input type="hidden" name="role" value="<?= htmlspecialchars($role); ?>">
 
@@ -76,7 +73,6 @@ if (isset($_SESSION['login_error'])) {
                     name="pin" class="input-field" placeholder="PIN (6 Digit)">
             </div>
             
-            <!-- link reset pw -->
             <a href="/?page=reset" class="link-lupa">Lupa kata sandi?</a>
 
             <button type="submit" class="btn-submit" id="submitBtn">
@@ -86,10 +82,8 @@ if (isset($_SESSION['login_error'])) {
 
     </div>
 
-    <!-- Penyeimbang bawah -->
     <div class="auth-spacer"></div>
 
-    <!-- Komponen Footer -->
     <?php require_once __DIR__ . '/../components/footer.php'; ?>
 
     <script>
