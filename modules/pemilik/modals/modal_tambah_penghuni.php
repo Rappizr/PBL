@@ -70,7 +70,7 @@ $list_skema   = $list_skema ?? [];
                         <option value="" disabled selected>-- Pilih Skema Sewa --</option>
                         <?php foreach ($list_skema as $skm): ?>
                             <option value="<?= $skm['id']; ?>" data-tipe="<?= htmlspecialchars($skm['tipe_periode']); ?>" data-nilai="<?= (int)$skm['durasi_nilai']; ?>">
-                                <?= htmlspecialchars($skm['nama_skema']); ?> (<?= (int)$skm['durasi_nilai']; ?> <?= htmlspecialchars($skm['tipe_periode']); ?> - Rp <?= number_format((float)($skm['harga_default'] ?? 0), 0, ',', '.'); ?>)
+                                <?= htmlspecialchars($skm['nama_skema']); ?> (<?= (int)$skm['durasi_nilai']; ?> <?= htmlspecialchars($skm['tipe_periode']); ?> - Rp <?= number_format((float)($skm['nominal'] ?? 0), 0, ',', '.'); ?>)
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -116,14 +116,16 @@ $list_skema   = $list_skema ?? [];
     <script>
         function hitungTanggalSelesaiDinamis() {
             const sel = document.getElementById('durasiSewaDinamis');
+            if (!sel || sel.selectedIndex === -1) return;
+
             const selectedOpt = sel.options[sel.selectedIndex];
             const tipe = selectedOpt.getAttribute('data-tipe') || 'bulan';
-            const nilai = parseInt(selectedOpt.getAttribute('data-nilai') || '1');
+            const nilai = parseInt(selectedOpt.getAttribute('data-nilai') || '1', 10);
             const tglMulaiVal = document.getElementById('tglMulai').value;
             const tglSelesaiInput = document.getElementById('tglSelesai');
 
-            if (!tglMulaiVal) {
-                tglSelesaiInput.value = '';
+            if (!tglMulaiVal || !tglSelesaiInput) {
+                if (tglSelesaiInput) tglSelesaiInput.value = '';
                 return;
             }
 
@@ -150,19 +152,18 @@ $list_skema   = $list_skema ?? [];
             }
         }
 
-    document.addEventListener('DOMContentLoaded', function() {
-    const wa = document.getElementById('nomorHp');
-    const wali = document.getElementById('kontakWali');
-    const pin = document.getElementById('pinAkun');
+        document.addEventListener('DOMContentLoaded', function() {
+            const wa = document.getElementById('nomorHp');
+            const wali = document.getElementById('kontakWali');
+            const pin = document.getElementById('pinAkun');
 
-    function filterHanyaAngka() {
-        this.value = this.value.replace(/[^0-9]/g, '');
-    }
+            function filterHanyaAngka() {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            }
 
-    if (wa) wa.addEventListener('input', filterHanyaAngka);
-    if (wali) wali.addEventListener('input', filterHanyaAngka);
-    if (pin) pin.addEventListener('input', filterHanyaAngka);
-});
+            if (wa) wa.addEventListener('input', filterHanyaAngka);
+            if (wali) wali.addEventListener('input', filterHanyaAngka);
+            if (pin) pin.addEventListener('input', filterHanyaAngka);
+        });
     </script>
 <?php endif; ?>
-

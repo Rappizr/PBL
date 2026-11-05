@@ -3,7 +3,6 @@ $modal_aktif  = $modal_aktif ?? ($_GET['modal'] ?? '');
 $current_page = $current_page ?? ($_GET['page'] ?? 'manajemen_kamar');
 $list_skema   = $list_skema ?? [];
 
-// Ambil pesan flash session
 $pesan_sukses = $_SESSION['pesan_sukses'] ?? '';
 unset($_SESSION['pesan_sukses']);
 ?>
@@ -51,7 +50,7 @@ unset($_SESSION['pesan_sukses']);
                     <label class="label-custom skema-label-sm">Harga Sewa (Rp)</label>
                     <div class="kamar-input-rp-box">
                         <span class="kamar-rp-label">Rp</span>
-                        <input type="text" name="harga_default" id="skemaFormHarga" class="kamar-rp-field" placeholder="Contoh: 5.000.000" required oninput="formatRupiahInput(this)">
+                        <input type="text" name="nominal" id="skemaFormHarga" class="kamar-rp-field" placeholder="Contoh: 5.000.000" required oninput="formatRupiahInput(this)">
                     </div>
                 </div>
 
@@ -74,11 +73,11 @@ unset($_SESSION['pesan_sukses']);
                                 <div class="skema-item-name"><?= htmlspecialchars($skm['nama_skema']); ?></div>
                                 <div class="skema-item-detail">
                                     Durasi: <?= (int)$skm['durasi_nilai']; ?> <?= htmlspecialchars($skm['tipe_periode']); ?>
-                                    &bull; <strong>Rp <?= number_format((float)($skm['harga_default'] ?? 0), 0, ',', '.'); ?></strong>
+                                    &bull; <strong>Rp <?= number_format((float)($skm['nominal'] ?? 0), 0, ',', '.'); ?></strong>
                                 </div>
                             </div>
                             <div class="skema-item-actions">
-                                <button type="button" class="btn-edit-skema" title="Edit Skema" onclick="isiFormEditSkema(<?= (int)$skm['id']; ?>, '<?= htmlspecialchars(addslashes($skm['nama_skema'])); ?>', '<?= htmlspecialchars($skm['tipe_periode']); ?>', <?= (int)$skm['durasi_nilai']; ?>, <?= (float)($skm['harga_default'] ?? 0); ?>)">
+                                <button type="button" class="btn-edit-skema" title="Edit Skema" onclick="isiFormEditSkema(<?= (int)$skm['id']; ?>, '<?= htmlspecialchars(addslashes($skm['nama_skema'])); ?>', '<?= htmlspecialchars($skm['tipe_periode']); ?>', <?= (int)$skm['durasi_nilai']; ?>, <?= (float)($skm['nominal'] ?? 0); ?>)">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
                                 <button type="button" class="btn-trash-skema" title="Hapus Skema" onclick="bukaModalHapusSkema(<?= (int)$skm['id']; ?>, '<?= htmlspecialchars(addslashes($skm['nama_skema'])); ?>')">
@@ -186,7 +185,6 @@ unset($_SESSION['pesan_sukses']);
             const durasiInput = document.getElementById('skemaFormDurasi');
             if (durasiInput) {
                 durasiInput.addEventListener('input', function() {
-                    // Hanya izinkan angka dan cegah input angka 0 di awal
                     this.value = this.value.replace(/[^0-9]/g, '');
                     if (this.value === '0') this.value = '1';
                 });
