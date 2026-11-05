@@ -121,7 +121,7 @@ $current_page = $_GET['page'] ?? 'verifikasi_pembayaran';
                             <div class="verifikasi-card-body">
                                 <div class="bukti-wrapper">
                                     <?php 
-                                        $foto_path = !empty($v['foto']) ? '/' . ltrim($v['foto'], '/') : '/uploads/bukti/bukti_001.jpg';
+                                        $foto_path = !empty($v['foto']) ? '/' . ltrim($v['foto'], '/') : 'https://picsum.photos/200';
                                     ?>
                                     <img src="<?= htmlspecialchars($foto_path); ?>" alt="Bukti Transfer" class="bukti-img">
                                     <a href="<?= htmlspecialchars($foto_path); ?>" target="_blank" class="btn-zoom">
