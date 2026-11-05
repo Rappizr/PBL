@@ -199,9 +199,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
             ]);
             $penghuni_id = $stmtP->fetchColumn();
 
+// 1. Simpan Kontrak Penghuni Kamar
             $stmtPK = $pdo->prepare("
                 INSERT INTO penghuni_kamar (kamar_id, penghuni_id, status_kamar, harga_sewa, tanggal_masuk, tanggal_selesai, skema_sewa)
                 VALUES (:kamar_id, :penghuni_id, 'aktif', :harga, :tgl_masuk, :tgl_selesai, :skema)
+                RETURNING id
             ");
             $stmtPK->execute([
                 ':kamar_id'    => $kamar['id'],
@@ -211,7 +213,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
                 ':tgl_selesai' => $tgl_selesai,
                 ':skema'       => $skema_teks
             ]);
+            $penghuni_kamar_id = $stmtPK->fetchColumn();
 
+            // Otomatis Buat Tagihan Pertama (Status Belum Bayar)
+            $periode_tagihan = date('F Y', strtotime($tgl_mulai));
+            $tgl_jatuh_tempo = date('Y-m-d', strtotime('+7 days', strtotime($tgl_mulai)));
+
+            $stmtTagihanBaru = $pdo->prepare("
+                INSERT INTO tagihan (
+                    penghuni_kamar_id, 
+                    total_tagihan, 
+                    status_tagihan, 
+                    tanggal_jatuh_tempo, 
+                    periode_tagihan
+                )
+                VALUES (:pk_id, :total, 'belum_bayar', :tgl_tempo, :periode)
+            ");
+            $stmtTagihanBaru->execute([
+                ':pk_id'     => $penghuni_kamar_id,
+                ':total'     => $harga_hitung,
+                ':tgl_tempo' => $tgl_jatuh_tempo,
+                ':periode'   => $periode_tagihan
+            ]);
+
+            // Ubah Status Kamar Menjadi Terisi
             $stmtUK = $pdo->prepare("UPDATE kamar SET status_kamar = 'terisi' WHERE id = :kamar_id");
             $stmtUK->execute([':kamar_id' => $kamar['id']]);
 
@@ -293,19 +318,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
                 ':pk_id'     => $data['penghuni_kamar_id']
             ]);
 
-            $stmtTagihan = $pdo->prepare("
-                UPDATE tagihan 
-                SET status_tagihan = :status_bayar 
-                WHERE id = (
-                    SELECT id FROM tagihan 
-                    WHERE penghuni_kamar_id = :pk_id 
-                    ORDER BY tanggal_jatuh_tempo DESC LIMIT 1
-                )
-            ");
-            $stmtTagihan->execute([
-                ':status_bayar' => strtolower($status_bayar),
-                ':pk_id'        => $data['penghuni_kamar_id']
-            ]);
+        $status_bayar_input = strtolower(trim($_POST['status_bayar'] ?? 'belum_bayar'));
+        $status_simpan = ($status_bayar_input === 'lunas') ? 'lunas' : 'belum_bayar';
+
+        $stmtTagihan = $pdo->prepare("
+            UPDATE tagihan 
+            SET status_tagihan = :status_bayar 
+            WHERE id = (
+                SELECT id FROM tagihan 
+                WHERE penghuni_kamar_id = :pk_id 
+                ORDER BY tanggal_jatuh_tempo DESC LIMIT 1
+            )
+        ");
+        $stmtTagihan->execute([
+            ':status_bayar' => $status_simpan,
+            ':pk_id'        => $data['penghuni_kamar_id']
+        ]);
         }
         $pdo->commit();
         header("Location: /?page=" . urlencode($current_page));

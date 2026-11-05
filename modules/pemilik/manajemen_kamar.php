@@ -56,7 +56,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             COALESCE(pk.skema_sewa, '1 Bulan') AS durasi_sewa,
             COALESCE(pk.tanggal_masuk, CURRENT_DATE) AS tgl_mulai,
             COALESCE(pk.tanggal_selesai, CURRENT_DATE) AS tgl_selesai,
-            COALESCE(t.status_tagihan, 'lunas') AS status_bayar
+            COALESCE(t.status_tagihan, 'belum_bayar') AS status_bayar
         FROM kamar k
         LEFT JOIN penghuni_kamar pk ON k.id = pk.kamar_id AND pk.status_kamar = 'aktif'
         LEFT JOIN penghuni p ON pk.penghuni_id = p.id

@@ -3967,6 +3967,7 @@ textarea.modal-input {
 }
 
 .kamar-rp-field {
+  appearance: textfield;
   -moz-appearance: textfield !important;
 }
 

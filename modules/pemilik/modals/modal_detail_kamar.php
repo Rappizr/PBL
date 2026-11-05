@@ -148,13 +148,14 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                     </div>
 
                     <!-- Status Pembayaran -->
-                    <div class="detail-form-group">
-                        <label class="detail-label" for="detailStatusBayar">Status Pembayaran</label>
-                        <select id="detailStatusBayar" name="status_bayar" class="detail-select-pill">
-                            <option value="lunas" <?= strtolower($kamar_terpilih['status_bayar']) === 'lunas' ? 'selected' : ''; ?>>Lunas</option>
-                            <option value="belum" <?= strtolower($kamar_terpilih['status_bayar']) === 'belum' ? 'selected' : ''; ?>>Belum Bayar</option>
-                        </select>
-                    </div>
+                    <?php 
+                        $status_current = strtolower($kamar_terpilih['status_bayar'] ?? 'belum_bayar');
+                        $is_lunas = ($status_current === 'lunas');
+                    ?>
+                    <select id="detailStatusBayar" name="status_bayar" class="detail-select-pill">
+                        <option value="lunas" <?= $is_lunas ? 'selected' : ''; ?>>Lunas</option>
+                        <option value="belum_bayar" <?= !$is_lunas ? 'selected' : ''; ?>>Belum Bayar</option>
+                    </select>
 
                     <!-- Tombol Aksi Detail Kamar -->
                     <div class="detail-actions-vertical">
