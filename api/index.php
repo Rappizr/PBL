@@ -24,6 +24,7 @@ switch ($page) {
         require_once __DIR__ . '/../modules/pemilik/manajemen_kamar.php';
         break;
     case 'arus_kas':
+    case 'analisis_kas';
         require_once __DIR__ . '/../modules/pemilik/analisis_kas.php';
         break;
     case 'verifikasi_bayar':          // <-- Ditambahkan sebagai alias
