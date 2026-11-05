@@ -17,22 +17,32 @@ if (file_exists(__DIR__ . '/handler/kamar_handlers.php')) {
     require_once __DIR__ . '/handlers/kamar_handlers.php';
 }
 
-// 2. Ambil Data Skema
+// 2. Ambil Data Skema Sewa
 $list_skema = $pdo->query("SELECT * FROM skema_sewa ORDER BY tipe_periode DESC, durasi_nilai ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-// 3. Ambil Data Kamar Realtime Langsung Lewat View Database
+// 3. Ambil Data Kamar Realtime Sesuai Skema Baru
 $queryKamar = "
     SELECT 
-        kamar_id,
-        no_kamar,
-        status_kamar,
-        nama_penghuni,
-        no_wa,
-        COALESCE(harga_sewa, 0) AS harga_sewa,
-        tanggal_masuk,
-        COALESCE(status_pembayaran_terakhir, 'lunas') AS status_bayar
-    FROM v_status_kamar_penghuni 
-    ORDER BY no_kamar ASC
+        k.id AS kamar_id,
+        k.no_kamar,
+        k.status_kamar,
+        COALESCE(p.nama, '') AS nama_penghuni,
+        COALESCE(p.no_wa, '') AS no_wa,
+        COALESCE(s.nominal, 0) AS harga_sewa,
+        pk.tanggal_masuk,
+        COALESCE(t.status_tagihan, 'lunas') AS status_bayar
+    FROM kamar k
+    LEFT JOIN penghuni_kamar pk ON k.id = pk.kamar_id
+    LEFT JOIN penghuni p ON pk.penghuni_id = p.id
+    LEFT JOIN skema_sewa s ON pk.skema_id = s.id
+    LEFT JOIN LATERAL (
+        SELECT status_tagihan 
+        FROM tagihan 
+        WHERE penghuni_kamar_id = pk.id 
+        ORDER BY tanggal_jatuh_tempo DESC 
+        LIMIT 1
+    ) t ON true
+    ORDER BY k.no_kamar::INTEGER ASC
 ";
 $daftar_kamar = $pdo->query($queryKamar)->fetchAll(PDO::FETCH_ASSOC);
 
@@ -44,7 +54,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
     $stmtDetail = $pdo->prepare("
         SELECT 
             k.no_kamar AS nomor,
-            COALESCE(pk.harga_sewa, 0) AS harga_sewa,
+            COALESCE(s.nominal, 0) AS harga_sewa,
             k.status_kamar,
             COALESCE(p.nama, '') AS nama,
             COALESCE(p.no_wa, '') AS no_wa,
@@ -53,13 +63,15 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             COALESCE(p.foto_ktp, '') AS foto_ktp,
             COALESCE(p.is_ketua_kos, false) AS is_ketua_kos,
             COALESCE(p.pin, '123456') AS pin,
-            COALESCE(pk.skema_sewa, '1 Bulan') AS durasi_sewa,
+            COALESCE(pk.skema_id, s.id) AS skema_id,
+            COALESCE(s.nama_skema, 'Bulanan') AS durasi_sewa,
             COALESCE(pk.tanggal_masuk, CURRENT_DATE) AS tgl_mulai,
             COALESCE(pk.tanggal_selesai, CURRENT_DATE) AS tgl_selesai,
             COALESCE(t.status_tagihan, 'belum_bayar') AS status_bayar
         FROM kamar k
-        LEFT JOIN penghuni_kamar pk ON k.id = pk.kamar_id AND pk.status_kamar = 'aktif'
+        LEFT JOIN penghuni_kamar pk ON k.id = pk.kamar_id
         LEFT JOIN penghuni p ON pk.penghuni_id = p.id
+        LEFT JOIN skema_sewa s ON pk.skema_id = s.id
         LEFT JOIN LATERAL (
             SELECT status_tagihan 
             FROM tagihan 

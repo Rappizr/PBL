@@ -3,6 +3,7 @@ $modal_aktif    = $modal_aktif ?? ($_GET['modal'] ?? '');
 $current_page   = $current_page ?? ($_GET['page'] ?? 'manajemen_kamar');
 $kamar_terpilih = $kamar_terpilih ?? null;
 $daftar_kamar   = $daftar_kamar ?? [];
+$list_skema     = $list_skema ?? [];
 
 // Baca file fisik langsung dari disk menggunakan jalur absolut project
 $foto_ktp_file = trim($kamar_terpilih['foto_ktp'] ?? '');
@@ -10,11 +11,9 @@ $ktp_src_data  = '';
 $ada_ktp       = false;
 
 if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower($foto_ktp_file) !== 'null') {
-    // Cari lokasi fisik file di server
     $lokasi_file = __DIR__ . '/../../../public/uploads/ktp/' . $foto_ktp_file;
     
     if (file_exists($lokasi_file)) {
-        // Konversi ke Base64 agar pasti tampil tanpa bergantung pada routing web server
         $ext = strtolower(pathinfo($lokasi_file, PATHINFO_EXTENSION));
         $mime_type = ($ext === 'png') ? 'image/png' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg');
         $file_content = file_get_contents($lokasi_file);
@@ -126,11 +125,23 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                         <?php endif; ?>
                     </div>
 
-                    <!-- Skema Sewa Terpilih -->
+                    <!-- Skema Sewa Terpilih (Dropdown Dinamis) -->
                     <div class="detail-form-group">
-                        <label class="detail-label" for="detailDurasi">Skema Sewa Terpilih</label>
-                        <input type="text" id="detailDurasi" name="durasi_sewa" class="detail-input-pill detail-input-readonly" 
-                               value="<?= htmlspecialchars($kamar_terpilih['durasi_sewa']); ?>" readonly>
+                        <label class="detail-label" for="detailSkemaId">Skema Sewa Terpilih</label>
+                        <select id="detailSkemaId" name="skema_id" class="detail-select-pill" onchange="hitungTanggalSelesaiDetail()" required>
+                            <?php foreach ($list_skema as $skm): ?>
+                                <?php 
+                                    $selected = ($skm['id'] == ($kamar_terpilih['skema_id'] ?? 0) || $skm['nama_skema'] === ($kamar_terpilih['durasi_sewa'] ?? '')) ? 'selected' : ''; 
+                                ?>
+                                <option value="<?= (int)$skm['id']; ?>" 
+                                        data-tipe="<?= htmlspecialchars($skm['tipe_periode']); ?>" 
+                                        data-nilai="<?= (int)$skm['durasi_nilai']; ?>" 
+                                        data-harga="<?= (float)($skm['nominal'] ?? 0); ?>" 
+                                        <?= $selected; ?>>
+                                    <?= htmlspecialchars($skm['nama_skema']); ?> (<?= (int)$skm['durasi_nilai']; ?> <?= htmlspecialchars($skm['tipe_periode']); ?> - Rp <?= number_format((float)($skm['nominal'] ?? 0), 0, ',', '.'); ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
                     </div>
 
                     <!-- Tanggal Masuk & Selesai -->
@@ -138,7 +149,7 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                         <div class="detail-form-group detail-col-half">
                             <label class="detail-label" for="detailTglMulai">Tanggal Mulai</label>
                             <input type="date" id="detailTglMulai" name="tgl_mulai" class="detail-input-pill date-box" 
-                                   value="<?= htmlspecialchars($kamar_terpilih['tgl_mulai']); ?>" required>
+                                   value="<?= htmlspecialchars($kamar_terpilih['tgl_mulai']); ?>" required onchange="hitungTanggalSelesaiDetail()">
                         </div>
                         <div class="detail-form-group detail-col-half">
                             <label class="detail-label" for="detailTglSelesai">Tanggal Selesai</label>
@@ -152,10 +163,13 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                         $status_current = strtolower($kamar_terpilih['status_bayar'] ?? 'belum_bayar');
                         $is_lunas = ($status_current === 'lunas');
                     ?>
-                    <select id="detailStatusBayar" name="status_bayar" class="detail-select-pill">
-                        <option value="lunas" <?= $is_lunas ? 'selected' : ''; ?>>Lunas</option>
-                        <option value="belum_bayar" <?= !$is_lunas ? 'selected' : ''; ?>>Belum Bayar</option>
-                    </select>
+                    <div class="detail-form-group">
+                        <label class="detail-label" for="detailStatusBayar">Status Pembayaran</label>
+                        <select id="detailStatusBayar" name="status_bayar" class="detail-select-pill">
+                            <option value="lunas" <?= $is_lunas ? 'selected' : ''; ?>>Lunas</option>
+                            <option value="belum_bayar" <?= !$is_lunas ? 'selected' : ''; ?>>Belum Bayar</option>
+                        </select>
+                    </div>
 
                     <!-- Tombol Aksi Detail Kamar -->
                     <div class="detail-actions-vertical">
@@ -314,7 +328,6 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
         if (m) m.classList.remove('active');
     }
 
-    // Fungsi Buka Pop-up Gambar KTP Langsung
     function bukaPopupKtpDirect() {
         const modal = document.getElementById('modalLightboxKtp');
         if (modal) {
@@ -328,17 +341,43 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-    const wa = document.getElementById('detailWa');
-    const wali = document.getElementById('detailWali');
-    const pin = document.getElementById('detailPin');
+    function hitungTanggalSelesaiDetail() {
+        const sel = document.getElementById('detailSkemaId');
+        if (!sel || sel.selectedIndex === -1) return;
 
-    function filterHanyaAngka() {
-        this.value = this.value.replace(/[^0-9]/g, '');
+        const opt = sel.options[sel.selectedIndex];
+        const tipe = opt.getAttribute('data-tipe') || 'bulan';
+        const nilai = parseInt(opt.getAttribute('data-nilai') || '1', 10);
+        const tglMulaiVal = document.getElementById('detailTglMulai').value;
+        const tglSelesaiInput = document.getElementById('detailTglSelesai');
+
+        if (!tglMulaiVal || !tglSelesaiInput) return;
+
+        const startDate = new Date(tglMulaiVal);
+        if (tipe === 'hari') {
+            startDate.setDate(startDate.getDate() + nilai);
+        } else {
+            startDate.setMonth(startDate.getMonth() + nilai);
+        }
+
+        const d = String(startDate.getDate()).padStart(2, '0');
+        const m = String(startDate.getMonth() + 1).padStart(2, '0');
+        const y = startDate.getFullYear();
+
+        tglSelesaiInput.value = `${d} / ${m} / ${y}`;
     }
 
-    if (wa) wa.addEventListener('input', filterHanyaAngka);
-    if (wali) wali.addEventListener('input', filterHanyaAngka);
-    if (pin) pin.addEventListener('input', filterHanyaAngka);
-});
+    document.addEventListener('DOMContentLoaded', function() {
+        const wa = document.getElementById('detailWa');
+        const wali = document.getElementById('detailWali');
+        const pin = document.getElementById('detailPin');
+
+        function filterHanyaAngka() {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        }
+
+        if (wa) wa.addEventListener('input', filterHanyaAngka);
+        if (wali) wali.addEventListener('input', filterHanyaAngka);
+        if (pin) pin.addEventListener('input', filterHanyaAngka);
+    });
 </script>
