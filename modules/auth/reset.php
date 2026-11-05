@@ -126,7 +126,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Menentukan tahapan form: 1 = Email, 2 = Input OTP + PIN, 3 = Sukses
 $langkah = 1;
 $sisa_detik = 0;
 
@@ -180,7 +179,6 @@ if ($sukses) {
             <!-- LANGKAH 2: VERIFIKASI OTP & PIN BARU -->
             <p class="reset-info">Kode dikirim ke: <strong><?= htmlspecialchars($_SESSION['reset_email']); ?></strong></p>
 
-            <!-- KOTAK TIMER HITUNG MUNDUR -->
             <div class="otp-timer-box" style="margin-bottom: 14px; font-size: 13px; font-weight: 700; color: #1a4d55; background: #e8f6f8; padding: 8px 12px; border-radius: 8px; border: 1px solid #4ca5b0;">
                 <i class="fa-solid fa-clock-rotate-left"></i> Sisa Waktu: <span id="countdownDisplay" style="color: #c91818;">05:00</span>
             </div>
