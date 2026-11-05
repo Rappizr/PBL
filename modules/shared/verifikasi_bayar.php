@@ -8,8 +8,12 @@ if (!isset($pdo)) {
     require_once __DIR__ . '/../../config/database.php'; 
 }
 
-// Panggil file handler yang berada satu folder di dalam 'handler'
-require_once __DIR__ . '/handler/verifBayar.php';
+// Panggil file handler yang berada di subfolder 'handler'
+if (file_exists(__DIR__ . '/handler/verifBayar.php')) {
+    require_once __DIR__ . '/handler/verifBayar.php';
+} elseif (file_exists(__DIR__ . '/../pemilik/handler/verifBayar.php')) {
+    require_once __DIR__ . '/../pemilik/handler/verifBayar.php';
+}
 
 // FILTER RENTANG TANGGAL (format: YYYY-MM-DD to YYYY-MM-DD)
 $date_range = trim($_GET['date_range'] ?? '');
@@ -58,7 +62,29 @@ if (isset($pdo)) {
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
-        $daftar_verifikasi = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $raw_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Validasi fisik foto di folder public/uploads/bukti/
+        $upload_dir = realpath(__DIR__ . '/../../public/uploads/bukti');
+
+        foreach ($raw_data as $row) {
+            $foto_nama = basename(trim((string)($row['foto'] ?? '')));
+            $src_final = '';
+
+            if ($foto_nama !== '' && $upload_dir && file_exists($upload_dir . DIRECTORY_SEPARATOR . $foto_nama)) {
+                $path_fisik = $upload_dir . DIRECTORY_SEPARATOR . $foto_nama;
+                $ext = strtolower(pathinfo($path_fisik, PATHINFO_EXTENSION));
+                $mime = ($ext === 'png') ? 'image/png' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg');
+                $src_final = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($path_fisik));
+            } else {
+                // Fallback URL biasa atau default placeholder
+                $src_final = !empty($row['foto']) ? '/uploads/bukti/' . $foto_nama : '/uploads/bukti/bukti_001.jpg';
+            }
+
+            $row['src_foto'] = $src_final;
+            $daftar_verifikasi[] = $row;
+        }
+
     } catch (Exception $e) {
         $daftar_verifikasi = [];
     }
@@ -66,6 +92,8 @@ if (isset($pdo)) {
 
 $is_filtered  = ($date_range !== '');
 $current_page = $_GET['page'] ?? 'verifikasi_pembayaran';
+$pesan_sukses = $_SESSION['pesan_sukses'] ?? '';
+unset($_SESSION['pesan_sukses']);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -80,8 +108,14 @@ $current_page = $_GET['page'] ?? 'verifikasi_pembayaran';
 </head>
 <body class="verifikasi-body">
 
+    <?php if (!empty($pesan_sukses)): ?>
+        <div class="alert-success" style="max-width: 650px; margin: 15px auto 0 auto; text-align: center;">
+            <?= htmlspecialchars($pesan_sukses); ?>
+        </div>
+    <?php endif; ?>
+
     <?php if (!empty($error_verif)): ?>
-        <div style="background: #fee2e2; color: #991b1b; padding: 12px; text-align: center; font-weight: 600;">
+        <div class="alert-error" style="max-width: 650px; margin: 15px auto 0 auto; text-align: center;">
             <?= htmlspecialchars($error_verif); ?>
         </div>
     <?php endif; ?>
@@ -120,13 +154,14 @@ $current_page = $_GET['page'] ?? 'verifikasi_pembayaran';
                         <div class="verifikasi-card">
                             <div class="verifikasi-card-body">
                                 <div class="bukti-wrapper">
-                                    <?php 
-                                        $foto_path = !empty($v['foto']) ? '/' . ltrim($v['foto'], '/') : '/uploads/bukti/bukti_001.jpg';
-                                    ?>
-                                    <img src="<?= htmlspecialchars($foto_path); ?>" alt="Bukti Transfer" class="bukti-img">
-                                    <a href="<?= htmlspecialchars($foto_path); ?>" target="_blank" class="btn-zoom">
+                                    <img src="<?= $v['src_foto']; ?>" alt="Bukti Transfer" class="bukti-img"
+                                         onclick="bukaPopupBukti('<?= $v['src_foto']; ?>', '<?= htmlspecialchars(addslashes($v['nama'])); ?>', '<?= htmlspecialchars(addslashes($v['kamar'])); ?>')">
+                                    
+                                    <!-- Tombol Zoom membuka Pop-up Lightbox di halaman yang sama -->
+                                    <button type="button" class="btn-zoom" title="Perbesar Bukti"
+                                            onclick="bukaPopupBukti('<?= $v['src_foto']; ?>', '<?= htmlspecialchars(addslashes($v['nama'])); ?>', '<?= htmlspecialchars(addslashes($v['kamar'])); ?>')">
                                         <i class="fa-solid fa-magnifying-glass-plus"></i>
-                                    </a>
+                                    </button>
                                 </div>
                                 <div class="detail-wrapper">
                                     <div class="user-info-row">
@@ -138,7 +173,7 @@ $current_page = $_GET['page'] ?? 'verifikasi_pembayaran';
                                 </div>
                             </div>
                             <div class="verifikasi-card-footer">
-                                <a href="https://wa.me/<?= preg_replace('/^0/', '62', $v['no_wa']); ?>" target="_blank" class="btn-action btn-chat">
+                                <a href="https://wa.me/<?= preg_replace('/^0/', '62', preg_replace('/[^0-9]/', '', $v['no_wa'])); ?>" target="_blank" class="btn-action btn-chat">
                                     <i class="fa-brands fa-whatsapp"></i> Chat
                                 </a>
                                 <!-- Tombol Tolak -->
@@ -165,7 +200,24 @@ $current_page = $_GET['page'] ?? 'verifikasi_pembayaran';
         </main>
     </div>
 
-    <!-- Script Flatpickr -->
+    <!-- MODAL POPUP LIGHTBOX BUKTI TRANSFER FULLSCREEN -->
+    <div id="modalLightboxBukti" class="modal-overlay modal-lightbox-overlay" onclick="tutupPopupBukti()">
+        <div class="modal-card-lightbox" onclick="event.stopPropagation()">
+            <div class="lightbox-header">
+                <span class="lightbox-title" id="lightboxTitle">
+                    <i class="fa-solid fa-receipt"></i> Bukti Transfer
+                </span>
+                <button type="button" class="btn-close-lightbox" onclick="tutupPopupBukti()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="lightbox-body">
+                <img id="imgBuktiFull" src="" alt="Bukti Transfer Full" class="lightbox-img">
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Flatpickr & Pop-up Modal -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         document.querySelectorAll('.flatpickr-range-input').forEach(function(input) {
@@ -180,6 +232,35 @@ $current_page = $_GET['page'] ?? 'verifikasi_pembayaran';
                     }
                 }
             });
+        });
+
+        // Logika Pop-up Modal Lightbox Bukti Transfer
+        function bukaPopupBukti(src, nama, kamar) {
+            const modal = document.getElementById('modalLightboxBukti');
+            const img = document.getElementById('imgBuktiFull');
+            const title = document.getElementById('lightboxTitle');
+
+            if (modal && img) {
+                img.src = src;
+                if (title && nama) {
+                    title.innerHTML = '<i class="fa-solid fa-receipt"></i> Bukti Transfer - ' + nama + ' (Kamar ' + kamar + ')';
+                }
+                modal.classList.add('active');
+            }
+        }
+
+        function tutupPopupBukti() {
+            const modal = document.getElementById('modalLightboxBukti');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+
+        // Tutup modal jika tombol ESC ditekan
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                tutupPopupBukti();
+            }
         });
     </script>
 </body>

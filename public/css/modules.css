@@ -154,9 +154,6 @@ body.login-body {
   text-align: left;
 }
 
-/* ==========================================================================
-   AUTH: UBAH PASSWORD
-   ========================================================================== */
 .login-card .btn-submit {
   margin-bottom: 16px;
 }
@@ -211,7 +208,6 @@ body.login-body {
   margin-bottom: 0;
 }
 
-/* Link "Lupa password?" di halaman login */
 .link-lupa {
   display: block;
   text-align: right;
@@ -387,6 +383,7 @@ body.login-body {
   display: flex;
   gap: 12px;
   margin-bottom: 18px;
+  flex-wrap: wrap;
 }
 
 .kamar-actions .btn-add-outline {
@@ -448,7 +445,6 @@ body.login-body {
     box-shadow 0.1s ease;
 }
 
-/* Efek tombol melesak ke dalam saat disentuh di HP */
 .kamar-card:active {
   transform: translate(2px, 3px) scale(0.98);
   box-shadow: 2px 2px 0px #c8924b;
@@ -616,7 +612,8 @@ body.login-body {
 }
 
 .kas-nominal-pill,
-.desktop-mutasi-badge-green {
+.desktop-mutasi-badge-green,
+.kelola-nominal-green {
   background-color: #8ce3b9 !important;
   color: #0b5e39 !important;
   font-size: 11.5px !important;
@@ -636,18 +633,6 @@ body.login-body {
   padding: 6px 12px;
   border-radius: 12px;
   white-space: nowrap;
-}
-
-.kelola-nominal-green {
-  background-color: #8ce3b9 !important;
-  color: #0b5e39 !important;
-  font-size: 11.5px !important;
-  font-weight: 800 !important;
-  padding: 6px 12px !important;
-  border-radius: 12px !important;
-  white-space: nowrap !important;
-  display: inline-block;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .kas-filter-row,
@@ -787,7 +772,6 @@ body.login-body {
   font-size: 12px;
 }
 
-/* Baris Header Saldo dan Filter Tanggal Monitoring Iuran */
 .iuran-header-row {
   display: flex;
   align-items: center;
@@ -795,10 +779,9 @@ body.login-body {
   margin-top: 16px;
   margin-bottom: 8px;
   width: 100%;
-  max-width: 620px; /* Disesuaikan agar lurus pas dengan batas card di bawahnya */
+  max-width: 620px;
 }
 
-/* Lebar Empty State Card agar lurus serasi */
 .desktop-kelola-mutasi-list .empty-state-card {
   background-color: #ffffff;
   border-radius: 12px;
@@ -895,6 +878,7 @@ body.login-body {
   overflow: hidden !important;
   background-color: #ffffff !important;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+  cursor: pointer;
 }
 
 .bukti-img {
@@ -919,6 +903,8 @@ body.login-body {
   color: #4ca5b0 !important;
   text-decoration: none !important;
   font-size: 13px !important;
+  border: none !important;
+  cursor: pointer !important;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
   z-index: 10 !important;
 }
@@ -1051,7 +1037,6 @@ body.login-body {
   box-sizing: border-box;
 }
 
-/* Pembungkus daftar kartu chat mobile agar terpisah dengan rapi */
 .chat-list {
   display: flex !important;
   flex-direction: column !important;
@@ -1247,9 +1232,6 @@ body.login-body {
   transform: translateY(1px);
 }
 
-/* ==========================================================
-   CSS TAMBAHAN UNTUK FILTER TANGGAL & HEADER RIWAYAT
-   ================================================---------- */
 .riwayat-header-row {
   display: flex;
   align-items: center;
@@ -1266,7 +1248,6 @@ body.login-body {
   margin: 0 !important;
 }
 
-/* Styling Card untuk Pesan Kosong */
 .empty-state-card {
   background-color: #ffffff;
   border-radius: 12px;
@@ -1286,15 +1267,20 @@ body.login-body {
   font-size: 20px;
   color: #4ca5b0;
 }
+
 /* ==========================================================================
-   FLATPICKR RANGE FILTER (TAGIHAN & RIWAYAT)
+   8. FLATPICKR KALENDER & RANGE FILTER
    ========================================================================== */
 .filter-range-form {
   width: 100%;
-  margin: 6px 0 14px 0;
+  margin: 6px 0 12px 0;
 }
 
-/* Wrapper Judul 'Riwayat Transaksi' dan Kalender di Desktop agar Sejajar */
+.filter-range-form-desktop {
+  margin: 0 !important;
+  flex-shrink: 0;
+}
+
 .desktop-range-filter-wrapper {
   display: flex !important;
   align-items: center !important;
@@ -1305,23 +1291,23 @@ body.login-body {
   gap: 16px;
 }
 
-.filter-range-form-desktop {
-  margin: 0 !important;
-}
-
-/* Kotak Kapsul Input Kalender */
 .flatpickr-box-wrapper {
   position: relative;
   display: inline-flex;
   align-items: center;
+  gap: 8px;
   background-color: #ffffff;
   border-radius: 9999px;
-  padding: 6px 16px;
+  padding: 5px 6px 5px 16px;
   box-shadow: 2px 3px 0px #c8924b;
   border: 1.5px solid #4ca5b0;
-  gap: 8px;
   box-sizing: border-box;
   max-width: 100%;
+}
+
+.filter-range-form .flatpickr-box-wrapper {
+  display: flex;
+  width: 100%;
 }
 
 .flatpickr-box-wrapper .date-icon {
@@ -1331,9 +1317,13 @@ body.login-body {
   flex-shrink: 0;
 }
 
-/* Input Teks Kalender (Rentang Tanggal) */
 .flatpickr-box-wrapper input,
 .flatpickr-box-wrapper .flatpickr-input {
+  flex: 1 1 auto;
+  min-width: 0 !important;
+  width: 200px !important;
+  margin: 0 !important;
+  padding: 0 !important;
   border: none !important;
   outline: none !important;
   background: transparent !important;
@@ -1342,29 +1332,32 @@ body.login-body {
   font-size: 12.5px !important;
   font-weight: 700 !important;
   cursor: pointer;
-  min-width: 215px !important;
-  width: auto !important;
+  text-overflow: ellipsis;
 }
 
-/* Tombol Reset Filter */
+.flatpickr-box-wrapper input[type="hidden"] {
+  display: none !important;
+}
+
 .btn-reset-range {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 4px 10px;
+  padding: 6px 12px;
   border-radius: 9999px;
   background-color: #ffeed3;
   color: #c91818;
   font-size: 11.5px;
   font-weight: 800;
+  line-height: 1;
   text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
   box-shadow: 1px 2px 0px rgba(0, 0, 0, 0.1);
   transition:
     transform 0.1s ease,
     background-color 0.15s ease;
-  white-space: nowrap;
-  flex-shrink: 0;
 }
 
 .btn-reset-range:hover {
@@ -1376,7 +1369,6 @@ body.login-body {
   transform: translateY(1px);
 }
 
-/* Tampilan Jika Data Riwayat Kosong */
 .empty-state-tx,
 .empty-state-tx-desktop {
   background-color: #4ca5b0;
@@ -1410,7 +1402,6 @@ body.login-body {
   font-weight: 700;
 }
 
-/* Kustomisasi Pop-up Kalender Flatpickr (Warna Tosca & Bayangan Oranye) */
 .flatpickr-calendar {
   border-radius: 18px !important;
   box-shadow:
@@ -1434,8 +1425,9 @@ body.login-body {
   border-color: #d8f1f5 !important;
   color: #1a4d55 !important;
 }
+
 /* ==========================================================================
-   8. POP-UP MODAL BAYAR & INVOICE
+   9. POP-UP MODAL BAYAR & INVOICE
    ========================================================================== */
 .modal-bayar-card {
   background-color: #f3ca81 !important;
@@ -1645,7 +1637,7 @@ body.login-body {
 }
 
 /* ==========================================================================
-   PROFILE PAGE
+   10. PROFILE PAGE & MODAL KUSTOM
    ========================================================================== */
 .profile-card {
   background-color: #4ca5b0;
@@ -1959,7 +1951,98 @@ body.login-body {
 }
 
 /* ==========================================================================
-   9. PERATURAN KOS (MOBILE)
+   11. INPUT PASSWORD EYE TOGGLE & FORM PROFILE
+   ========================================================================== */
+.modal-card-pin-custom {
+  background-color: #f0c375 !important;
+  max-width: 420px !important;
+}
+
+.input-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-password-wrapper .input-pin-pad {
+  width: 100%;
+  padding-right: 44px !important;
+  letter-spacing: 2px;
+}
+
+.btn-toggle-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+  z-index: 2;
+}
+
+.btn-toggle-eye:hover {
+  color: #1a4d55;
+}
+
+.input-disabled-style {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+.pin-hint-msg {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+  margin-left: 6px;
+  min-height: 14px;
+}
+
+.pin-hint-msg.error {
+  color: #b91c1c;
+}
+
+.pin-hint-msg.success {
+  color: #065f46;
+}
+
+.btn-modal-submit.btn-disabled {
+  background-color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  opacity: 0.65;
+  box-shadow: none !important;
+}
+
+.input-readonly-locked {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  font-weight: 600 !important;
+  cursor: default !important;
+  user-select: none !important;
+  border: 1.5px solid #cbd5e1 !important;
+  opacity: 1 !important;
+}
+
+.input-readonly-locked:focus {
+  outline: none !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   12. PERATURAN KOS (MOBILE & DESKTOP)
    ========================================================================== */
 .peraturan-card-wrapper {
   background-color: #ffffff;
@@ -1968,7 +2051,6 @@ body.login-body {
   box-shadow: 5px 6px 0px #c8924b;
   display: flex;
   flex-direction: column;
-  gap: 0px;
   margin-bottom: 24px;
 }
 
@@ -2011,8 +2093,245 @@ body.login-body {
   margin: 0;
 }
 
+.peraturan-toolbar {
+  margin-bottom: 20px;
+}
+
+.btn-tambah-tatib-mobile {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 8px 18px;
+  border-radius: 9999px;
+  text-decoration: none;
+  box-shadow: 2px 3px 0px #c8924b;
+  transition: transform 0.1s ease;
+}
+
+.btn-tambah-tatib-mobile:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px #c8924b;
+}
+
+.tatib-table-card {
+  background-color: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 4px 6px 0px #c8924b;
+  max-width: 820px;
+}
+
+.tatib-table-header {
+  background-color: #4ca5b0;
+  color: #ffffff;
+  padding: 14px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 800;
+  font-size: 15px;
+}
+
+.tatib-table-header .col-action {
+  width: 200px;
+  text-align: center;
+}
+
+.tatib-table-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.tatib-table-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 28px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tatib-table-row:last-child {
+  border-bottom: none;
+}
+
+.tatib-row-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  flex: 1;
+  padding-right: 20px;
+}
+
+.tatib-icon-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #4ca5b0;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.tatib-row-text h4 {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #1a4d55;
+  margin: 0 0 4px 0;
+}
+
+.tatib-row-text p {
+  font-size: 13px;
+  color: #4a5568;
+  line-height: 1.45;
+  margin: 0;
+  max-width: 480px;
+}
+
+.tatib-row-actions {
+  width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btn-pill-edit-desktop {
+  background-color: #4ca5b0;
+  color: #ffffff;
+  padding: 6px 18px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-pill-hapus-desktop {
+  background-color: #ffeed3;
+  color: #b91c1c;
+  padding: 6px 18px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.peraturan-item-mobile {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 12px;
+}
+
+.peraturan-item-mobile:last-child {
+  border-bottom: none;
+}
+
+.peraturan-mobile-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex: 1;
+}
+
+.peraturan-mobile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.btn-pill-edit-mobile {
+  background-color: #4ca5b0;
+  color: #ffffff;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-pill-hapus-mobile {
+  background-color: #ffeed3;
+  color: #b91c1c;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.peraturan-flash {
+  max-width: 820px;
+  margin-bottom: 14px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.peraturan-flash.sukses {
+  background-color: #d3fbe7;
+  color: #0d5635;
+}
+
+.peraturan-flash.gagal {
+  background-color: #ffd6d6;
+  color: #b42318;
+}
+
+.peraturan-kosong {
+  padding: 28px 0;
+  text-align: center;
+  color: #4a5568;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.modal-konfirmasi {
+  font-size: 14px;
+  color: #333333;
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+textarea.modal-input,
+select.modal-input {
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+textarea.modal-input {
+  resize: vertical;
+}
+
 /* ==========================================================================
-   10. RINGKASAN PEMILIK (MOBILE)
+   13. RINGKASAN PEMILIK (MOBILE)
    ========================================================================== */
 .pemilik-summary-section {
   margin-bottom: 24px;
@@ -2145,8 +2464,1075 @@ body.login-body {
   color: #64748b;
 }
 
+a.kotak-kapsul-pemilik {
+  text-decoration: none !important;
+  cursor: pointer !important;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  transition:
+    transform 0.1s ease,
+    opacity 0.15s ease;
+}
+
+a.kotak-kapsul-pemilik:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+
 /* ==========================================================================
-   11. DESKTOP VIEW 
+   14. MODAL TAMBAH PENGHUNI & KAMAR
+   ========================================================================== */
+.modal-card-penghuni-custom {
+  background-color: #f0c375;
+  width: 95%;
+  max-width: 480px !important;
+  border-radius: 28px;
+  padding: 24px 22px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+  box-sizing: border-box;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.modal-size-sm {
+  max-width: 380px !important;
+}
+
+.modal-size-md {
+  max-width: 480px !important;
+}
+
+.modal-title-spacing {
+  margin-bottom: 20px;
+}
+
+.modal-penghuni-title {
+  color: #1a4d55;
+  font-size: 20px;
+  font-weight: 900;
+  margin: 0 0 16px 0;
+  text-align: left;
+}
+
+.form-penghuni-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  width: 100%;
+}
+
+.field-group-custom {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.label-custom {
+  color: #1a4d55;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.input-custom-pill,
+.select-custom-pill {
+  width: 100%;
+  background-color: #ffffff;
+  border: 1.5px solid transparent;
+  border-radius: 9999px;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a4d55;
+  outline: none;
+  box-sizing: border-box;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  transition: border-color 0.2s;
+}
+
+.input-custom-pill::placeholder {
+  color: #9ca3af;
+  font-weight: 600;
+}
+
+.input-custom-pill:focus,
+.select-custom-pill:focus {
+  border-color: #3b8892;
+}
+
+.select-custom-pill {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.row-tanggal-custom {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.row-tanggal-custom .flex-1 {
+  flex: 1;
+}
+
+.input-date-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.date-input {
+  padding: 9px 12px;
+  text-align: center;
+  font-size: 12.5px;
+}
+
+.input-readonly-dashed {
+  background-color: #ffffff;
+  border: 1.5px dashed #4ca5b0;
+  color: #1a4d55;
+  font-weight: 800;
+  cursor: default;
+}
+
+.upload-area-custom {
+  position: relative;
+  background-color: #ffffff;
+  border: 2px dashed #4ca5b0;
+  border-radius: 20px;
+  height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.upload-area-custom input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.upload-icon-circle {
+  color: #4ca5b0;
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.upload-text-custom {
+  color: #4ca5b0;
+  font-size: 12px;
+  font-weight: 800;
+  margin: 0;
+  pointer-events: none;
+}
+
+.actions-custom-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 6px;
+  width: 100%;
+}
+
+.actions-spacing-top {
+  margin-top: 14px;
+}
+
+.btn-custom-pill {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  box-sizing: border-box;
+  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.12);
+  transition:
+    transform 0.1s ease,
+    box-shadow 0.1s ease;
+}
+
+.btn-custom-pill:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.12);
+}
+
+.btn-batal-custom {
+  background-color: #ffffff;
+  color: #1a4d55;
+}
+
+.btn-simpan-custom {
+  background-color: #4ca5b0;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   15. MODAL DETAIL KAMAR & PINDAH KAMAR
+   ========================================================================== */
+.modal-card-detail-kamar {
+  background-color: #f0c375;
+  width: 95%;
+  max-width: 480px !important;
+  border-radius: 28px;
+  padding: 24px 24px 26px;
+  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+  max-height: 88vh;
+  overflow-y: auto;
+}
+
+.detail-kamar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.detail-kamar-title {
+  color: #1a4d55;
+  font-size: 20px;
+  font-weight: 900;
+  margin: 0;
+}
+
+.badge-detail-kamar {
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 4px 14px;
+  border-radius: 9999px;
+}
+
+.badge-terisi {
+  background-color: #fce1b8;
+  color: #7c4103;
+}
+
+.badge-kosong-detail {
+  background-color: #ffffff;
+  color: #1a4d55;
+}
+
+.detail-kamar-form {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  width: 100%;
+}
+
+.detail-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+
+.detail-label {
+  color: #1a4d55;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.detail-input-pill,
+.detail-select-pill {
+  width: 100%;
+  background-color: #ffffff;
+  border: 1.5px solid transparent;
+  border-radius: 9999px;
+  padding: 10px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1a4d55;
+  outline: none;
+  box-sizing: border-box;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+.detail-input-pill:focus,
+.detail-select-pill:focus {
+  border-color: #3b8892;
+}
+
+.detail-select-pill {
+  cursor: pointer;
+}
+
+.detail-row-dates {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.detail-input-pill.date-box {
+  padding: 9px 12px;
+  text-align: center;
+  font-size: 12.5px;
+}
+
+.detail-input-pill.dashed-border {
+  border: 1.5px dashed #4ca5b0;
+  background-color: #ffffff;
+  cursor: default;
+}
+
+.detail-actions-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+}
+
+.btn-detail-pill {
+  width: 100%;
+  padding: 11px 0;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.1s ease;
+}
+
+.btn-detail-pill:active {
+  transform: translateY(1px);
+}
+
+.btn-detail-simpan {
+  background-color: #4ca5b0;
+  color: #ffffff;
+}
+
+.btn-detail-hapus {
+  background-color: #ffd6d9;
+  color: #8c0c16;
+}
+
+.btn-detail-batal {
+  background-color: #ffffff;
+  color: #1a4d55;
+}
+
+.modal-card-konfirmasi-kamar {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 340px;
+  border-radius: 24px;
+  padding: 24px 20px;
+  text-align: center;
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.konfirmasi-icon-wrapper {
+  width: 58px;
+  height: 58px;
+  background-color: #ffd6d9;
+  color: #c91818;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin: 0 auto 14px;
+}
+
+.konfirmasi-title {
+  color: #1a4d55;
+  font-size: 19px;
+  font-weight: 900;
+  margin: 0 0 8px;
+}
+
+.konfirmasi-desc {
+  color: #4b5563;
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.konfirmasi-desc strong {
+  color: #1a4d55;
+}
+
+.konfirmasi-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-konfirmasi-batal {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 9999px;
+  background-color: #ededed;
+  color: #4b5563;
+  font-size: 13.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-konfirmasi-batal:hover {
+  background-color: #e0e0e0;
+}
+
+.btn-konfirmasi-hapus {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 9999px;
+  background-color: #c91818;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.1s ease,
+    background-color 0.15s ease;
+}
+
+.btn-konfirmasi-hapus:hover {
+  background-color: #b01414;
+}
+
+.btn-konfirmasi-hapus:active {
+  transform: translateY(1px);
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.modal-overlay.active {
+  display: flex !important;
+}
+
+#modalKonfirmasiHapus.active {
+  display: flex !important;
+  z-index: 1100 !important;
+}
+
+.kamar-input-rp-box {
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+  background-color: #ffffff !important;
+  border-radius: 9999px !important;
+  padding: 0 14px !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
+  border: 1.5px solid transparent !important;
+  transition: border-color 0.2s ease !important;
+}
+
+.kamar-input-rp-box:focus-within {
+  border-color: #3b8892 !important;
+}
+
+.kamar-rp-label {
+  font-size: 12.5px !important;
+  font-weight: 800 !important;
+  color: #4ca5b0 !important;
+  margin-right: 6px !important;
+  user-select: none !important;
+}
+
+.kamar-rp-field {
+  flex: 1 !important;
+  width: 100% !important;
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  padding: 10px 0 !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #1a4d55 !important;
+  font-family: inherit !important;
+}
+
+.kamar-rp-field::placeholder {
+  color: #9ca3af !important;
+  font-weight: 600 !important;
+}
+
+.kamar-rp-field::-webkit-inner-spin-button,
+.kamar-rp-field::-webkit-outer-spin-button {
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+}
+
+.kamar-rp-field {
+  appearance: textfield;
+  -moz-appearance: textfield !important;
+}
+
+.alert-error-kamar {
+  margin-bottom: 14px;
+}
+
+.alert-error-kamar-desktop {
+  max-width: 820px;
+  margin-bottom: 16px;
+}
+
+.btn-skema-highlight,
+.kamar-btn-skema-action {
+  background-color: #f0c375 !important;
+  color: #1a4d55 !important;
+  border: 1.5px solid #1a4d55 !important;
+}
+
+.kamar-empty-state-mobile {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 20px;
+  margin: 0;
+}
+
+.kamar-empty-state-desktop {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #ffffff;
+  font-weight: 700;
+  padding: 24px;
+  margin: 0;
+}
+
+/* ==========================================================================
+   16. MODAL KELOLA SKEMA SEWA
+   ========================================================================== */
+.modal-skema-container {
+  max-width: 440px !important;
+  max-height: 90vh !important;
+  overflow-y: auto !important;
+}
+
+.modal-skema-sub {
+  font-size: 12px;
+  color: #1a4d55;
+  margin: 0 0 14px;
+  font-weight: 600;
+}
+
+.skema-form-card {
+  background-color: #ffffff;
+  padding: 14px;
+  border-radius: 18px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.skema-form-heading {
+  font-size: 13px;
+  font-weight: 800;
+  color: #1a4d55;
+}
+
+.skema-group-sm {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.skema-label-sm {
+  font-size: 11px;
+}
+
+.skema-input-sm {
+  border: 1px solid #d1d5db !important;
+  padding: 8px 14px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.skema-grid-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+
+.skema-select-sm {
+  border: 1px solid #d1d5db !important;
+  padding: 8px 12px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.btn-skema-submit {
+  padding: 10px 0 !important;
+  margin-top: 4px !important;
+  font-size: 13px !important;
+  width: 100% !important;
+}
+
+.skema-list-label {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #1a4d55;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.skema-scroll-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.skema-item-box {
+  background-color: #ffffff;
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.skema-item-name {
+  font-weight: 800;
+  font-size: 13px;
+  color: #1a4d55;
+}
+
+.skema-item-detail {
+  font-size: 11px;
+  color: #4ca5b0;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.btn-trash-skema {
+  background-color: #ffd6d9;
+  color: #8c0c16;
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-trash-skema:hover {
+  background-color: #fca5a5;
+}
+
+.btn-trash-skema i {
+  font-size: 13px;
+}
+
+.btn-tutup-skema {
+  width: 100% !important;
+  text-align: center;
+  display: block;
+  padding: 10px 0;
+  text-decoration: none;
+}
+
+.modal-confirm-skema {
+  z-index: 1200 !important;
+}
+
+.notif-sukses-kamar {
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1.5px solid #6ee7b7;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  animation: fadeInDown 0.25s ease-out;
+}
+
+.notif-sukses-kamar i {
+  font-size: 16px;
+  color: #059669;
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.skema-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-edit-skema {
+  background-color: #fef3c7;
+  color: #92400e;
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-edit-skema:hover {
+  background-color: #fde68a;
+}
+
+.btn-edit-skema i {
+  font-size: 13px;
+}
+
+.btn-batal-edit-skema {
+  background-color: #ededed;
+  color: #4b5563;
+  padding: 8px 0;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  text-align: center;
+  display: none;
+  width: 100%;
+}
+
+.detail-input-readonly {
+  background-color: #f3f4f6 !important;
+}
+
+.detail-col-half {
+  flex: 1;
+}
+
+.kamar-empty-title {
+  font-weight: 700;
+  margin: 0;
+}
+
+.row-input-dual {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-detail-pindah {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #bae6fd !important;
+}
+
+.btn-detail-pindah:hover {
+  background-color: #bae6fd !important;
+}
+
+.pindah-icon-wrapper {
+  width: 58px;
+  height: 58px;
+  background-color: #e0f2fe;
+  color: #0284c7;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin: 0 auto 14px;
+}
+
+.btn-konfirmasi-pindah {
+  flex: 1;
+  padding: 10px 0;
+  border-radius: 9999px;
+  background-color: #0284c7;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.btn-konfirmasi-pindah:hover:not(:disabled) {
+  background-color: #0369a1;
+}
+
+.btn-konfirmasi-pindah:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.p-bottom-sm {
+  margin-bottom: 16px;
+}
+
+.text-left {
+  text-align: left;
+}
+
+/* ==========================================================================
+   17. KTP PREVIEW THUMBNAIL (MANAJEMEN KAMAR)
+   ========================================================================== */
+.ktp-preview-box {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #ffffff;
+  border: 1.5px solid #d1d5db;
+  border-radius: 9999px;
+  padding: 6px 16px 6px 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.ktp-preview-box:hover {
+  border-color: #0284c7;
+  background-color: #f0f9ff;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.15);
+}
+
+.ktp-thumbnail-wrapper {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background-color: #cbd5e1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ktp-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.ktp-preview-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  text-align: left;
+}
+
+.ktp-preview-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.ktp-preview-title i {
+  color: #0284c7;
+  margin-right: 4px;
+}
+
+.ktp-preview-hint {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.ktp-zoom-icon {
+  font-size: 15px;
+  color: #0284c7;
+  margin-left: 4px;
+}
+
+.ktp-empty-state {
+  cursor: default;
+  background-color: #f3f4f6;
+  border: 1.5px dashed #cbd5e1;
+  color: #64748b;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 10px 14px;
+  justify-content: center;
+}
+
+.ktp-empty-state:hover {
+  border-color: #cbd5e1;
+  background-color: #f3f4f6;
+  box-shadow: none;
+}
+
+.ktp-empty-icon {
+  font-size: 16px;
+  color: #94a3b8;
+}
+
+/* ==========================================================================
+   18. LIGHTBOX MODAL POPUP (KTP & BUKTI TRANSFER FULLSCREEN)
+   ========================================================================== */
+.modal-lightbox-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.85) !important;
+  backdrop-filter: blur(4px);
+  z-index: 99999 !important;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.modal-lightbox-overlay.active {
+  display: flex !important;
+}
+
+.modal-card-lightbox {
+  background-color: #1e293b !important;
+  border-radius: 18px !important;
+  max-width: 620px !important;
+  width: 100% !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 30px rgba(0, 0, 0, 0.45) !important;
+  animation: modalScaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.lightbox-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  padding: 14px 20px !important;
+  background-color: #0f172a !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.lightbox-title {
+  color: #ffffff !important;
+  font-weight: 700 !important;
+  font-size: 14.5px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+
+.lightbox-title i {
+  color: #38bdf8 !important;
+}
+
+.btn-close-lightbox {
+  background: transparent !important;
+  border: none !important;
+  color: #94a3b8 !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  padding: 4px 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: color 0.15s ease !important;
+}
+
+.btn-close-lightbox:hover {
+  color: #ffffff !important;
+}
+
+.lightbox-body {
+  padding: 16px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  background-color: #0f172a !important;
+  min-height: 240px !important;
+  max-height: 80vh !important;
+  overflow: auto !important;
+}
+
+.lightbox-img {
+  max-width: 100% !important;
+  max-height: 70vh !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35) !important;
+  object-fit: contain !important;
+}
+
+@keyframes modalScaleUp {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   19. DESKTOP VIEW
    ========================================================================== */
 @media (min-width: 992px) {
   .menu-utama-title {
@@ -2318,29 +3704,11 @@ body.login-body {
     transition: transform 0.15s ease;
   }
 
-  .desktop-pemilik-stat-car {
-    background-color: #ffffff;
-    border-radius: 20px;
-    padding: 16px 22px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    box-shadow: 4px 5px 0px #c8924b;
-    box-sizing: border-box;
-    text-decoration: none;
-    transition: transform 0.15s ease;
-  }
-
   .desktop-pemilik-stat-card:hover {
     transform: translateY(-3px);
   }
 
   .desktop-pemilik-stat-card.stat-card-wide {
-    grid-column: 1 / -1;
-    max-width: 456px;
-  }
-
-  .desktop-pemilik-stat-car.stat-card-wide {
     grid-column: 1 / -1;
     max-width: 456px;
   }
@@ -2398,6 +3766,10 @@ body.login-body {
     margin-bottom: 20px;
     width: 100%;
     max-width: 824px;
+  }
+
+  .iuran-desktop-actions-row .filter-range-form-desktop {
+    margin-left: auto !important;
   }
 
   .iuran-btn-pill-action,
@@ -2479,60 +3851,14 @@ body.login-body {
     white-space: nowrap;
   }
 
-  .desktop-mutasi-badge-green {
-    background-color: #8ce3b9 !important;
-    color: #0b5e39 !important;
-    font-size: 12px;
-    font-weight: 800;
-    padding: 6px 14px;
-    border-radius: 12px;
-    white-space: nowrap;
-  }
-
   .iuran-desktop-filters,
   .desktop-kelola-filter-row {
     display: flex;
     gap: 10px;
     margin-bottom: 16px;
-  }
-
-  .iuran-filter-pill {
-    font-size: 12px;
-    font-weight: 800;
-    padding: 6px 16px;
-    border-radius: 9999px;
-    text-decoration: none;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-  }
-
-  .iuran-filter-pill.active {
-    background-color: #4ca5b0;
-    color: #ffffff;
-  }
-
-  .iuran-filter-pill.inactive {
-    background-color: #ffffff;
-    color: #4ca5b0;
-  }
-
-  .desktop-penghuni-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
     max-width: 620px;
   }
 
-  /* nambahin filter desktop */
-
-  /* Pastikan kontainer filter sejajar dan lebarnya dibatasi agar proporsional */
-  .iuran-desktop-filters,
-  .desktop-kelola-filter-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 16px;
-    max-width: 620px; /* Disamakan dengan max-width list penghuni di bawahnya */
-  }
-
   .iuran-filter-pill {
     font-size: 12px;
     font-weight: 800;
@@ -2552,7 +3878,6 @@ body.login-body {
     color: #4ca5b0;
   }
 
-  /* Batasi lebar maksimal list penghuni agar tampilannya rapi dan tidak selebar layar penuh */
   .desktop-penghuni-list {
     display: flex;
     flex-direction: column;
@@ -2917,7 +4242,6 @@ body.login-body {
       box-shadow 0.1s ease;
   }
 
-  /* Mengapung sedikit keluar saat kursor di atasnya */
   .kamar-card-white:hover {
     transform: translateY(-2px);
     box-shadow:
@@ -2925,7 +4249,6 @@ body.login-body {
       0 8px 16px rgba(0, 0, 0, 0.12);
   }
 
-  /* Masuk / tertekan ke dalam saat diklik */
   .kamar-card-white:active {
     transform: translateY(3px);
     box-shadow:
@@ -3046,1552 +4369,4 @@ body.login-body {
     font-weight: 800;
     color: #ffffff;
   }
-}
-
-/* ==========================================================================
-   FLATPICKR RANGE
-   ========================================================================== */
-.filter-range-form {
-  width: 100%;
-  margin: 6px 0 12px 0;
-}
-
-.desktop-range-filter-wrapper {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  max-width: 620px !important;
-  margin-top: 24px !important;
-  margin-bottom: 22px !important;
-  gap: 16px;
-}
-
-.filter-range-form-desktop {
-  margin: 0 !important;
-  flex-shrink: 0;
-}
-
-/* Di baris tombol aksi (Kelola Iuran), filter didorong ke kanan */
-.iuran-desktop-actions-row .filter-range-form-desktop {
-  margin-left: auto !important;
-}
-
-/* ===== Pill filter: ikon + tanggal + tombol Reset, semuanya dalam 1 pill ===== */
-.flatpickr-box-wrapper {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background-color: #ffffff;
-  border-radius: 9999px;
-  padding: 5px 6px 5px 16px; /* sisi kanan lebih kecil supaya Reset pas di dalam pill */
-  box-shadow: 2px 3px 0px #c8924b;
-  border: 1.5px solid #4ca5b0;
-  box-sizing: border-box;
-  max-width: 100%;
-}
-
-/* Mobile: pill selebar form, isi menyesuaikan */
-.filter-range-form .flatpickr-box-wrapper {
-  display: flex;
-  width: 100%;
-}
-
-.flatpickr-box-wrapper .date-icon {
-  color: #4ca5b0;
-  font-size: 14px;
-  pointer-events: none;
-  flex-shrink: 0;
-}
-
-/* Input asli maupun input hasil generate Flatpickr (altInput) */
-.flatpickr-box-wrapper input,
-.flatpickr-box-wrapper .flatpickr-input {
-  flex: 1 1 auto;
-  min-width: 0 !important; /* boleh mengecil, jadi Reset tidak terdorong keluar */
-  width: 200px !important; /* lebar ideal untuk "dd/mm/yyyy to dd/mm/yyyy" */
-  margin: 0 !important;
-  padding: 0 !important;
-  border: none !important;
-  outline: none !important;
-  background: transparent !important;
-  color: #1a4d55 !important;
-  font-family: inherit;
-  font-size: 12.5px !important;
-  font-weight: 700 !important;
-  cursor: pointer;
-  text-overflow: ellipsis;
-}
-
-.flatpickr-box-wrapper input[type="hidden"] {
-  display: none !important;
-}
-
-/* Tombol Reset: nempel rapi di dalam pill */
-.btn-reset-range {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border-radius: 9999px;
-  background-color: #ffeed3;
-  color: #c91818;
-  font-size: 11.5px;
-  font-weight: 800;
-  line-height: 1;
-  text-decoration: none;
-  white-space: nowrap;
-  flex-shrink: 0;
-  transition: background-color 0.15s ease;
-}
-
-.btn-reset-range:hover {
-  background-color: #ffe3b8;
-}
-
-.btn-reset-range:active {
-  transform: translateY(1px);
-}
-
-/* Kalender Pop-up */
-.flatpickr-calendar {
-  border-radius: 18px !important;
-  box-shadow:
-    0 10px 25px rgba(0, 0, 0, 0.15),
-    3px 5px 0px #c8924b !important;
-  border: 1.5px solid #4ca5b0 !important;
-  font-family: inherit !important;
-}
-
-.flatpickr-day.selected,
-.flatpickr-day.startRange,
-.flatpickr-day.endRange {
-  background: #4ca5b0 !important;
-  border-color: #4ca5b0 !important;
-  color: #ffffff !important;
-  font-weight: 800 !important;
-}
-
-.flatpickr-day.inRange {
-  background: #d8f1f5 !important;
-  border-color: #d8f1f5 !important;
-  color: #1a4d55 !important;
-}
-
-/* ==========================================================================
-   HEADER LINK KE PROFIL (MOBILE)
-   ========================================================================== */
-a.kotak-kapsul-pemilik {
-  text-decoration: none !important;
-  cursor: pointer !important;
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  display: inline-flex;
-  align-items: center;
-  transition:
-    transform 0.1s ease,
-    opacity 0.15s ease;
-}
-
-a.kotak-kapsul-pemilik:active {
-  transform: scale(0.96);
-  opacity: 0.9;
-}
-
-/* ==========================================================================
-   MANAJEMEN PERATURAN KOS (TABEL DESKTOP & AKSI MOBILE)
-   ========================================================================== */
-.peraturan-toolbar {
-  margin-bottom: 20px;
-}
-
-/* Tombol Tambah Peraturan Mobile & Desktop */
-.btn-tambah-tatib-mobile {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background-color: #4ca5b0;
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 800;
-  padding: 8px 18px;
-  border-radius: 9999px;
-  text-decoration: none;
-  box-shadow: 2px 3px 0px #c8924b;
-  transition: transform 0.1s ease;
-}
-
-.btn-tambah-tatib-mobile:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0px #c8924b;
-}
-
-.tatib-table-card {
-  background-color: #ffffff;
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 4px 6px 0px #c8924b;
-  max-width: 820px;
-}
-
-.tatib-table-header {
-  background-color: #4ca5b0;
-  color: #ffffff;
-  padding: 14px 28px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: 800;
-  font-size: 15px;
-}
-
-.tatib-table-header .col-action {
-  width: 200px;
-  text-align: center;
-}
-
-.tatib-table-body {
-  display: flex;
-  flex-direction: column;
-}
-
-.tatib-table-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 28px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.tatib-table-row:last-child {
-  border-bottom: none;
-}
-
-.tatib-row-left {
-  display: flex;
-  align-items: flex-start;
-  gap: 18px;
-  flex: 1;
-  padding-right: 20px;
-}
-
-.tatib-icon-circle {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background-color: #4ca5b0;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  flex-shrink: 0;
-}
-
-.tatib-row-text h4 {
-  font-size: 15.5px;
-  font-weight: 800;
-  color: #1a4d55;
-  margin: 0 0 4px 0;
-}
-
-.tatib-row-text p {
-  font-size: 13px;
-  color: #4a5568;
-  line-height: 1.45;
-  margin: 0;
-  max-width: 480px;
-}
-
-.tatib-row-actions {
-  width: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.btn-pill-edit-desktop {
-  background-color: #4ca5b0;
-  color: #ffffff;
-  padding: 6px 18px;
-  border-radius: 9999px;
-  font-size: 12.5px;
-  font-weight: 800;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.btn-pill-hapus-desktop {
-  background-color: #ffeed3;
-  color: #b91c1c;
-  padding: 6px 18px;
-  border-radius: 9999px;
-  font-size: 12.5px;
-  font-weight: 800;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Layout Aksi Mobile */
-.peraturan-item-mobile {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 16px 0;
-  border-bottom: 1px solid #e2e8f0;
-  gap: 12px;
-}
-
-.peraturan-item-mobile:last-child {
-  border-bottom: none;
-}
-
-.peraturan-mobile-left {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  flex: 1;
-}
-
-.peraturan-mobile-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  align-items: flex-end;
-  flex-shrink: 0;
-}
-
-.btn-pill-edit-mobile {
-  background-color: #4ca5b0;
-  color: #ffffff;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 800;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.btn-pill-hapus-mobile {
-  background-color: #ffeed3;
-  color: #b91c1c;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 11px;
-  font-weight: 800;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.peraturan-flash {
-  max-width: 820px;
-  margin-bottom: 14px;
-  padding: 9px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.peraturan-flash.sukses {
-  background-color: #d3fbe7;
-  color: #0d5635;
-}
-
-.peraturan-flash.gagal {
-  background-color: #ffd6d6;
-  color: #b42318;
-}
-
-.peraturan-kosong {
-  padding: 28px 0;
-  text-align: center;
-  color: #4a5568;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.modal-konfirmasi {
-  font-size: 14px;
-  color: #333333;
-  line-height: 1.5;
-  margin-bottom: 18px;
-}
-
-textarea.modal-input,
-select.modal-input {
-  width: 100%;
-  font-family: inherit;
-  font-size: inherit;
-}
-
-textarea.modal-input {
-  resize: vertical;
-}
-
-/* ==========================================================================
-   MODAL TAMBAH PENGHUNI (PERSIS MOCKUP)
-   ========================================================================== */
-.modal-card-penghuni-custom {
-  background-color: #f0c375;
-  width: 95%;
-  max-width: 480px !important; /* Diperlebar dari 380px */
-  border-radius: 28px;
-  padding: 24px 22px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
-  box-sizing: border-box;
-  max-height: 88vh;
-  overflow-y: auto;
-}
-
-.modal-penghuni-title {
-  color: #1a4d55;
-  font-size: 20px;
-  font-weight: 900;
-  margin: 0 0 16px 0;
-  text-align: left;
-}
-
-.form-penghuni-custom {
-  display: flex;
-  flex-direction: column;
-  gap: 13px;
-  width: 100%;
-}
-
-.field-group-custom {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-}
-
-.label-custom {
-  color: #1a4d55;
-  font-size: 13px;
-  font-weight: 800;
-  text-align: left;
-}
-
-.input-custom-pill,
-.select-custom-pill {
-  width: 100%;
-  background-color: #ffffff;
-  border: 1.5px solid transparent;
-  border-radius: 9999px;
-  padding: 10px 18px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #1a4d55;
-  outline: none;
-  box-sizing: border-box;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  transition: border-color 0.2s;
-}
-
-.input-custom-pill::placeholder {
-  color: #9ca3af;
-  font-weight: 600;
-}
-
-.input-custom-pill:focus,
-.select-custom-pill:focus {
-  border-color: #3b8892;
-}
-
-.select-custom-pill {
-  appearance: auto;
-  cursor: pointer;
-}
-
-/* Row Tanggal Mulai & Selesai */
-.row-tanggal-custom {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-}
-
-.row-tanggal-custom .flex-1 {
-  flex: 1;
-}
-
-.input-date-wrapper {
-  position: relative;
-  width: 100%;
-}
-
-.date-input {
-  padding: 9px 12px;
-  text-align: center;
-  font-size: 12.5px;
-}
-
-.input-readonly-dashed {
-  background-color: #ffffff;
-  border: 1.5px dashed #4ca5b0;
-  color: #1a4d55;
-  font-weight: 800;
-  cursor: default;
-}
-
-/* Upload Area Garis Putus-Putus */
-.upload-area-custom {
-  position: relative;
-  background-color: #ffffff;
-  border: 2px dashed #4ca5b0;
-  border-radius: 20px;
-  height: 110px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  box-sizing: border-box;
-  overflow: hidden;
-}
-
-.upload-area-custom input[type="file"] {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.upload-icon-circle {
-  color: #4ca5b0;
-  font-size: 26px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.upload-text-custom {
-  color: #4ca5b0;
-  font-size: 12px;
-  font-weight: 800;
-  margin: 0;
-  pointer-events: none;
-}
-
-/* Tombol Aksi Batal & Simpan */
-.actions-custom-row {
-  display: flex;
-  gap: 12px;
-  margin-top: 6px;
-  width: 100%;
-}
-
-.btn-custom-pill {
-  flex: 1;
-  padding: 10px 0;
-  border-radius: 9999px;
-  font-size: 14px;
-  font-weight: 800;
-  text-align: center;
-  text-decoration: none;
-  cursor: pointer;
-  border: none;
-  box-sizing: border-box;
-  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.12);
-  transition:
-    transform 0.1s ease,
-    box-shadow 0.1s ease;
-}
-
-.btn-custom-pill:active {
-  transform: translate(1px, 1px);
-  box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.12);
-}
-
-.btn-batal-custom {
-  background-color: #ffffff;
-  color: #1a4d55;
-}
-
-.btn-simpan-custom {
-  background-color: #4ca5b0;
-  color: #ffffff;
-}
-
-/* ==========================================================================
-   MODAL DETAIL KAMAR (WARNA KUNING EMAS IDENTIK DENGAN MOCKUP)
-   ========================================================================== */
-.modal-card-detail-kamar {
-  background-color: #f0c375;
-  width: 95%;
-  max-width: 480px !important; /* Diperlebar dari 375px */
-  border-radius: 28px;
-  padding: 24px 24px 26px;
-  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.3);
-  box-sizing: border-box;
-  max-height: 88vh;
-  overflow-y: auto;
-}
-
-.detail-kamar-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-}
-
-.detail-kamar-title {
-  color: #1a4d55;
-  font-size: 20px;
-  font-weight: 900;
-  margin: 0;
-}
-
-.badge-detail-kamar {
-  font-size: 11.5px;
-  font-weight: 800;
-  padding: 4px 14px;
-  border-radius: 9999px;
-}
-
-.badge-terisi {
-  background-color: #fce1b8;
-  color: #7c4103;
-}
-
-.badge-kosong-detail {
-  background-color: #ffffff;
-  color: #1a4d55;
-}
-
-.detail-kamar-form {
-  display: flex;
-  flex-direction: column;
-  gap: 13px;
-  width: 100%;
-}
-
-.detail-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  width: 100%;
-}
-
-.detail-label {
-  color: #1a4d55;
-  font-size: 13px;
-  font-weight: 800;
-  text-align: left;
-}
-
-.detail-input-pill,
-.detail-select-pill {
-  width: 100%;
-  background-color: #ffffff;
-  border: 1.5px solid transparent;
-  border-radius: 9999px;
-  padding: 10px 18px;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #1a4d55;
-  outline: none;
-  box-sizing: border-box;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-}
-
-.detail-input-pill:focus,
-.detail-select-pill:focus {
-  border-color: #3b8892;
-}
-
-.detail-select-pill {
-  cursor: pointer;
-}
-
-.detail-row-dates {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-}
-
-.detail-input-pill.date-box {
-  padding: 9px 12px;
-  text-align: center;
-  font-size: 12.5px;
-}
-
-.detail-input-pill.dashed-border {
-  border: 1.5px dashed #4ca5b0;
-  background-color: #ffffff;
-  cursor: default;
-}
-
-/* Tombol Aksi Bertingkat Vertikal */
-.detail-actions-vertical {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: 8px;
-  width: 100%;
-}
-
-.btn-detail-pill {
-  width: 100%;
-  padding: 11px 0;
-  border-radius: 9999px;
-  font-size: 13.5px;
-  font-weight: 800;
-  text-align: center;
-  text-decoration: none;
-  cursor: pointer;
-  border: none;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: transform 0.1s ease;
-}
-
-.btn-detail-pill:active {
-  transform: translateY(1px);
-}
-
-.btn-detail-simpan {
-  background-color: #4ca5b0;
-  color: #ffffff;
-}
-
-.btn-detail-hapus {
-  background-color: #ffd6d9;
-  color: #8c0c16;
-}
-
-.btn-detail-batal {
-  background-color: #ffffff;
-  color: #1a4d55;
-}
-
-/* ==========================================================================
-   MODAL KONFIRMASI HAPUS PENGHUNI (KUSTOM)
-   ========================================================================== */
-.modal-card-konfirmasi-kamar {
-  background-color: #ffffff;
-  width: 100%;
-  max-width: 340px;
-  border-radius: 24px;
-  padding: 24px 20px;
-  text-align: center;
-  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.35);
-  box-sizing: border-box;
-  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-@keyframes popIn {
-  from {
-    transform: scale(0.92);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-.konfirmasi-icon-wrapper {
-  width: 58px;
-  height: 58px;
-  background-color: #ffd6d9;
-  color: #c91818;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 26px;
-  margin: 0 auto 14px;
-}
-
-.konfirmasi-title {
-  color: #1a4d55;
-  font-size: 19px;
-  font-weight: 900;
-  margin: 0 0 8px;
-}
-
-.konfirmasi-desc {
-  color: #4b5563;
-  font-size: 13.5px;
-  line-height: 1.5;
-  margin: 0 0 20px;
-}
-
-.konfirmasi-desc strong {
-  color: #1a4d55;
-}
-
-.konfirmasi-actions {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-}
-
-.btn-konfirmasi-batal {
-  flex: 1;
-  padding: 10px 0;
-  border-radius: 9999px;
-  background-color: #ededed;
-  color: #4b5563;
-  font-size: 13.5px;
-  font-weight: 800;
-  border: none;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.btn-konfirmasi-batal:hover {
-  background-color: #e0e0e0;
-}
-
-.btn-konfirmasi-hapus {
-  flex: 1;
-  padding: 10px 0;
-  border-radius: 9999px;
-  background-color: #c91818;
-  color: #ffffff;
-  font-size: 13.5px;
-  font-weight: 800;
-  border: none;
-  cursor: pointer;
-  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.15);
-  transition:
-    transform 0.1s ease,
-    background-color 0.15s ease;
-}
-
-.btn-konfirmasi-hapus:hover {
-  background-color: #b01414;
-}
-
-.btn-konfirmasi-hapus:active {
-  transform: translateY(1px);
-}
-
-/* Overlay Utama untuk Semua Modal */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(2px);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-  padding: 16px;
-  box-sizing: border-box;
-}
-
-.modal-overlay.active {
-  display: flex !important;
-}
-
-/* Modal Konfirmasi Hapus wajib di lapisan paling depan */
-#modalKonfirmasiHapus.active {
-  display: flex !important;
-  z-index: 1100 !important;
-}
-
-/* ==========================================================================
-   INPUT KURS RUPIAH MODAL KAMAR
-   ========================================================================== */
-.kamar-input-rp-box {
-  display: flex !important;
-  align-items: center !important;
-  width: 100% !important;
-  background-color: #ffffff !important;
-  border-radius: 9999px !important;
-  padding: 0 14px !important;
-  box-sizing: border-box !important;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05) !important;
-  border: 1.5px solid transparent !important;
-  transition: border-color 0.2s ease !important;
-}
-
-.kamar-input-rp-box:focus-within {
-  border-color: #3b8892 !important;
-}
-
-.kamar-rp-label {
-  font-size: 12.5px !important;
-  font-weight: 800 !important;
-  color: #4ca5b0 !important;
-  margin-right: 6px !important;
-  user-select: none !important;
-}
-
-.kamar-rp-field {
-  flex: 1 !important;
-  width: 100% !important;
-  border: none !important;
-  outline: none !important;
-  background: transparent !important;
-  padding: 10px 0 !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  color: #1a4d55 !important;
-  font-family: inherit !important;
-}
-
-.kamar-rp-field::placeholder {
-  color: #9ca3af !important;
-  font-weight: 600 !important;
-}
-
-/* Hapus panah naik-turun bawaan type=number */
-.kamar-rp-field::-webkit-inner-spin-button,
-.kamar-rp-field::-webkit-outer-spin-button {
-  -webkit-appearance: none !important;
-  margin: 0 !important;
-}
-
-.kamar-rp-field {
-  appearance: textfield;
-  -moz-appearance: textfield !important;
-}
-
-/* ==========================================================================
-   CLASS PENGGANTI INLINE STYLE MANAJEMEN KAMAR
-   ========================================================================== */
-
-/* Alert Error */
-.alert-error-kamar {
-  margin-bottom: 14px;
-}
-
-.alert-error-kamar-desktop {
-  max-width: 820px;
-  margin-bottom: 16px;
-}
-
-/* Penyesuaian Baris Aksi */
-.kamar-actions {
-  flex-wrap: wrap;
-}
-
-/* Tombol Skema Sewa (Emas Kontras) */
-.btn-skema-highlight {
-  background-color: #f0c375 !important;
-  color: #1a4d55 !important;
-  border: 1.5px solid #1a4d55 !important;
-}
-
-.kamar-btn-skema-action {
-  background-color: #f0c375 !important;
-  color: #1a4d55 !important;
-  border: 1.5px solid #1a4d55 !important;
-}
-
-/* Empty State Kamar */
-.kamar-empty-state-mobile {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: #ffffff;
-  font-weight: 700;
-  padding: 20px;
-  margin: 0;
-}
-
-.kamar-empty-state-desktop {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: #ffffff;
-  font-weight: 700;
-  padding: 24px;
-  margin: 0;
-}
-
-/* ==========================================================================
-   MODAL KELOLA SKEMA SEWA (FULL EXTERNAL CSS)
-   ========================================================================== */
-.modal-skema-container {
-  max-width: 440px !important;
-  max-height: 90vh !important;
-  overflow-y: auto !important;
-}
-
-.modal-skema-sub {
-  font-size: 12px;
-  color: #1a4d55;
-  margin: 0 0 14px;
-  font-weight: 600;
-}
-
-/* Card Form Input Skema Baru */
-.skema-form-card {
-  background-color: #ffffff;
-  padding: 14px;
-  border-radius: 18px;
-  margin-bottom: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-}
-
-.skema-form-heading {
-  font-size: 13px;
-  font-weight: 800;
-  color: #1a4d55;
-}
-
-.skema-group-sm {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.skema-label-sm {
-  font-size: 11px;
-}
-
-.skema-input-sm {
-  border: 1px solid #d1d5db !important;
-  padding: 8px 14px !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-.skema-grid-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  width: 100%;
-}
-
-.skema-select-sm {
-  border: 1px solid #d1d5db !important;
-  padding: 8px 12px !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-.btn-skema-submit {
-  padding: 10px 0 !important;
-  margin-top: 4px !important;
-  font-size: 13px !important;
-  width: 100% !important;
-}
-
-/* Daftar List Skema */
-.skema-list-label {
-  font-size: 12.5px;
-  font-weight: 800;
-  color: #1a4d55;
-  margin-bottom: 8px;
-  display: block;
-}
-
-.skema-scroll-list {
-  max-height: 200px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.skema-item-box {
-  background-color: #ffffff;
-  border-radius: 14px;
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-}
-
-.skema-item-name {
-  font-weight: 800;
-  font-size: 13px;
-  color: #1a4d55;
-}
-
-.skema-item-detail {
-  font-size: 11px;
-  color: #4ca5b0;
-  font-weight: 700;
-  margin-top: 2px;
-}
-
-.btn-trash-skema {
-  background-color: #ffd6d9;
-  color: #8c0c16;
-  border: none;
-  border-radius: 8px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.btn-trash-skema:hover {
-  background-color: #fca5a5;
-}
-
-.btn-trash-skema i {
-  font-size: 13px;
-}
-
-.btn-tutup-skema {
-  width: 100% !important;
-  text-align: center;
-  display: block;
-  padding: 10px 0;
-  text-decoration: none;
-}
-
-/* Layer Modal Konfirmasi Hapus Skema */
-.modal-confirm-skema {
-  z-index: 1200 !important;
-}
-
-/* Notifikasi Sukses Aksi Kamar & Skema */
-.notif-sukses-kamar {
-  background-color: #d1fae5;
-  color: #065f46;
-  border: 1.5px solid #6ee7b7;
-  padding: 10px 14px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  animation: fadeInDown 0.25s ease-out;
-}
-
-.notif-sukses-kamar i {
-  font-size: 16px;
-  color: #059669;
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Grup Aksi List Skema */
-.skema-item-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-/* Tombol Edit Skema (Kuning Lembut) */
-.btn-edit-skema {
-  background-color: #fef3c7;
-  color: #92400e;
-  border: none;
-  border-radius: 8px;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.15s ease;
-}
-
-.btn-edit-skema:hover {
-  background-color: #fde68a;
-}
-
-.btn-edit-skema i {
-  font-size: 13px;
-}
-
-/* Tombol Batal Edit */
-.btn-batal-edit-skema {
-  background-color: #ededed;
-  color: #4b5563;
-  padding: 8px 0;
-  border-radius: 9999px;
-  font-size: 12.5px;
-  font-weight: 800;
-  border: none;
-  cursor: pointer;
-  text-align: center;
-  display: none;
-  width: 100%;
-}
-
-/* Utility Detail Kamar */
-.detail-input-readonly {
-  background-color: #f3f4f6 !important;
-}
-
-.detail-col-half {
-  flex: 1;
-}
-
-.kamar-empty-title {
-  font-weight: 700;
-  margin: 0;
-}
-
-/* Tata Letak Input Ganda (Dual Field Row) */
-.row-input-dual {
-  display: flex;
-  gap: 10px;
-  width: 100%;
-}
-
-/* Tombol Pindah Kamar di Modal Detail */
-.btn-detail-pindah {
-  background-color: #e0f2fe !important;
-  color: #0369a1 !important;
-  border: 1px solid #bae6fd !important;
-}
-
-.btn-detail-pindah:hover {
-  background-color: #bae6fd !important;
-}
-
-/* Modal Pindah Kamar */
-.pindah-icon-wrapper {
-  width: 58px;
-  height: 58px;
-  background-color: #e0f2fe;
-  color: #0284c7;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  margin: 0 auto 14px;
-}
-
-.btn-konfirmasi-pindah {
-  flex: 1;
-  padding: 10px 0;
-  border-radius: 9999px;
-  background-color: #0284c7;
-  color: #ffffff;
-  font-size: 13.5px;
-  font-weight: 800;
-  border: none;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.btn-konfirmasi-pindah:hover:not(:disabled) {
-  background-color: #0369a1;
-}
-
-.btn-konfirmasi-pindah:disabled {
-  background-color: #94a3b8;
-  cursor: not-allowed;
-}
-
-.p-bottom-sm {
-  margin-bottom: 16px;
-}
-
-.text-left {
-  text-align: left;
-}
-
-.ktp-preview-box {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background-color: #ffffff;
-  border: 1.5px solid #d1d5db;
-  border-radius: 9999px;
-  padding: 6px 16px 6px 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  user-select: none;
-}
-
-.ktp-preview-box:hover {
-  border-color: #0284c7;
-  background-color: #f0f9ff;
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.15);
-}
-
-.ktp-thumbnail-wrapper {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  overflow: hidden;
-  flex-shrink: 0;
-  background-color: #cbd5e1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ktp-thumbnail-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.ktp-preview-info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  text-align: left;
-}
-
-.ktp-preview-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1f2937;
-}
-
-.ktp-preview-title i {
-  color: #0284c7;
-  margin-right: 4px;
-}
-
-.ktp-preview-hint {
-  font-size: 11px;
-  color: #6b7280;
-}
-
-.ktp-zoom-icon {
-  font-size: 15px;
-  color: #0284c7;
-  margin-left: 4px;
-}
-
-.ktp-empty-state {
-  cursor: default;
-  background-color: #f3f4f6;
-  border: 1.5px dashed #cbd5e1;
-  color: #64748b;
-  font-size: 12.5px;
-  font-weight: 600;
-  padding: 10px 14px;
-  justify-content: center;
-}
-
-.ktp-empty-state:hover {
-  border-color: #cbd5e1;
-  background-color: #f3f4f6;
-  box-shadow: none;
-}
-
-.ktp-empty-icon {
-  font-size: 16px;
-  color: #94a3b8;
-}
-
-.modal-lightbox-overlay {
-  z-index: 99999 !important;
-  background-color: rgba(15, 23, 42, 0.85);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  backdrop-filter: blur(4px);
-  padding: 16px;
-}
-
-.modal-lightbox-overlay.active {
-  display: flex !important;
-}
-
-.modal-card-lightbox {
-  background-color: #ffffff;
-  border-radius: 18px;
-  max-width: 620px;
-  width: 100%;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.35);
-  overflow: hidden;
-  animation: modalScaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.lightbox-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.lightbox-title {
-  font-size: 14.5px;
-  font-weight: 800;
-  color: #0f172a;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.lightbox-title i {
-  color: #0284c7;
-}
-
-.btn-close-lightbox {
-  background: none;
-  border: none;
-  font-size: 20px;
-  color: #64748b;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: color 0.15s ease;
-}
-
-.btn-close-lightbox:hover {
-  color: #ef4444;
-}
-
-.lightbox-body {
-  padding: 16px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #0f172a;
-  min-height: 240px;
-}
-
-.lightbox-img {
-  max-width: 100%;
-  max-height: 70vh;
-  border-radius: 6px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
-  object-fit: contain;
-}
-
-@keyframes modalScaleUp {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
-
-/* ==========================================================================
-   INPUT PASSWORD EYE TOGGLE & VALIDASI PIN MODAL
-   ========================================================================== */
-.modal-card-pin-custom {
-  background-color: #f0c375 !important;
-  max-width: 420px !important;
-}
-
-.input-password-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-.input-password-wrapper .input-pin-pad {
-  width: 100%;
-  padding-right: 44px !important; /* ruang tombol mata di kanan */
-  letter-spacing: 2px;
-}
-
-.btn-toggle-eye {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  color: #64748b;
-  font-size: 15px;
-  cursor: pointer;
-  padding: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.15s ease;
-  z-index: 2;
-}
-
-.btn-toggle-eye:hover {
-  color: #1a4d55;
-}
-
-/* Tampilan saat input dinonaktifkan (PIN lama belum cocok) */
-.input-disabled-style {
-  background-color: #f1f5f9 !important;
-  border-color: #e2e8f0 !important;
-  color: #94a3b8 !important;
-  cursor: not-allowed !important;
-  box-shadow: none !important;
-}
-
-/* Notifikasi teks hint di bawah input */
-.pin-hint-msg {
-  display: block;
-  font-size: 11px;
-  font-weight: 700;
-  margin-top: 4px;
-  margin-left: 6px;
-  min-height: 14px;
-}
-
-.pin-hint-msg.error {
-  color: #b91c1c;
-}
-
-.pin-hint-msg.success {
-  color: #065f46;
-}
-
-/* Tombol submit ketika disabled */
-.btn-modal-submit.btn-disabled {
-  background-color: #94a3b8 !important;
-  cursor: not-allowed !important;
-  opacity: 0.65;
-  box-shadow: none !important;
-}
-
-/* Input Readonly Terkunci: Background putih bersih, warna teks hitam solid, tidak bisa diedit */
-.input-readonly-locked {
-  background-color: #ffffff !important;
-  color: #1e293b !important; /* warna teks hitam biasa */
-  font-weight: 600 !important;
-  cursor: default !important;
-  user-select: none !important;
-  border: 1.5px solid #cbd5e1 !important;
-  opacity: 1 !important; /* tidak pudar */
-}
-
-.input-readonly-locked:focus {
-  outline: none !important;
-  border-color: #cbd5e1 !important;
-  box-shadow: none !important;
 }
