@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_skema_item'])) 
 
 // 3. HANDLER: TAMBAH KAMAR (HANYA NO KAMAR, TANPA HARGA)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_kamar'])) {
-    $no_kamar = trim($_POST['no_kamar'] ?? '');
+    $no_kamar = preg_replace('/[^0-9]/', '', trim($_POST['no_kamar'] ?? ''));
 
     if ($no_kamar !== '') {
         try {
@@ -129,10 +129,10 @@ if ($stmtCek->fetch()) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
     $nama         = trim($_POST['nama'] ?? '');
     $kamar_nomor  = trim($_POST['kamar_nomor'] ?? '');
-    $no_wa        = trim($_POST['no_wa'] ?? '');
+    $no_wa        = preg_replace('/[^0-9]/', '', trim($_POST['no_wa'] ?? ''));
     $email        = trim($_POST['email'] ?? null);
-    $kontak_wali  = trim($_POST['kontak_wali'] ?? '');
-    $pin          = trim($_POST['pin'] ?? '123456');
+    $kontak_wali  = preg_replace('/[^0-9]/', '', trim($_POST['kontak_wali'] ?? ''));
+    $pin          = preg_replace('/[^0-9]/', '', trim($_POST['pin'] ?? '123456'));
     $is_ketua_kos = (isset($_POST['is_ketua_kos']) && $_POST['is_ketua_kos'] === '1') ? 'true' : 'false';
     $skema_id     = (int) ($_POST['skema_id'] ?? 0);
     $tgl_mulai    = $_POST['tgl_mulai'] ?? date('Y-m-d');
@@ -256,10 +256,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
     $nomor_kamar  = trim($_POST['nomor_kamar'] ?? '');
     $nama         = trim($_POST['nama'] ?? '');
-    $no_wa        = trim($_POST['no_wa'] ?? '');
+    $no_wa        = preg_replace('/[^0-9]/', '', trim($_POST['no_wa'] ?? ''));
     $email        = trim($_POST['email'] ?? null);
-    $kontak_wali  = trim($_POST['kontak_wali'] ?? '');
-    $pin_baru     = trim($_POST['pin'] ?? '');
+    $kontak_wali  = preg_replace('/[^0-9]/', '', trim($_POST['kontak_wali'] ?? ''));
+    $pin_baru     = preg_replace('/[^0-9]/', '', trim($_POST['pin'] ?? ''));
     $is_ketua_kos = (isset($_POST['is_ketua_kos']) && $_POST['is_ketua_kos'] === '1') ? 'true' : 'false';
     $skema_teks   = trim($_POST['durasi_sewa'] ?? '');
     $tgl_mulai    = $_POST['tgl_mulai'] ?? date('Y-m-d');

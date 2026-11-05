@@ -327,4 +327,18 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
             modal.classList.remove('active');
         }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+    const wa = document.getElementById('detailWa');
+    const wali = document.getElementById('detailWali');
+    const pin = document.getElementById('detailPin');
+
+    function filterHanyaAngka() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    }
+
+    if (wa) wa.addEventListener('input', filterHanyaAngka);
+    if (wali) wali.addEventListener('input', filterHanyaAngka);
+    if (pin) pin.addEventListener('input', filterHanyaAngka);
+});
 </script>

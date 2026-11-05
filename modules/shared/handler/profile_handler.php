@@ -78,16 +78,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // 3. Ubah Data Profil
+// 3. Ubah Data Profil
     if ($action === 'ubah_profil') {
         $nama_baru        = trim($_POST['nama'] ?? '');
-        $no_wa_baru       = trim($_POST['no_wa'] ?? '');
-        $no_rekening_baru = trim($_POST['no_rekening'] ?? '');
+        // Bersihkan karakter non-angka
+        $no_wa_baru       = preg_replace('/[^0-9]/', '', trim($_POST['no_wa'] ?? ''));
+        $no_rekening_baru = preg_replace('/[^0-9]/', '', trim($_POST['no_rekening'] ?? ''));
 
         if ($role_user === 'pemilik') {
-            if ($nama_baru === '') {$_SESSION['pesan_error'] = 'Nama tidak boleh kosong.';
+            if ($nama_baru === '') {
+                $_SESSION['pesan_error'] = 'Nama tidak boleh kosong.';
             } else {
-                $updateStmt =$pdo->prepare("UPDATE pemilik SET nama = :nama, no_wa = :no_wa, no_rekening = :no_rekening WHERE id = :id");
+                $updateStmt = $pdo->prepare("UPDATE pemilik SET nama = :nama, no_wa = :no_wa, no_rekening = :no_rekening WHERE id = :id");
                 $updateStmt->execute([
                     'nama'        => $nama_baru,
                     'no_wa'       => $no_wa_baru,
@@ -95,8 +97,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'id'          => $user_id
                 ]);
 
-                $_SESSION['user']['nama'] =$nama_baru;
-                $_SESSION['pesan_sukses'] = 'Data profil berhasil diperbarui!';
+                $_SESSION['user']['nama']        = $nama_baru;
+                $_SESSION['user']['no_wa']       = $no_wa_baru;
+                $_SESSION['user']['no_rekening'] = $no_rekening_baru;
+                $_SESSION['pesan_sukses']        = 'Data profil berhasil diperbarui!';
             }
         }
         header('Location: /?page=profile');

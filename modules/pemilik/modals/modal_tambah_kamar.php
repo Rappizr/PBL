@@ -10,7 +10,8 @@ $current_page = $current_page ?? ($_GET['page'] ?? 'manajemen_kamar');
             <form action="?page=<?= htmlspecialchars($current_page) ?>" method="POST" class="form-penghuni-custom">
                 <div class="field-group-custom">
                     <label class="label-custom" for="nomorKamar">Nomor Kamar</label>
-                    <input type="text" id="nomorKamar" name="no_kamar" class="input-custom-pill" placeholder="Contoh: 04" maxlength="10" required autofocus>
+                    <input type="text" id="nomorKamar" name="no_kamar" class="input-custom-pill input-hanya-angka" 
+                           placeholder="Contoh: 04" maxlength="10" inputmode="numeric" pattern="[0-9]+" required autofocus>
                 </div>
 
                 <div class="actions-custom-row actions-spacing-top">
@@ -20,4 +21,15 @@ $current_page = $current_page ?? ($_GET['page'] ?? 'manajemen_kamar');
             </form>
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const noKamarInput = document.getElementById('nomorKamar');
+            if (noKamarInput) {
+                noKamarInput.addEventListener('input', function() {
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                });
+            }
+        });
+    </script>
 <?php endif; ?>

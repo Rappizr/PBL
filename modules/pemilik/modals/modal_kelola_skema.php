@@ -15,7 +15,6 @@ unset($_SESSION['pesan_sukses']);
                 Tambahkan atau ubah format sewa kost Anda (misal: Bulanan, Harian, 3 Bulan, atau Tahunan).
             </p>
 
-            <!-- NOTIFIKASI BERHASIL DISIMPAN / DIUPDATE / DIHAPUS -->
             <?php if (!empty($pesan_sukses)): ?>
                 <div class="notif-sukses-kamar">
                     <i class="fa-solid fa-circle-check"></i>
@@ -23,9 +22,7 @@ unset($_SESSION['pesan_sukses']);
                 </div>
             <?php endif; ?>
 
-            <!-- Form Input & Edit Skema -->
             <form action="?page=<?= htmlspecialchars($current_page) ?>" method="POST" class="skema-form-card" id="formKelolaSkema">
-                <!-- ID Skema (terisi jika sedang mode edit) -->
                 <input type="hidden" name="id_skema" id="skemaFormId" value="0">
 
                 <span class="skema-form-heading" id="skemaFormHeading">+ Tambah Skema Baru</span>
@@ -45,7 +42,8 @@ unset($_SESSION['pesan_sukses']);
                     </div>
                     <div class="field-group-custom skema-group-sm">
                         <label class="label-custom skema-label-sm" id="labelDurasiNilai">Berapa Bulan</label>
-                        <input type="number" name="durasi_nilai" id="skemaFormDurasi" class="input-custom-pill skema-input-sm" placeholder="Contoh: 1 / 3 / 12" min="1" value="1" required>
+                        <input type="text" name="durasi_nilai" id="skemaFormDurasi" class="input-custom-pill skema-input-sm" 
+                               placeholder="Contoh: 1 / 3 / 12" inputmode="numeric" maxlength="4" value="1" required>
                     </div>
                 </div>
 
@@ -65,7 +63,6 @@ unset($_SESSION['pesan_sukses']);
                 </button>
             </form>
 
-            <!-- Daftar Skema Tersedia -->
             <span class="skema-list-label">Skema yang Tersedia:</span>
             <div class="skema-scroll-list">
                 <?php if (empty($list_skema)): ?>
@@ -123,11 +120,7 @@ unset($_SESSION['pesan_sukses']);
     <script>
         function formatRupiahInput(input) {
             let value = input.value.replace(/\D/g, '');
-            if (value) {
-                input.value = new Intl.NumberFormat('id-ID').format(value);
-            } else {
-                input.value = '';
-            }
+            input.value = value ? new Intl.NumberFormat('id-ID').format(value) : '';
         }
 
         function formatAngkaTitik(angka) {
@@ -186,9 +179,18 @@ unset($_SESSION['pesan_sukses']);
 
         function tutupModalHapusSkema() {
             const m = document.getElementById('modalKonfirmasiHapusSkema');
-            if (m) {
-                m.classList.remove('active');
-            }
+            if (m) m.classList.remove('active');
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const durasiInput = document.getElementById('skemaFormDurasi');
+            if (durasiInput) {
+                durasiInput.addEventListener('input', function() {
+                    // Hanya izinkan angka dan cegah input angka 0 di awal
+                    this.value = this.value.replace(/[^0-9]/g, '');
+                    if (this.value === '0') this.value = '1';
+                });
+            }
+        });
     </script>
 <?php endif; ?>

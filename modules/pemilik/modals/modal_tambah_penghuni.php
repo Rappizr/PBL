@@ -149,5 +149,20 @@ $list_skema   = $list_skema ?? [];
                 text.textContent = 'Ketuk untuk pilih foto';
             }
         }
+
+    document.addEventListener('DOMContentLoaded', function() {
+    const wa = document.getElementById('nomorHp');
+    const wali = document.getElementById('kontakWali');
+    const pin = document.getElementById('pinAkun');
+
+    function filterHanyaAngka() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+    }
+
+    if (wa) wa.addEventListener('input', filterHanyaAngka);
+    if (wali) wali.addEventListener('input', filterHanyaAngka);
+    if (pin) pin.addEventListener('input', filterHanyaAngka);
+});
     </script>
 <?php endif; ?>
+
