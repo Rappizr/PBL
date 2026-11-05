@@ -13,14 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($pin === '') {
             $_SESSION['login_error'] = 'PIN Pemilik wajib diisi!';
         } else {
-            // Ambil pemilik dengan urutan ID yang pasti (ID terendah / utama)
+            // Ambil pemilik utama
             $stmtPemilik = $pdo->query("SELECT * FROM pemilik ORDER BY id ASC LIMIT 1");
             $data_pemilik = $stmtPemilik ? $stmtPemilik->fetch(PDO::FETCH_ASSOC) : null;
 
             if (!$data_pemilik || $pin !== trim((string)$data_pemilik['pin'])) {
                 $_SESSION['login_error'] = 'PIN Pemilik salah!';
             } else {
-                // Regenerasi ID sesi untuk mencegah session fixation
                 session_regenerate_id(true);
 
                 $_SESSION['user'] = [
@@ -51,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $padded_kamar = str_pad($clean_kamar, 2, '0', STR_PAD_LEFT);
 
             try {
+                // Sesuai skema baru: status_kamar ada di tabel kamar ('terisi')
                 $stmt = $pdo->prepare("
                     SELECT
                         p.id AS penghuni_id,
@@ -62,10 +62,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         k.no_kamar,
                         pk.id AS penghuni_kamar_id
                     FROM kamar k
-                    INNER JOIN penghuni_kamar pk ON pk.kamar_id = k.id AND pk.status_kamar = 'aktif'
+                    INNER JOIN penghuni_kamar pk ON pk.kamar_id = k.id
                     INNER JOIN penghuni p ON p.id = pk.penghuni_id
                     WHERE (k.no_kamar = :raw_kamar OR k.no_kamar = :clean_kamar OR k.no_kamar = :padded_kamar)
+                      AND k.status_kamar = 'terisi'
                       AND p.pin = :pin
+                    ORDER BY pk.id DESC
                     LIMIT 1
                 ");
 
