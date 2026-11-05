@@ -76,7 +76,7 @@ $tahun               = "2026";
                     <span class="stat-box-lbl">Menunggu Verifikasi</span>
                     <span class="stat-box-val val-danger"><?= $menunggu_verif; ?></span>
                 </a>
-                <div class="desktop-pemilik-stat-car stat-card-wide">
+                <div class="desktop-pemilik-stat-card stat-card-wide">
                     <span class="stat-box-lbl">Pemasukan Tahun Ini</span>
                     <span class="stat-box-val val-money"><?= $pemasukan_tahun_ini; ?></span>
                 </div>
