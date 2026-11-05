@@ -3,10 +3,50 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$kamar_terisi       = "13/16";
-$menunggu_verif     = 4;
-$pemasukan_tahun_ini = "Rp. 19,500,000";
-$tahun               = "2026";
+// Pastikan koneksi $pdo tersedia
+if (!isset($pdo)) {
+    require_once __DIR__ . '/../../config/database.php';
+}
+
+$tahun = date('Y');
+
+// 1. HITUNG KAMAR TERISI (Contoh: "13/16" atau dihitung dinamis dari tabel kamar)
+$kamar_terisi_str = "0/0";
+try {
+    // Total kamar keseluruhan
+    $totalKamar = (int)$pdo->query("SELECT COUNT(*) FROM kamar")->fetchColumn();
+    
+    // Total kamar yang terisi / aktif
+    $terisiKamar = (int)$pdo->query("SELECT COUNT(DISTINCT kamar_id) FROM penghuni_kamar WHERE status_kamar = 'aktif'")->fetchColumn();
+    
+    $kamar_terisi_str = $terisiKamar . '/' . $totalKamar;
+} catch (Exception $e) {
+    $kamar_terisi_str = "0/0";
+}
+
+// 2. HITUNG JUMLAH MENUNGGU VERIFIKASI (Dari tabel pembayaran status 'pending')
+$menunggu_verif = 0;
+try {
+    $menunggu_verif = (int)$pdo->query("SELECT COUNT(*) FROM pembayaran WHERE status_verifikasi = 'pending'")->fetchColumn();
+} catch (Exception $e) {
+    $menunggu_verif = 0;
+}
+
+// 3. HITUNG TOTAL PEMASUKAN TAHUN INI (Dari tabel buku_kas dengan tipe 'pemasukan')
+$total_pemasukan_val = 0;
+try {
+    $stmtPemasukan = $pdo->prepare("
+        SELECT COALESCE(SUM(nominal), 0) AS total 
+        FROM buku_kas 
+        WHERE tipe_transaksi = 'pemasukan' 
+        AND EXTRACT(YEAR FROM tanggal_transaksi) = :tahun
+    ");
+    $stmtPemasukan->execute([':tahun' => $tahun]);
+    $total_pemasukan_val = (float)$stmtPemasukan->fetchColumn();
+} catch (Exception $e) {
+    $total_pemasukan_val = 0;
+}
+$pemasukan_tahun_ini = "Rp. " . number_format($total_pemasukan_val, 0, ',', '.');
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -70,7 +110,7 @@ $tahun               = "2026";
             <div class="desktop-pemilik-stats-grid">
                 <a href="/?page=manajemen_kamar" class="desktop-pemilik-stat-card">
                     <span class="stat-box-lbl">Kamar Terisi</span>
-                    <span class="stat-box-val"><?= $kamar_terisi; ?></span>
+                    <span class="stat-box-val"><?= $kamar_terisi_str; ?></span>
                 </a>
                 <a href="/?page=verifikasi_pembayaran" class="desktop-pemilik-stat-card">
                     <span class="stat-box-lbl">Menunggu Verifikasi</span>
