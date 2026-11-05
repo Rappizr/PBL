@@ -28,7 +28,7 @@ switch ($page) {
         break;
     case 'verifikasi_bayar':          // <-- Ditambahkan sebagai alias
     case 'verifikasi_pembayaran':
-        require_once __DIR__ . '/../modules/pemilik/verifikasi_bayar.php';
+        require_once __DIR__ . '/../modules/shared/verifikasi_bayar.php';
         break;
 
     // Penghuni

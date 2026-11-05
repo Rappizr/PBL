@@ -4500,3 +4500,81 @@ textarea.modal-input {
     opacity: 1;
   }
 }
+
+/* ==========================================================================
+   INPUT PASSWORD EYE TOGGLE & VALIDASI PIN MODAL
+   ========================================================================== */
+.modal-card-pin-custom {
+  background-color: #f0c375 !important;
+  max-width: 420px !important;
+}
+
+.input-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-password-wrapper .input-pin-pad {
+  width: 100%;
+  padding-right: 44px !important; /* ruang tombol mata di kanan */
+  letter-spacing: 2px;
+}
+
+.btn-toggle-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease;
+  z-index: 2;
+}
+
+.btn-toggle-eye:hover {
+  color: #1a4d55;
+}
+
+/* Tampilan saat input dinonaktifkan (PIN lama belum cocok) */
+.input-disabled-style {
+  background-color: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+}
+
+/* Notifikasi teks hint di bawah input */
+.pin-hint-msg {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+  margin-left: 6px;
+  min-height: 14px;
+}
+
+.pin-hint-msg.error {
+  color: #b91c1c;
+}
+
+.pin-hint-msg.success {
+  color: #065f46;
+}
+
+/* Tombol submit ketika disabled */
+.btn-modal-submit.btn-disabled {
+  background-color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  opacity: 0.65;
+  box-shadow: none !important;
+}

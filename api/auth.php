@@ -13,21 +13,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($pin === '') {
             $_SESSION['login_error'] = 'PIN Pemilik wajib diisi!';
         } else {
-            $stmtPemilik = $pdo->query("SELECT * FROM pemilik LIMIT 1");
+            // Ambil pemilik dengan urutan ID yang pasti (ID terendah / utama)
+            $stmtPemilik = $pdo->query("SELECT * FROM pemilik ORDER BY id ASC LIMIT 1");
             $data_pemilik = $stmtPemilik ? $stmtPemilik->fetch(PDO::FETCH_ASSOC) : null;
 
             if (!$data_pemilik || $pin !== trim((string)$data_pemilik['pin'])) {
                 $_SESSION['login_error'] = 'PIN Pemilik salah!';
             } else {
-                // Regenerasi ID sesi untuk mencegah session fixation / tumpang tindih akun
+                // Regenerasi ID sesi untuk mencegah session fixation
                 session_regenerate_id(true);
 
                 $_SESSION['user'] = [
-                    'id'    => $data_pemilik['id'],
-                    'nama'  => $data_pemilik['nama'] ?? 'Bapak Kos',
-                    'role'  => 'pemilik',
-                    'kamar' => null,
-                    'is_pj' => false
+                    'id'          => (int)$data_pemilik['id'],
+                    'nama'        => $data_pemilik['nama'] ?? 'Bapak Kos',
+                    'email'       => $data_pemilik['email'] ?? '',
+                    'no_wa'       => $data_pemilik['no_wa'] ?? '',
+                    'no_rekening' => $data_pemilik['no_rekening'] ?? '',
+                    'pin'         => trim((string)$data_pemilik['pin']),
+                    'role'        => 'pemilik',
+                    'kamar'       => null,
+                    'is_pj'       => false
                 ];
                 header('Location: /?page=dashboard_pemilik');
                 exit;
@@ -57,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         k.no_kamar,
                         pk.id AS penghuni_kamar_id
                     FROM kamar k
-                    INNER JOIN penghuni_kamar pk ON pk.kamar_id = k.id
+                    INNER JOIN penghuni_kamar pk ON pk.kamar_id = k.id AND pk.status_kamar = 'aktif'
                     INNER JOIN penghuni p ON p.id = pk.penghuni_id
                     WHERE (k.no_kamar = :raw_kamar OR k.no_kamar = :clean_kamar OR k.no_kamar = :padded_kamar)
                       AND p.pin = :pin
@@ -78,7 +83,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } elseif (isset($penghuni['status_akun']) && strtolower(trim($penghuni['status_akun'])) !== 'aktif') {
                     $_SESSION['login_error'] = 'Akun penghuni sedang tidak aktif!';
                 } else {
-                    // Regenerasi ID sesi agar hak akses bersih
                     session_regenerate_id(true);
 
                     $is_ketua = !empty($penghuni['is_ketua_kos']);
@@ -89,8 +93,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'role'              => 'penghuni',
                         'is_pj'             => $is_ketua,
                         'is_ketua_kos'      => $is_ketua,
-                        'kamar'             => $penghuni['no_kamar'],      // Kunci untuk komponen header
-                        'no_kamar'          => $penghuni['no_kamar'],      // Fallback
+                        'kamar'             => $penghuni['no_kamar'],
+                        'no_kamar'          => $penghuni['no_kamar'],
                         'kamar_id'          => $penghuni['kamar_id'],
                         'penghuni_kamar_id' => $penghuni['penghuni_kamar_id'],
                     ];
