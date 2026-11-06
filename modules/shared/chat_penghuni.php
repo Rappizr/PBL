@@ -103,9 +103,7 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
 </span>
 
 <div class="badge-kamar-putih"
-<span class="chat-id">
-    No Kamar: <?= htmlspecialchars($p['kamar']); ?>
-</span>
+<span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                                     </div>
                                     <span class="chat-wa"><?= htmlspecialchars($p['no_wa']); ?></span>
                                 </div>
@@ -160,9 +158,7 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
     <?= htmlspecialchars($p['nama']); ?>
 </span>
 
-<span class="desktop-chat-id">
-    No Kamar: <?= htmlspecialchars($p['kamar']); ?>
-</span>
+<span class="desktop-badge-kamar">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                                 </div>
                                 <span class="desktop-chat-telp"><?= htmlspecialchars($p['no_wa']); ?></span>
                             </div>
