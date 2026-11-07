@@ -21,18 +21,29 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
 }
 
 // 2. Load File Handler
-require_once __DIR__ . '/handler/tagihan_handler.php';
+$handler_paths = [
+    __DIR__ . '/handler/tagihan_handler.php',
+    __DIR__ . '/handler/tagihan_riwayat_handlers.php',
+    __DIR__ . '/handlers/tagihan_riwayat_handlers.php'
+];
+
+foreach ($handler_paths as $hp) {
+    if (file_exists($hp)) {
+        require_once $hp;
+        break;
+    }
+}
 
 // 3. Eksekusi Fungsi Handler (Passing $pdo & Session secara Eksplisit)
 $nama_penghuni = $_SESSION['user']['nama'] ?? ($_SESSION['nama'] ?? 'Penghuni');
-$pk_id         = resolvePenghuniKamarId($pdo, $_SESSION['user'] ?? []);
+$pk_id         = function_exists('resolvePenghuniKamarId') ? resolvePenghuniKamarId($pdo, $_SESSION['user'] ?? []) : (int)($_SESSION['user']['penghuni_kamar_id'] ?? 0);
 
-$post_res      = handleUploadBuktiBayar($pdo);
-$sukses_pesan  = $post_res['sukses'];
-$error_pesan   = $post_res['error'];
+$post_res      = function_exists('handleUploadBuktiBayar') ? handleUploadBuktiBayar($pdo) : ['sukses' => '', 'error' => ''];
+$sukses_pesan  = $post_res['sukses'] ?? ($sukses_pesan ?? '');
+$error_pesan   = $post_res['error'] ?? ($error_pesan ?? '');
 
-$daftar_tagihan_saya = fetchDaftarTagihan($pdo, $pk_id);
-$semua_riwayat       = fetchRiwayatTransaksi($pdo, $pk_id);
+$daftar_tagihan_saya = function_exists('fetchDaftarTagihan') ? fetchDaftarTagihan($pdo, $pk_id) : ($daftar_tagihan_saya ?? []);
+$semua_riwayat       = function_exists('fetchRiwayatTransaksi') ? fetchRiwayatTransaksi($pdo, $pk_id) : ($semua_riwayat ?? []);
 
 // 4. Filter Range Tanggal
 $date_range = trim($_GET['date_range'] ?? '');
@@ -377,14 +388,21 @@ if (isset($_GET['invoice_id'])) {
                     </div>
                     <div class="modal-upload-wrapper">
                         <label class="modal-rekening-label">Upload Bukti Pembayaran</label>
-                        <label class="modal-upload-box">
-                            <input type="file" name="bukti_transfer" accept="image/*" required>
-                            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4ca5b0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
-                                <polyline points="7 9 12 4 17 9"></polyline>
-                                <line x1="12" y1="4" x2="12" y2="16"></line>
-                            </svg>
-                            <p class="modal-upload-text">Ketuk untuk pilih foto</p>
+                        <label class="modal-upload-box" id="dropAreaBukti">
+                            <input type="file" name="bukti_transfer" id="inputBuktiTransfer" accept="image/*" required onchange="previewFotoBukti(this)">
+                            
+                            <!-- Tampilan Awal (Placeholder) -->
+                            <div id="placeholderBukti" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
+                                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4ca5b0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
+                                    <polyline points="7 9 12 4 17 9"></polyline>
+                                    <line x1="12" y1="4" x2="12" y2="16"></line>
+                                </svg>
+                                <p class="modal-upload-text">Ketuk untuk pilih foto</p>
+                            </div>
+
+                            <!-- Tampilan Setelah Foto Dipilih (Preview) -->
+                            <img id="imgPreviewBukti" src="#" alt="Preview Bukti" style="display: none; width: 100%; height: 100%; object-fit: contain; border-radius: 14px; padding: 4px; box-sizing: border-box;">
                         </label>
                     </div>
                     <div class="modal-bayar-actions">
@@ -411,6 +429,30 @@ if (isset($_GET['invoice_id'])) {
                 }
             });
         });
+
+        function previewFotoBukti(input) {
+            const file = input.files[0];
+            const preview = document.getElementById('imgPreviewBukti');
+            const placeholder = document.getElementById('placeholderBukti');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    if (placeholder) {
+                        placeholder.style.display = 'none';
+                    }
+                };
+                reader.readAsDataURL(file);
+            } else {
+                preview.src = '#';
+                preview.style.display = 'none';
+                if (placeholder) {
+                    placeholder.style.display = 'flex';
+                }
+            }
+        }
     </script>
 </body>
 </html>

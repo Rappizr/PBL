@@ -1,7 +1,6 @@
 <?php
 /**
- * HANDLER KELOLA / MONITORING IURAN
- * Mengolah data saldo kas, riwayat transaksi, dan status tagihan iuran penghuni dari PostgreSQL
+ * HANDLER LOGIK & DATABASE KELOLA / MONITORING IURAN
  */
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -60,7 +59,10 @@ $can_manage   = $is_pemilik || $is_pj;
 
 $link_kembali = $is_pemilik ? '/?page=dashboard_pemilik' : '/?page=dashboard_penghuni';
 $current_page = $_GET['page'] ?? ($can_manage ? 'kelola_iuran' : 'monitoring_iuran');
-$show_modal   = isset($_GET['modal']) && $_GET['modal'] === 'tambah_pengeluaran';
+
+$modal_type             = $_GET['modal'] ?? '';
+$show_modal_pengeluaran = ($modal_type === 'tambah_pengeluaran');
+$show_modal_set_iuran   = ($modal_type === 'set_nominal_iuran');
 
 if ($is_pemilik) {
     $judul_halaman    = 'Monitoring & Tagihan Iuran';
@@ -74,68 +76,148 @@ if ($is_pemilik) {
 }
 
 // ==========================================================================
-// 2. HANDLER: SIMPAN PENGELUARAN BARU (POST)
+// 2. AMBIL NAMA, NOMINAL & PERIODE IURAN DARI TABEL kategori_iuran
 // ==========================================================================
+$nama_iuran_saat_ini    = 'Iuran Kebersihan & Keamanan';
+$nominal_iuran_saat_ini = 50000;
+$tgl_mulai_iuran        = date('Y-m-01');
+$tgl_selesai_iuran      = date('Y-m-t');
+$id_kategori_iuran      = null;
 
+try {
+    $pdo->exec("ALTER TABLE kategori_iuran ADD COLUMN IF NOT EXISTS tanggal_mulai DATE NULL");
+    $pdo->exec("ALTER TABLE kategori_iuran ADD COLUMN IF NOT EXISTS tanggal_selesai DATE NULL");
+
+    $stmtGetSetting = $pdo->query("SELECT id, nama_iuran, nominal, tanggal_mulai, tanggal_selesai FROM kategori_iuran ORDER BY id ASC LIMIT 1");
+    $rowIuran = $stmtGetSetting->fetch(PDO::FETCH_ASSOC);
+
+    if ($rowIuran) {
+        $id_kategori_iuran      = $rowIuran['id'];
+        $nama_iuran_saat_ini    = !empty($rowIuran['nama_iuran']) ? $rowIuran['nama_iuran'] : 'Iuran Kebersihan & Keamanan';
+        $nominal_iuran_saat_ini = (float) $rowIuran['nominal'];
+        
+        if (!empty($rowIuran['tanggal_mulai'])) {
+            $tgl_mulai_iuran = $rowIuran['tanggal_mulai'];
+        }
+        if (!empty($rowIuran['tanggal_selesai'])) {
+            $tgl_selesai_iuran = $rowIuran['tanggal_selesai'];
+        }
+    } else {
+        $stmtInit = $pdo->prepare("
+            INSERT INTO kategori_iuran (nama_iuran, nominal, tanggal_mulai, tanggal_selesai) 
+            VALUES ('Iuran Kebersihan & Keamanan', 50000, :tgl_m, :tgl_s)
+        ");
+        $stmtInit->execute([':tgl_m' => $tgl_mulai_iuran, ':tgl_s' => $tgl_selesai_iuran]);
+        $id_kategori_iuran = (int) $pdo->lastInsertId();
+    }
+} catch (PDOException $e) {
+    catatError('ambil nominal iuran', $e);
+}
+
+// ==========================================================================
+// 3. HANDLER POST: SIMPAN PENGELUARAN & SIMPAN NAMA, NOMINAL, TANGGAL IURAN
+// ==========================================================================
 $error_modal = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_pengeluaran'])) {
-
-    $keterangan = trim($_POST['keterangan'] ?? '');
-
-    // Hapus titik pemisah ribuan
-    $nominal = str_replace('.', '', $_POST['nominal'] ?? '');
-
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $user_id = $_SESSION['user']['id'] ?? null;
 
-    if (!$can_manage) {
-        $error_modal = 'Anda tidak memiliki akses untuk menambah pengeluaran.';
+    // SIMPAN PENGELUARAN KAS
+    if (isset($_POST['simpan_pengeluaran'])) {
+        $keterangan = trim($_POST['keterangan'] ?? '');
+        $nominal    = str_replace('.', '', $_POST['nominal'] ?? '');
 
-    } elseif ($keterangan === '') {
-        $error_modal = 'Keterangan wajib diisi.';
+        if (!$can_manage) {
+            $error_modal = 'Anda tidak memiliki akses untuk menambah pengeluaran.';
+        } elseif ($keterangan === '') {
+            $error_modal = 'Keterangan wajib diisi.';
+        } elseif (!ctype_digit($nominal) || (int) $nominal < 1) {
+            $error_modal = 'Nominal harus berupa angka lebih dari 0.';
+        } else {
+            try {
+                $stmtInsert = $pdo->prepare("
+                    INSERT INTO buku_kas (
+                        keterangan, tipe_transaksi, nominal, tanggal_transaksi, " . ($is_pemilik ? "pemilik_id" : "penghuni_id") . "
+                    ) VALUES (:ket, 'pengeluaran', :nom, NOW(), :uid)
+                ");
+                $stmtInsert->execute([':ket' => $keterangan, ':nom' => (int)$nominal, ':uid' => $user_id]);
 
-    } elseif (!ctype_digit($nominal) || (int) $nominal < 1) {
-        $error_modal = 'Nominal harus berupa angka lebih dari 0.';
-
-    } else {
-
-        // Ubah nominal menjadi integer
-        $nominal = (int) $nominal;
-
-        try {
-            $stmtInsert = $pdo->prepare("
-                INSERT INTO buku_kas (
-                    keterangan,
-                    tipe_transaksi,
-                    nominal,
-                    tanggal_transaksi,
-                    " . ($is_pemilik ? "pemilik_id" : "penghuni_id") . "
-                )
-                VALUES (:ket, 'pengeluaran', :nom, NOW(), :uid)
-            ");
-
-            $stmtInsert->execute([
-                ':ket' => $keterangan,
-                ':nom' => $nominal,
-                ':uid' => $user_id
-            ]);
-
-            header('Location: ' . urlIuran($current_page));
-            exit;
-
-        } catch (PDOException $e) {
-            catatError('simpan pengeluaran', $e);
-            $error_modal = 'Gagal menyimpan pengeluaran.';
+                header('Location: ' . urlIuran($current_page));
+                exit;
+            } catch (PDOException $e) {
+                catatError('simpan pengeluaran', $e);
+                $error_modal = 'Gagal menyimpan pengeluaran.';
+            }
         }
+        if ($error_modal !== '') $show_modal_pengeluaran = true;
     }
 
-    if ($error_modal !== '') {
-        $show_modal = true;
+    // SIMPAN NAMA, NOMINAL & TANGGAL IURAN BERLAKU
+    if (isset($_POST['simpan_nominal_iuran'])) {
+        $nama_iuran_baru = trim($_POST['nama_iuran'] ?? 'Iuran Kebersihan & Keamanan');
+        $nominal_baru    = str_replace('.', '', $_POST['nominal_iuran'] ?? '');
+        $rentang_tgl     = trim($_POST['periode_iuran_range'] ?? '');
+        $tgl_m_baru      = null;
+        $tgl_s_baru      = null;
+
+        if ($rentang_tgl !== '' && str_contains($rentang_tgl, ' to ')) {
+            $p = explode(' to ', $rentang_tgl);
+            $tgl_m_baru = trim($p[0]);
+            $tgl_s_baru = trim($p[1] ?? $p[0]);
+        } elseif ($rentang_tgl !== '') {
+            $tgl_m_baru = $rentang_tgl;
+            $tgl_s_baru = $rentang_tgl;
+        }
+
+        if (!$can_manage) {
+            $error_modal = 'Anda tidak memiliki akses untuk mengubah nominal iuran.';
+        } elseif ($nama_iuran_baru === '') {
+            $error_modal = 'Nama / Keterangan iuran wajib diisi.';
+        } elseif (!ctype_digit($nominal_baru) || (int) $nominal_baru < 0) {
+            $error_modal = 'Nominal iuran harus berupa angka valid.';
+        } elseif (empty($tgl_m_baru) || empty($tgl_s_baru)) {
+            $error_modal = 'Pilih rentang tanggal iuran yang valid (Tanggal Mulai s.d Selesai).';
+        } else {
+            try {
+                if ($id_kategori_iuran) {
+                    $stmtSet = $pdo->prepare("
+                        UPDATE kategori_iuran 
+                        SET nama_iuran = :nama, nominal = :val, tanggal_mulai = :tgl_m, tanggal_selesai = :tgl_s 
+                        WHERE id = :id
+                    ");
+                    $stmtSet->execute([
+                        ':nama'  => $nama_iuran_baru,
+                        ':val'   => (int)$nominal_baru,
+                        ':tgl_m' => $tgl_m_baru,
+                        ':tgl_s' => $tgl_s_baru,
+                        ':id'    => $id_kategori_iuran
+                    ]);
+                } else {
+                    $stmtSet = $pdo->prepare("
+                        INSERT INTO kategori_iuran (nama_iuran, nominal, tanggal_mulai, tanggal_selesai) 
+                        VALUES (:nama, :val, :tgl_m, :tgl_s)
+                    ");
+                    $stmtSet->execute([
+                        ':nama'  => $nama_iuran_baru,
+                        ':val'   => (int)$nominal_baru,
+                        ':tgl_m' => $tgl_m_baru,
+                        ':tgl_s' => $tgl_s_baru
+                    ]);
+                }
+
+                header('Location: ' . urlIuran($current_page));
+                exit;
+            } catch (PDOException $e) {
+                catatError('simpan nominal iuran', $e);
+                $error_modal = 'Gagal memperbarui nominal & rentang tanggal iuran.';
+            }
+        }
+        if ($error_modal !== '') $show_modal_set_iuran = true;
     }
 }
 
 // ==========================================================================
-// 3. Filter Rentang Tanggal
+// 4. FILTER TANGGAL, HITUNG STATISTIK (DITERIMA = SUDAH BAYAR)
 // ==========================================================================
 $date_range  = trim($_GET['date_range'] ?? '');
 $tgl_mulai   = '';
@@ -147,44 +229,60 @@ if ($date_range !== '' && preg_match('/^\d{4}-\d{2}-\d{2}( to \d{4}-\d{2}-\d{2})
     $tgl_selesai = trim($parts[1] ?? $tgl_mulai);
 }
 
-$is_filtered = ($date_range !== '');
-
-// ==========================================================================
-// 4. Total Penghuni dan Sudah Bayar
-// ==========================================================================
-$total_penghuni = 0;
-$sudah_bayar    = 0;
+$is_filtered         = ($date_range !== '');
+$total_penghuni      = 0;
+$sudah_bayar         = 0;
+$count_belum         = 0;
+$count_verifikasi    = 0;
 
 if ($can_manage) {
     try {
-        $stmtPenghuniCount = $pdo->query("
-            SELECT COUNT(DISTINCT pen.id)
-            FROM penghuni pen
-            LEFT JOIN penghuni_kamar pk ON pen.id = pk.penghuni_id
+        // 1. Total Penghuni Kamar Aktif
+        $stmtTotal = $pdo->query("
+            SELECT COUNT(DISTINCT pk.id) 
+            FROM penghuni_kamar pk
+            JOIN penghuni pen ON pk.penghuni_id = pen.id
+            JOIN kamar k ON pk.kamar_id = k.id AND k.status_kamar = 'terisi'
             WHERE LOWER(COALESCE(pen.status_akun, 'aktif')) = 'aktif'
         ");
-        $total_penghuni = (int) $stmtPenghuniCount->fetchColumn();
+        $total_penghuni = (int) $stmtTotal->fetchColumn();
 
-        $stmtBayarCount = $pdo->query("
-            SELECT COUNT(DISTINCT pen.id)
-            FROM penghuni pen
-            LEFT JOIN penghuni_kamar pk ON pen.id = pk.penghuni_id
-            LEFT JOIN tagihan t ON pk.id = t.penghuni_kamar_id
-            LEFT JOIN pembayaran pem ON t.id = pem.tagihan_id
-            LEFT JOIN buku_kas bk ON pen.id = bk.penghuni_id OR pem.id = bk.pembayaran_id
-            WHERE LOWER(COALESCE(t.status_tagihan, '')) IN ('lunas', 'terverifikasi', 'diterima', 'sebagian')
-               OR LOWER(COALESCE(pem.status_verifikasi, '')) IN ('diterima', 'terverifikasi', 'lunas')
-               OR LOWER(COALESCE(bk.tipe_transaksi, '')) = 'pemasukan'
+        // 2. Penghuni yang SUDAH BAYAR (status_verifikasi = 'diterima' DAN tagihan = 'lunas')
+        $stmtSudahBayar = $pdo->query("
+            SELECT COUNT(DISTINCT pk.id)
+            FROM penghuni_kamar pk
+            JOIN penghuni pen ON pk.penghuni_id = pen.id
+            JOIN kamar k ON pk.kamar_id = k.id AND k.status_kamar = 'terisi'
+            JOIN tagihan t ON pk.id = t.penghuni_kamar_id AND t.kategori_iuran_id IS NOT NULL
+            JOIN pembayaran pem ON t.id = pem.tagihan_id
+            WHERE LOWER(COALESCE(pen.status_akun, 'aktif')) = 'aktif'
+              AND LOWER(TRIM(pem.status_verifikasi)) = 'diterima'
+              AND LOWER(TRIM(t.status_tagihan)) = 'lunas'
         ");
-        $sudah_bayar = (int) $stmtBayarCount->fetchColumn();
+        $sudah_bayar = (int) $stmtSudahBayar->fetchColumn();
+
+        // 3. Penghuni yang MENUNGGU VERIFIKASI (status_verifikasi = 'pending')
+        $stmtVerifikasi = $pdo->query("
+            SELECT COUNT(DISTINCT pk.id)
+            FROM penghuni_kamar pk
+            JOIN penghuni pen ON pk.penghuni_id = pen.id
+            JOIN kamar k ON pk.kamar_id = k.id AND k.status_kamar = 'terisi'
+            JOIN tagihan t ON pk.id = t.penghuni_kamar_id AND t.kategori_iuran_id IS NOT NULL
+            JOIN pembayaran pem ON t.id = pem.tagihan_id
+            WHERE LOWER(COALESCE(pen.status_akun, 'aktif')) = 'aktif'
+              AND LOWER(TRIM(pem.status_verifikasi)) = 'pending'
+        ");
+        $count_verifikasi = (int) $stmtVerifikasi->fetchColumn();
+
+        // 4. Penghuni yang BELUM BAYAR (Total dikurangi yang sudah lunas)
+        $count_belum = max(0, $total_penghuni - $sudah_bayar);
+
     } catch (PDOException $e) {
-        catatError('hitung penghuni', $e);
+        catatError('hitung statistik iuran', $e);
     }
 }
 
-// ==========================================================================
-// 5. Saldo Kas Iuran
-// ==========================================================================
+// Saldo Kas Iuran
 $saldo_kas_iuran = 0;
 try {
     $stmtSaldo = $pdo->query("
@@ -197,31 +295,17 @@ try {
 } catch (PDOException $e) {
     catatError('hitung saldo', $e);
 }
-$saldo_tampil = formatRupiah($saldo_kas_iuran);
 
-// ==========================================================================
-// 6. Riwayat Transaksi
-// ==========================================================================
+// Riwayat Mutasi Buku Kas
 $daftar_transaksi = [];
 try {
-    $sqlKas = "
-        SELECT
-            id,
-            keterangan AS judul,
-            tipe_transaksi AS tipe,
-            nominal,
-            tanggal_transaksi AS tanggal
-        FROM buku_kas
-        WHERE 1=1
-    ";
-
+    $sqlKas = "SELECT id, keterangan AS judul, tipe_transaksi AS tipe, nominal, tanggal_transaksi AS tanggal FROM buku_kas WHERE 1=1";
     $paramsKas = [];
     if ($tgl_mulai !== '' && $tgl_selesai !== '') {
         $sqlKas .= " AND DATE(tanggal_transaksi) BETWEEN :tgl_mulai AND :tgl_selesai";
         $paramsKas[':tgl_mulai']   = $tgl_mulai;
         $paramsKas[':tgl_selesai'] = $tgl_selesai;
     }
-
     $sqlKas .= " ORDER BY tanggal_transaksi DESC";
     $stmtKas = $pdo->prepare($sqlKas);
     $stmtKas->execute($paramsKas);
@@ -237,117 +321,59 @@ try {
             'nominal' => ($is_keluar ? 'Rp. -' : 'Rp. +') . number_format((float) $row['nominal'], 0, ',', '.')
         ];
     }
-
-    if (empty($daftar_transaksi) && !$is_filtered) {
-        $sqlFallback = "
-            SELECT
-                p.id,
-                CONCAT('Pembayaran ', pen.nama) AS judul,
-                'pemasukan' AS tipe,
-                p.jumlah_bayar AS nominal,
-                COALESCE(p.tanggal_bayar, CURRENT_TIMESTAMP) AS tanggal
-            FROM pembayaran p
-            JOIN tagihan t ON p.tagihan_id = t.id
-            JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
-            JOIN penghuni pen ON pk.penghuni_id = pen.id
-            WHERE LOWER(COALESCE(p.status_verifikasi, '')) IN ('diterima', 'terverifikasi', 'lunas')
-            ORDER BY p.id DESC
-        ";
-        $rawFallback = $pdo->query($sqlFallback)->fetchAll(PDO::FETCH_ASSOC);
-        foreach ($rawFallback as $fb) {
-            $daftar_transaksi[] = [
-                'tipe'    => 'masuk',
-                'icon'    => 'fa-solid fa-check',
-                'judul'   => $fb['judul'],
-                'tanggal' => date('Y-m-d H:i:s', strtotime($fb['tanggal'])),
-                'nominal' => 'Rp. +' . number_format((float) $fb['nominal'], 0, ',', '.')
-            ];
-        }
-    }
 } catch (PDOException $e) {
     catatError('riwayat transaksi', $e);
 }
 
-// ==========================================================================
-// 7. Tab Filter Status Tagihan
-// ==========================================================================
+// Filter Tab Penghuni
 $filter_status = strtolower(trim($_GET['filter'] ?? 'semua'));
 if (!in_array($filter_status, ['semua', 'belum_bayar', 'verifikasi'], true)) {
     $filter_status = 'semua';
 }
 
-$count_semua      = 0;
-$count_belum      = 0;
-$count_verifikasi = 0;
-
-if ($can_manage) {
-    try {
-        $sqlCount = "
-            SELECT
-                COUNT(DISTINCT pen.id) AS total_semua,
-                COUNT(DISTINCT CASE WHEN LOWER(COALESCE(t.status_tagihan, 'belum_bayar')) IN ('belum_bayar', 'menunggu') THEN pen.id END) AS total_belum,
-                COUNT(DISTINCT CASE WHEN LOWER(COALESCE(t.status_tagihan, '')) IN ('proses_verifikasi', 'menunggu_verifikasi', 'verifikasi', 'pending') OR LOWER(COALESCE(pem.status_verifikasi, '')) = 'pending' THEN pen.id END) AS total_verifikasi
-            FROM penghuni pen
-            LEFT JOIN penghuni_kamar pk ON pen.id = pk.penghuni_id
-            LEFT JOIN tagihan t ON pk.id = t.penghuni_kamar_id
-            LEFT JOIN pembayaran pem ON t.id = pem.tagihan_id
-            WHERE LOWER(COALESCE(pen.status_akun, 'aktif')) = 'aktif'
-        ";
-        $counts = $pdo->query($sqlCount)->fetch(PDO::FETCH_ASSOC);
-
-        if ($counts) {
-            $count_semua      = (int) $counts['total_semua'];
-            $count_belum      = (int) $counts['total_belum'];
-            $count_verifikasi = (int) $counts['total_verifikasi'];
-        }
-    } catch (PDOException $e) {
-        catatError('hitung tab filter', $e);
-    }
-}
-
 $filter_tabs = [
-    'semua'       => ['label' => 'Semua',       'jumlah' => $count_semua],
+    'semua'       => ['label' => 'Semua',       'jumlah' => $total_penghuni],
     'belum_bayar' => ['label' => 'Belum Bayar', 'jumlah' => $count_belum],
     'verifikasi'  => ['label' => 'Verifikasi',  'jumlah' => $count_verifikasi],
 ];
 
-// ==========================================================================
-// 8. Daftar Penghuni Per Tab
-// ==========================================================================
+// DAFTAR PENGHUNI BERDASARKAN TAB
 $daftar_penghuni = [];
-
 if ($can_manage) {
     try {
         $sqlPenghuni = "
-            SELECT DISTINCT ON (pen.id)
-                pen.nama,
-                pen.no_wa,
+            SELECT 
+                pen.id AS penghuni_id,
+                pen.nama, 
+                pen.no_wa, 
                 COALESCE(k.no_kamar, '-') AS kamar,
-                COALESCE(t.total_tagihan, pk.harga_sewa, 0) AS nominal,
-                COALESCE(t.status_tagihan, 'belum_bayar') AS status_tagihan
-            FROM penghuni pen
-            LEFT JOIN penghuni_kamar pk ON pen.id = pk.penghuni_id
-            LEFT JOIN kamar k ON pk.kamar_id = k.id
-            LEFT JOIN tagihan t ON pk.id = t.penghuni_kamar_id
-            LEFT JOIN pembayaran pem ON t.id = pem.tagihan_id
+                COALESCE(ki.nominal, :nom_def) AS nominal,
+                COALESCE(t.status_tagihan, 'belum_bayar') AS status_tagihan,
+                pem.status_verifikasi
+            FROM penghuni_kamar pk
+            JOIN penghuni pen ON pk.penghuni_id = pen.id
+            JOIN kamar k ON pk.kamar_id = k.id AND k.status_kamar = 'terisi'
+            LEFT JOIN tagihan t ON pk.id = t.penghuni_kamar_id AND t.kategori_iuran_id IS NOT NULL
+            LEFT JOIN kategori_iuran ki ON t.kategori_iuran_id = ki.id
+            LEFT JOIN (
+                SELECT tagihan_id, MAX(id) AS max_pem_id
+                FROM pembayaran
+                GROUP BY tagihan_id
+            ) lp ON lp.tagihan_id = t.id
+            LEFT JOIN pembayaran pem ON pem.id = lp.max_pem_id
             WHERE LOWER(COALESCE(pen.status_akun, 'aktif')) = 'aktif'
         ";
 
         if ($filter_status === 'belum_bayar') {
-            $sqlPenghuni .= " AND (t.status_tagihan IS NULL OR LOWER(t.status_tagihan) IN ('belum_bayar', 'menunggu'))";
+            $sqlPenghuni .= " AND (pem.status_verifikasi IS NULL OR LOWER(TRIM(pem.status_verifikasi)) != 'diterima' OR LOWER(TRIM(t.status_tagihan)) != 'lunas')";
         } elseif ($filter_status === 'verifikasi') {
-            $sqlPenghuni .= " AND (LOWER(COALESCE(t.status_tagihan, '')) IN ('proses_verifikasi', 'menunggu_verifikasi', 'verifikasi') OR LOWER(COALESCE(pem.status_verifikasi, '')) = 'pending')";
+            $sqlPenghuni .= " AND LOWER(TRIM(pem.status_verifikasi)) = 'pending'";
         }
 
-        $sqlPenghuni .= " ORDER BY pen.id, t.id DESC";
-        $daftar_penghuni = $pdo->query($sqlPenghuni)->fetchAll(PDO::FETCH_ASSOC);
-
-        foreach ($daftar_penghuni as &$p) {
-            $p['nominal_tampil'] = formatRupiah((float) $p['nominal']);
-            $p['kamar_tampil']   = $p['kamar'] === '-' ? '-' : 'Kamar ' . $p['kamar'];
-            $p['wa_link']        = linkWhatsApp($p['no_wa'] ?? null, 'Halo ' . $p['nama'] . ', ini mengenai iuran kos.');
-        }
-        unset($p);
+        $sqlPenghuni .= " ORDER BY k.no_kamar ASC";
+        $stmtP = $pdo->prepare($sqlPenghuni);
+        $stmtP->execute([':nom_def' => $nominal_iuran_saat_ini]);
+        $daftar_penghuni = $stmtP->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
         catatError('daftar penghuni', $e);
     }
