@@ -4,13 +4,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (isset($_GET['aksi']) && $_GET['aksi'] === 'logout') {
-    session_unset();
-    session_destroy();
-    header("Location: /?page=login");
-    exit;
-}
-
 // Sinkronisasi Real-Time Nama & Status dari Database
 global $pdo;
 if (!isset($pdo) || !($pdo instanceof PDO)) {
@@ -107,7 +100,7 @@ $currentPage = $_GET['page'] ?? 'dashboard';
 
     <!-- BAGIAN BAWAH: TOMBOL KELUAR TEPAT DI ATAS FOOTER -->
     <div class="sidebar-bottom-group">
-        <button type="button" class="btn-logout-sidebar" onclick="bukaModalLogout()">
+        <button type="button" class="btn-logout-sidebar" onclick="bukaModalLogoutSidebar()">
             <i class="fa-solid fa-right-from-bracket"></i>
             <span>Keluar</span>
         </button>
@@ -119,19 +112,60 @@ $currentPage = $_GET['page'] ?? 'dashboard';
     </div>
 </aside>
 
-<!-- MODAL POP-UP KONFIRMASI LOGOUT (JIKA HALAMAN TIDAK MEMUAT HEADER MOBILE) -->
+<!-- MODAL POP-UP KONFIRMASI LOGOUT UNTUK DESKTOP SIDEBAR -->
+<div id="modalKonfirmasiLogoutSidebar" class="modal-overlay" onclick="tutupModalLogoutSidebar()">
+    <div class="modal-card-konfirmasi-kamar" onclick="event.stopPropagation()">
+        <div class="konfirmasi-icon-wrapper" id="logoutIconBoxSidebar">
+            <i class="fa-solid fa-right-from-bracket"></i>
+        </div>
+        <h3 class="konfirmasi-title">Yakin ingin keluar?</h3>
+        <p class="konfirmasi-desc">
+            Sesi akun Anda akan diakhiri dan Anda harus masuk kembali untuk mengakses sistem.
+        </p>
+        <div class="konfirmasi-actions">
+            <button type="button" class="btn-konfirmasi-batal" id="btnBatalLogoutSidebar" onclick="tutupModalLogoutSidebar()">Batal</button>
+            <a href="/?page=logout" class="btn-konfirmasi-hapus btn-ya-keluar" onclick="prosesLogoutAnimasi(event, this, 'logoutIconBoxSidebar', 'btnBatalLogoutSidebar')">
+                <span>Ya, Keluar</span>
+            </a>
+        </div>
+    </div>
+</div>
+
 <script>
-    if (typeof bukaModalLogout !== 'function') {
-        function bukaModalLogout() {
-            const modal = document.getElementById('modalKonfirmasiLogout');
-            if (modal) modal.classList.add('active');
-        }
-        function tutupModalLogout() {
-            const modal = document.getElementById('modalKonfirmasiLogout');
-            if (modal) modal.classList.remove('active');
-        }
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') tutupModalLogout();
-        });
+    function bukaModalLogoutSidebar() {
+        const modal = document.getElementById('modalKonfirmasiLogoutSidebar');
+        if (modal) modal.classList.add('active');
     }
+
+    function tutupModalLogoutSidebar() {
+        const modal = document.getElementById('modalKonfirmasiLogoutSidebar');
+        if (modal) modal.classList.remove('active');
+    }
+
+    if (typeof prosesLogoutAnimasi !== 'function') {
+        function prosesLogoutAnimasi(e, el, iconId, batalId) {
+            e.preventDefault();
+            const targetUrl = el.getAttribute('href');
+            
+            const iconBox = document.getElementById(iconId);
+            if (iconBox) {
+                iconBox.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+            }
+            
+            el.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Keluar...';
+            el.style.pointerEvents = 'none';
+            el.style.opacity = '0.85';
+            
+            const btnBatal = document.getElementById(batalId);
+            if (btnBatal) btnBatal.style.display = 'none';
+
+            setTimeout(function() {
+                window.location.href = targetUrl;
+            }, 300);
+        }
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') tutupModalLogoutSidebar();
+    });
 </script>

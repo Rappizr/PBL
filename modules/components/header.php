@@ -9,14 +9,6 @@ function getNamaDepan(string $fullName): string {
     return $parts[0] ?? $fullName;
 }
 
-// Proses Logout jika dikonfirmasi
-if (isset($_GET['aksi']) && $_GET['aksi'] === 'logout') {
-    session_unset();
-    session_destroy();
-    header("Location: /?page=login");
-    exit;
-}
-
 // Sinkronisasi Real-Time Nama & Status dari Database
 global $pdo;
 if (!isset($pdo) || !($pdo instanceof PDO)) {
@@ -107,3 +99,61 @@ $namaDisplay = getNamaDepan($currentUser['nama'] ?? 'Penghuni');
         </button>
     </div>
 </header>
+
+<!-- ELEMEN MODAL POP-UP KONFIRMASI LOGOUT MOBILE -->
+<div id="modalKonfirmasiLogout" class="modal-overlay" onclick="tutupModalLogout()">
+    <div class="modal-card-konfirmasi-kamar" onclick="event.stopPropagation()">
+        <div class="konfirmasi-icon-wrapper" id="logoutIconBoxHeader">
+            <i class="fa-solid fa-right-from-bracket"></i>
+        </div>
+        <h3 class="konfirmasi-title">Yakin ingin keluar?</h3>
+        <p class="konfirmasi-desc">
+            Sesi akun Anda akan diakhiri dan Anda harus masuk kembali untuk mengakses sistem.
+        </p>
+        <div class="konfirmasi-actions">
+            <button type="button" class="btn-konfirmasi-batal" id="btnBatalLogoutHeader" onclick="tutupModalLogout()">Batal</button>
+            <a href="/?page=logout" class="btn-konfirmasi-hapus btn-ya-keluar" onclick="prosesLogoutAnimasi(event, this, 'logoutIconBoxHeader', 'btnBatalLogoutHeader')">
+                <span>Ya, Keluar</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (typeof bukaModalLogout !== 'function') {
+        function bukaModalLogout() {
+            const modal = document.getElementById('modalKonfirmasiLogout');
+            if (modal) modal.classList.add('active');
+        }
+
+        function tutupModalLogout() {
+            const modal = document.getElementById('modalKonfirmasiLogout');
+            if (modal) modal.classList.remove('active');
+        }
+
+        function prosesLogoutAnimasi(e, el, iconId, batalId) {
+            e.preventDefault();
+            const targetUrl = el.getAttribute('href');
+            
+            const iconBox = document.getElementById(iconId);
+            if (iconBox) {
+                iconBox.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+            }
+            
+            el.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Keluar...';
+            el.style.pointerEvents = 'none';
+            el.style.opacity = '0.85';
+            
+            const btnBatal = document.getElementById(batalId);
+            if (btnBatal) btnBatal.style.display = 'none';
+
+            setTimeout(function() {
+                window.location.href = targetUrl;
+            }, 300);
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') tutupModalLogout();
+        });
+    }
+</script>
