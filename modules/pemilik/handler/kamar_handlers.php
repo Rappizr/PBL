@@ -125,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_kamar'])) {
     }
 }
 
-// 4. HANDLER: TAMBAH PENGHUNI (DENGAN EMAIL, WALI, PIN, & KETUA KOST)
+// 4. HANDLER: TAMBAH PENGHUNI (DENGAN AUTO GENERATE TAGIHAN SEWA & IURAN)
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
     $nama         = trim($_POST['nama'] ?? '');
     $kamar_nomor  = trim($_POST['kamar_nomor'] ?? '');
@@ -142,9 +142,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
     }
     $email_val = ($email === '') ? null : $email;
 
+    // Ambil data skema sewa terpilih
     $stmtSkema = $pdo->prepare("SELECT * FROM skema_sewa WHERE id = :id LIMIT 1");
     $stmtSkema->execute([':id' => $skema_id]);
     $skema_pilih = $stmtSkema->fetch(PDO::FETCH_ASSOC);
+
+    // Fallback jika belum memilih skema
+    if (!$skema_pilih) {
+        $stmtSkemaDefault = $pdo->query("SELECT * FROM skema_sewa ORDER BY id ASC LIMIT 1");
+        $skema_pilih = $stmtSkemaDefault ? $stmtSkemaDefault->fetch(PDO::FETCH_ASSOC) : null;
+        $skema_id = $skema_pilih ? (int)$skema_pilih['id'] : 0;
+    }
 
     $tipe_periode = $skema_pilih['tipe_periode'] ?? 'bulan';
     $durasi_nilai = (int) ($skema_pilih['durasi_nilai'] ?? 1);
@@ -161,8 +169,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
         if (!is_dir($upload_dir)) {
             mkdir($upload_dir, 0777, true);
         }
-        $ext = pathinfo($_FILES['foto_ktp']['name'], PATHINFO_EXTENSION);
-        $nama_foto = 'ktp_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+        $ext = strtolower(pathinfo($_FILES['foto_ktp']['name'], PATHINFO_EXTENSION));
+        $nama_foto = 'ktp_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
         move_uploaded_file($_FILES['foto_ktp']['tmp_name'], $upload_dir . $nama_foto);
     }
 
@@ -209,24 +217,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
             ]);
             $penghuni_kamar_id = $stmtPK->fetchColumn();
 
-            // 3. Otomatis Buat Tagihan Pertama
+            // 3. Buat Tagihan SEWA Otomatis (kategori_iuran_id IS NULL)
             $tgl_jatuh_tempo = date('Y-m-d', strtotime('+7 days', strtotime($tgl_mulai)));
-            $stmtTagihanBaru = $pdo->prepare("
+            $stmtTagihanSewa = $pdo->prepare("
                 INSERT INTO tagihan (
                     penghuni_kamar_id, 
+                    kategori_iuran_id,
                     tanggal_awal_tagihan,
                     tanggal_jatuh_tempo, 
                     status_tagihan
                 )
-                VALUES (:pk_id, :tgl_awal, :tgl_tempo, 'belum_bayar')
+                VALUES (:pk_id, NULL, :tgl_awal, :tgl_tempo, 'belum_bayar')
             ");
-            $stmtTagihanBaru->execute([
+            $stmtTagihanSewa->execute([
                 ':pk_id'     => $penghuni_kamar_id,
                 ':tgl_awal'  => $tgl_mulai,
                 ':tgl_tempo' => $tgl_jatuh_tempo
             ]);
 
-            // 4. Ubah Status Kamar Menjadi Terisi
+            // 4. Pastikan Master Kategori Iuran Tersedia & Buat Tagihan IURAN Otomatis
+            $stmtIuran = $pdo->query("SELECT id FROM kategori_iuran ORDER BY id ASC LIMIT 1");
+            $masterIuran = $stmtIuran ? $stmtIuran->fetch(PDO::FETCH_ASSOC) : null;
+
+            if (!$masterIuran) {
+                // Buat kategori default jika tabel masih kosong
+                $stmtInsertKat = $pdo->query("
+                    INSERT INTO kategori_iuran (nama_iuran, nominal) 
+                    VALUES ('Iuran Kebersihan & Keamanan', 50000) 
+                    RETURNING id
+                ");
+                $iuran_id = (int)$stmtInsertKat->fetchColumn();
+            } else {
+                $iuran_id = (int)$masterIuran['id'];
+            }
+
+            $stmtTagihanIuran = $pdo->prepare("
+                INSERT INTO tagihan (
+                    penghuni_kamar_id, 
+                    kategori_iuran_id,
+                    tanggal_awal_tagihan,
+                    tanggal_jatuh_tempo, 
+                    status_tagihan
+                )
+                VALUES (:pk_id, :iuran_id, :tgl_awal, :tgl_tempo, 'belum_bayar')
+            ");
+            $stmtTagihanIuran->execute([
+                ':pk_id'     => $penghuni_kamar_id,
+                ':iuran_id'  => $iuran_id,
+                ':tgl_awal'  => $tgl_mulai,
+                ':tgl_tempo' => $tgl_jatuh_tempo
+            ]);
+
+            // 5. Ubah Status Kamar Menjadi Terisi
             $stmtUK = $pdo->prepare("UPDATE kamar SET status_kamar = 'terisi' WHERE id = :kamar_id");
             $stmtUK->execute([':kamar_id' => $kamar['id']]);
 
@@ -235,7 +277,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
             exit;
         } catch (Exception $e) {
             $pdo->rollBack();
-            $error_simpan = "Gagal menambah penghuni: " . $e->getMessage();
+            $_SESSION['error_simpan'] = "Gagal menambah penghuni: " . $e->getMessage();
+            header("Location: /?page=" . urlencode($current_page));
+            exit;
         }
     } else {
         $error_simpan = "Nama lengkap dan nomor kamar wajib diisi.";
@@ -244,18 +288,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
 
 // 5. HANDLER: SIMPAN DETAIL KAMAR & PENGHUNI
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
-    $nomor_kamar  = trim($_POST['nomor_kamar'] ?? '');
-    $nama         = trim($_POST['nama'] ?? '');
-    $no_wa        = preg_replace('/[^0-9]/', '', trim($_POST['no_wa'] ?? ''));
-    $email        = trim($_POST['email'] ?? '');
-    $kontak_wali  = preg_replace('/[^0-9]/', '', trim($_POST['kontak_wali'] ?? ''));
-    $pin_baru     = preg_replace('/[^0-9]/', '', trim($_POST['pin'] ?? ''));
-    $is_ketua_kos = (isset($_POST['is_ketua_kos']) && $_POST['is_ketua_kos'] === '1') ? 'true' : 'false';
-    $skema_id     = (int) ($_POST['skema_id'] ?? 0);
-    $tgl_mulai    = $_POST['tgl_mulai'] ?? date('Y-m-d');
-    $status_bayar = strtolower(trim($_POST['status_bayar'] ?? 'belum_bayar'));
+    $nomor_kamar   = trim($_POST['nomor_kamar'] ?? '');
+    $nama          = trim($_POST['nama'] ?? '');
+    $no_wa         = preg_replace('/[^0-9]/', '', trim($_POST['no_wa'] ?? ''));
+    $email         = trim($_POST['email'] ?? '');
+    $kontak_wali   = preg_replace('/[^0-9]/', '', trim($_POST['kontak_wali'] ?? ''));
+    $pin_baru      = preg_replace('/[^0-9]/', '', trim($_POST['pin'] ?? ''));
+    $is_ketua_kos  = (isset($_POST['is_ketua_kos']) && $_POST['is_ketua_kos'] === '1') ? 'true' : 'false';
+    $skema_id      = (int) ($_POST['skema_id'] ?? 0);
+    $tgl_mulai     = $_POST['tgl_mulai'] ?? date('Y-m-d');
+    $status_bayar  = strtolower(trim($_POST['status_bayar'] ?? 'belum_bayar'));
     $status_simpan = ($status_bayar === 'lunas') ? 'lunas' : 'belum_bayar';
-    $email_val    = ($email === '') ? null : $email;
+    $email_val     = ($email === '') ? null : $email;
 
     // Ambil durasi skema sewa untuk update tanggal selesai secara akurat
     $stmtSkema = $pdo->prepare("SELECT tipe_periode, durasi_nilai FROM skema_sewa WHERE id = :id LIMIT 1");
@@ -283,7 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
         $data = $stmtCari->fetch(PDO::FETCH_ASSOC);
 
         if ($data) {
-            // Update Data Penghuni
+            // Update Data Akun Penghuni
             $sqlUP = "
                 UPDATE penghuni 
                 SET nama = :nama, 
@@ -324,7 +368,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
                 ':pk_id'       => $data['penghuni_kamar_id']
             ]);
 
-            // Update Status Tagihan Terakhir
+            // Update Status Tagihan Sewa Terakhir
             $stmtTagihan = $pdo->prepare("
                 UPDATE tagihan 
                 SET status_tagihan = :status_bayar 

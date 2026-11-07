@@ -46,11 +46,10 @@ switch ($page) {
         require_once __DIR__ . '/../modules/pemilik/edit_tatib.php';
         break;
 
-    // Bersama (Shared)
     case 'chat_penghuni':
         require_once __DIR__ . '/../modules/shared/chat_penghuni.php';
         break;
-    case 'iuran':                     // <-- Ditambahkan sebagai alias
+    case 'iuran':                     
     case 'kelola_iuran':
     case 'monitoring_iuran':
         require_once __DIR__ . '/../modules/shared/iuran.php';

@@ -1048,12 +1048,18 @@ body.login-body {
   background-color: #4ca5b0;
   border-radius: 20px;
   padding: 14px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
   box-shadow: 4px 5px 0px #c8924b;
   box-sizing: border-box;
   margin: 0 !important;
+  width: 100% !important;
+}
+
+.chat-card .btn-chat-wa {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
 }
 
 .chat-info {
@@ -4403,4 +4409,79 @@ a.kotak-kapsul-pemilik:active {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
+}
+
+/* ==========================================================================
+   20. TAGIHAN & RIWAYAT STATUS BADGE & ACTION BUTTONS
+   ========================================================================== */
+.alert-box-sukses {
+  background-color: #d1fae5;
+  color: #065f46;
+  padding: 12px 20px;
+  margin: 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.alert-box-error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 12px 20px;
+  margin: 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.badge-tagihan-lunas {
+  background-color: #93f5c7;
+  color: #0d5635;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.badge-tagihan-pending {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.badge-tagihan-belum {
+  background-color: #ffeed3;
+  color: #7c4103;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.btn-card-lunas {
+  background-color: #ffffff;
+  color: #0d5635;
+  font-weight: 800;
+  cursor: default;
+  text-align: center;
+  box-shadow: none;
+}
+
+.btn-card-pending {
+  background-color: #f1f5f9;
+  color: #475569;
+  font-weight: 800;
+  cursor: default;
+  text-align: center;
+  box-shadow: none;
+}
+
+.modal-form-upload-tagihan {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
 }
