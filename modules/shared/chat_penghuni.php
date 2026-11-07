@@ -20,31 +20,26 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
     }
 }
 
-// 2. Ambil data langsung dari tabel penghuni (Meskipun belum masuk penghuni_kamar, TETAP TAMPIL)
+// 2. Ambil data penghuni aktif dan nomor kamar sesuai relasi baru
 $penghuniKos = [];
 
 if (isset($pdo) && $pdo instanceof PDO) {
     try {
+        $sql = "
+            SELECT
+                p.id,
+                p.nama,
+                COALESCE(k.no_kamar, '-') AS kamar,
+                COALESCE(p.no_wa, '-') AS no_wa
+            FROM penghuni p
+            LEFT JOIN penghuni_kamar pk ON p.id = pk.penghuni_id
+            LEFT JOIN kamar k ON pk.kamar_id = k.id AND k.status_kamar = 'terisi'
+            WHERE LOWER(p.status_akun) = 'aktif'
+            ORDER BY k.no_kamar ASC, p.nama ASC
+        ";
 
-$sql = "
-    SELECT
-        p.id,
-        p.nama,
-        COALESCE(k.no_kamar, '-') AS kamar,
-        COALESCE(p.no_wa, '-') AS no_wa
-    FROM penghuni p
-    LEFT JOIN penghuni_kamar pk
-        ON p.id = pk.penghuni_id
-    LEFT JOIN kamar k
-        ON pk.kamar_id = k.id
-        AND k.status_kamar = 'terisi'
-    WHERE LOWER(p.status_akun) = 'aktif'
-    ORDER BY k.no_kamar ASC, p.nama ASC
-";
-
-$stmt = $pdo->query($sql);
-$penghuniKos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+        $stmt = $pdo->query($sql);
+        $penghuniKos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
         $penghuniKos = [];
     }
@@ -98,12 +93,8 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
                             <div class="chat-card" data-nama="<?= strtolower(htmlspecialchars($p['nama'])); ?>" data-kamar="<?= strtolower(htmlspecialchars($p['kamar'])); ?>">
                                 <div class="chat-info">
                                     <div class="chat-header-row">
-                                       <span class="chat-nama">
-    <?= htmlspecialchars($p['nama']); ?>
-</span>
-
-<div class="badge-kamar-putih"
-<span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
+                                        <span class="chat-nama"><?= htmlspecialchars($p['nama']); ?></span>
+                                        <span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                                     </div>
                                     <span class="chat-wa"><?= htmlspecialchars($p['no_wa']); ?></span>
                                 </div>
@@ -154,11 +145,8 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
                         <article class="desktop-chat-card" data-nama="<?= strtolower(htmlspecialchars($p['nama'])); ?>" data-kamar="<?= strtolower(htmlspecialchars($p['kamar'])); ?>">
                             <div class="desktop-chat-info">
                                 <div class="desktop-chat-header-row">
-                                   <span class="desktop-chat-nama">
-    <?= htmlspecialchars($p['nama']); ?>
-</span>
-
-<span class="desktop-badge-kamar">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
+                                    <span class="desktop-chat-nama"><?= htmlspecialchars($p['nama']); ?></span>
+                                    <span class="desktop-badge-kamar">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                                 </div>
                                 <span class="desktop-chat-telp"><?= htmlspecialchars($p['no_wa']); ?></span>
                             </div>
@@ -172,7 +160,7 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
         </main>
     </div>
 
-    <!-- Skrip Filter Live Search -->
+    <!-- Script Filter Live Search -->
     <script>
         function setupFilter(inputId, listId) {
             const input = document.getElementById(inputId);

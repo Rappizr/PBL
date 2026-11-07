@@ -2,10 +2,16 @@
 /**
  * Local dev router — use with:
  *   php -S localhost:3000 router.php
- *
- * vercel.json routes only work on Vercel.
- * This file mirrors those routes for local testing.
  */
+
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Tangkap jika ada permintaan logout via ?aksi=logout
+if (isset($_GET['aksi']) && $_GET['aksi'] === 'logout') {
+    $_GET['page'] = 'logout';
+}
 
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
 $uri = rtrim($uri, '/') ?: '/';
@@ -29,7 +35,6 @@ if ($uri === '/api/auth') {
     return true;
 }
 
-// Pretty URLs → front controller
 // Pretty URLs → front controller
 $map = [
     '/login'               => 'login',

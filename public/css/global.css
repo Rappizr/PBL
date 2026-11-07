@@ -47,15 +47,17 @@ body {
 }
 
 /* ==========================================================================
-   2. HEADER & BRANDING
+   2. HEADER & BRANDING (FIXED FOR LONG NAMES)
    ========================================================================== */
 .brand-title-dashboard {
   font-family: "Jockey One", sans-serif;
-  font-size: 28px;
+  font-size: 28px !important;
   color: #ffffff;
   letter-spacing: 1.5px;
   text-transform: uppercase;
   margin: 0;
+  white-space: nowrap !important; /* Mencegah judul patah dua baris */
+  flex-shrink: 0 !important;
   text-shadow:
     1px 1px 0 #4ca5b0,
     2px 2px 0 #4ca5b0,
@@ -64,12 +66,26 @@ body {
     5px 5px 0 #4ca5b0;
 }
 
+.btn-logout-mobile {
+  flex-shrink: 0 !important;
+}
+
 .dashboard-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: 20px;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  width: 100% !important;
+  gap: 8px !important;
+  box-sizing: border-box !important;
+  margin-bottom: 20px !important;
+}
+
+.header-user-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-shrink: 1 !important;
+  min-width: 0 !important;
 }
 
 .kotak-kapsul-pemilik {
@@ -81,6 +97,13 @@ body {
   gap: 8px;
   box-sizing: border-box;
   flex-shrink: 0;
+}
+
+a.kotak-kapsul-pemilik {
+  max-width: 95px !important; /* Membatasi lebar teks nama depan agar header seimbang */
+  min-width: 0 !important;
+  overflow: hidden !important;
+  flex-shrink: 1 !important;
 }
 
 .lingkaran-user-abu {
@@ -102,12 +125,11 @@ body {
 }
 
 .tulisan-nama {
-  font-family: "Inter", sans-serif;
-  font-size: 14px;
-  font-weight: 800;
-  color: #ffffff;
-  line-height: 1;
-  white-space: nowrap;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: inline-block !important;
+  max-width: 100% !important;
 }
 
 /* ==========================================================================
@@ -600,32 +622,32 @@ body {
 /* iuran filter */
 /* Untuk baris header riwayat pada halaman Monitoring Iuran agar sejajar dengan card di atasnya */
 .iuran-desktop-header-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 24px;
-    margin-bottom: 12px;
-    width: 100%;
-    max-width: 520px; /* Disesuaikan dengan lebar card Saldo Bersih di atasnya */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  width: 100%;
+  max-width: 520px; /* Disesuaikan dengan lebar card Saldo Bersih di atasnya */
 }
 
 /* Untuk menyamakan lebar empty state card agar lurus dengan card atasnya */
 .empty-state-card {
-    background-color: #ffffff;
-    border-radius: 12px;
-    padding: 20px 24px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    width: 100%;
-    max-width: 520px; /* Disamakan juga agar ujung kanannya lurus */
-    color: #555555;
-    font-size: 14px;
-    font-weight: 600;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 520px; /* Disamakan juga agar ujung kanannya lurus */
+  color: #555555;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .empty-state-card .empty-icon {
-    font-size: 20px;
-    color: #4ca5b0;
+  font-size: 20px;
+  color: #4ca5b0;
 }

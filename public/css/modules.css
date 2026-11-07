@@ -1048,12 +1048,18 @@ body.login-body {
   background-color: #4ca5b0;
   border-radius: 20px;
   padding: 14px 18px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
   box-shadow: 4px 5px 0px #c8924b;
   box-sizing: border-box;
   margin: 0 !important;
+  width: 100% !important;
+}
+
+.chat-card .btn-chat-wa {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
 }
 
 .chat-info {
@@ -4403,4 +4409,481 @@ a.kotak-kapsul-pemilik:active {
   display: flex !important;
   align-items: center !important;
   gap: 10px !important;
+}
+
+/* ==========================================================================
+   20. TAGIHAN & RIWAYAT STATUS BADGE & ACTION BUTTONS
+   ========================================================================== */
+.alert-box-sukses {
+  background-color: #d1fae5;
+  color: #065f46;
+  padding: 12px 20px;
+  margin: 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.alert-box-error {
+  background-color: #fee2e2;
+  color: #991b1b;
+  padding: 12px 20px;
+  margin: 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.badge-tagihan-lunas {
+  background-color: #93f5c7;
+  color: #0d5635;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.badge-tagihan-pending {
+  background-color: #e0f2fe;
+  color: #0369a1;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.badge-tagihan-belum {
+  background-color: #ffeed3;
+  color: #7c4103;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.btn-card-lunas {
+  background-color: #ffffff;
+  color: #0d5635;
+  font-weight: 800;
+  cursor: default;
+  text-align: center;
+  box-shadow: none;
+}
+
+.btn-card-pending {
+  background-color: #f1f5f9;
+  color: #475569;
+  font-weight: 800;
+  cursor: default;
+  text-align: center;
+  box-shadow: none;
+}
+
+.modal-form-upload-tagihan {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+/* ==========================================================================
+   21. TOMBOL LOGOUT & MODAL KONFIRMASI KELUAR
+   ========================================================================== */
+.sidebar-bottom-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-top: auto;
+}
+
+.btn-logout-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 16px;
+  background-color: rgba(255, 214, 217, 0.18);
+  color: #ffd6d9;
+  border: 1.5px solid rgba(255, 214, 217, 0.45);
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.btn-logout-sidebar:hover {
+  background-color: #ffd6d9;
+  color: #8c0c16;
+  border-color: #ffd6d9;
+}
+
+.header-user-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-logout-mobile {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: #ffd6d9;
+  color: #c91818;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.1s ease,
+    background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-logout-mobile:hover {
+  background-color: #fca5a5;
+}
+
+.btn-logout-mobile:active {
+  transform: scale(0.93);
+}
+
+#modalKonfirmasiLogout.active {
+  display: flex !important;
+  z-index: 99999 !important;
+}
+
+.btn-ya-keluar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+/* MODAL POP-UP LOGOUT DESKTOP FIX */
+#modalKonfirmasiLogoutSidebar.modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  background-color: rgba(0, 0, 0, 0.45) !important;
+  backdrop-filter: blur(2px) !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 999999 !important;
+  padding: 16px !important;
+  box-sizing: border-box !important;
+}
+
+#modalKonfirmasiLogoutSidebar.modal-overlay.active {
+  display: flex !important;
+}
+
+.btn-ya-keluar i.fa-spin,
+.konfirmasi-icon-wrapper i.fa-spin {
+  animation: fa-spin 0.8s infinite linear;
+}
+
+@keyframes fa-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.btn-set-iuran {
+  background-color: #2b6cb0;
+  color: #ffffff !important;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.btn-set-iuran:hover {
+  background-color: #2c5282;
+}
+
+/* ==========================================
+   STATISTIK KELOLA IURAN (MOBILE & DESKTOP)
+   ========================================== */
+.kelola-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.kelola-stat-periode {
+  color: #ffffff;
+  opacity: 0.9;
+  font-size: 11px;
+  display: block;
+  margin-top: 4px;
+}
+
+.desktop-kelola-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 824px;
+  margin-bottom: 20px;
+}
+
+.desktop-kelola-stat-card {
+  background-color: #38b2ac;
+  border-radius: 12px;
+  padding: 16px;
+  color: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.desktop-kelola-stat-val-white {
+  color: #ffffff;
+}
+
+.desktop-kelola-stat-periode {
+  color: #ffffff;
+  opacity: 0.95;
+  font-size: 11.5px;
+  font-weight: 600;
+  display: block;
+  margin-top: 4px;
+}
+
+@media (max-width: 600px) {
+  .kelola-stats-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .kelola-stat-card {
+    padding: 10px 8px;
+  }
+
+  .kelola-stat-value {
+    font-size: 15px;
+  }
+}
+
+/* Tombol Verifikasi Cepat di Samping Tombol Chat */
+.iuran-btn-verif-pill {
+  background-color: #fef08a !important;
+  color: #854d0e !important;
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  padding: 6px 14px !important;
+  border-radius: 9999px !important;
+  text-decoration: none !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  box-shadow: 1px 2px 0px rgba(0, 0, 0, 0.1) !important;
+  transition:
+    transform 0.1s ease,
+    background-color 0.15s ease !important;
+  white-space: nowrap !important;
+}
+
+.iuran-btn-verif-pill:hover {
+  background-color: #fde047 !important;
+  transform: translateY(-1px);
+}
+
+.iuran-btn-verif-pill:active {
+  transform: translateY(1px);
+}
+
+/* ==========================================================================
+   22. VERIFIKASI PEMBAYARAN STYLING (TANPA INLINE STYLE)
+   ========================================================================== */
+.verifikasi-subpage-title {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0 0 4px 0;
+}
+
+.verifikasi-subpage-desc {
+  color: #ffffff;
+  font-size: 12px;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.verifikasi-alert-center {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.verifikasi-alert-desktop {
+  max-width: 650px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.verifikasi-filter-box-full {
+  width: 100%;
+}
+
+.verifikasi-filter-desktop-wrap {
+  max-width: 260px;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.verifikasi-card-list-desktop {
+  max-width: 650px;
+  width: 100%;
+}
+
+.verifikasi-empty-card-full {
+  width: 100%;
+  max-width: 650px;
+}
+
+.badge-tagihan-tipe {
+  font-size: 10.5px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background-color: #e0f2fe;
+  color: #0369a1;
+}
+
+.form-aksi-verif {
+  flex: 1;
+  display: flex;
+  margin: 0;
+  width: 100%;
+}
+
+.btn-action-full {
+  width: 100%;
+}
+
+/* ==========================================================================
+   23. MODAL KONFIRMASI VERIFIKASI PEMBAYARAN (TERIMA & TOLAK)
+   ========================================================================== */
+.modal-konfirmasi-verif-card {
+  background-color: #ffffff;
+  width: 100%;
+  max-width: 380px;
+  border-radius: 24px;
+  padding: 26px 22px 24px;
+  text-align: center;
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.35);
+  box-sizing: border-box;
+  animation: popIn 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.konfirmasi-verif-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin: 0 auto 16px;
+}
+
+.konfirmasi-verif-icon.icon-terima {
+  background-color: #d1fae5;
+  color: #059669;
+}
+
+.konfirmasi-verif-icon.icon-tolak {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.konfirmasi-verif-title {
+  color: #1a4d55;
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0 0 8px;
+}
+
+.konfirmasi-verif-desc {
+  color: #4b5563;
+  font-size: 13.5px;
+  line-height: 1.5;
+  margin: 0 0 22px;
+}
+
+.konfirmasi-verif-desc strong {
+  color: #1a4d55;
+}
+
+.konfirmasi-verif-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-konfir-batal {
+  flex: 1;
+  padding: 11px 0;
+  border-radius: 9999px;
+  background-color: #f1f5f9;
+  color: #475569;
+  font-size: 13.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.btn-konfir-batal:hover {
+  background-color: #e2e8f0;
+}
+
+.btn-konfir-submit {
+  flex: 1;
+  padding: 11px 0;
+  border-radius: 9999px;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 2px 3px 0px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.1s ease,
+    background-color 0.15s ease;
+}
+
+.btn-konfir-submit.btn-terima {
+  background-color: #10b981;
+}
+
+.btn-konfir-submit.btn-terima:hover {
+  background-color: #059669;
+}
+
+.btn-konfir-submit.btn-tolak {
+  background-color: #ef4444;
+}
+
+.btn-konfir-submit.btn-tolak:hover {
+  background-color: #dc2626;
+}
+
+.btn-konfir-submit:active {
+  transform: translateY(1px);
 }
