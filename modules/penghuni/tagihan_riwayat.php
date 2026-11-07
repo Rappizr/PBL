@@ -3,64 +3,133 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$is_pj = $_SESSION['user']['is_pj'] ?? true;
-$nama_penghuni = $_SESSION['user']['nama'] ?? "Mas Dafa";
+if (!isset($pdo) || !($pdo instanceof PDO)) {
+    $possible_paths = [
+        __DIR__ . '/../../config/database.php',
+        __DIR__ . '/../config/database.php',
+        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php',
+        dirname(__DIR__, 2) . '/config/database.php',
+        dirname(__DIR__, 3) . '/config/database.php'
+    ];
+    foreach ($possible_paths as $path) {
+        if (file_exists($path)) {
+            require_once $path;
+            break;
+        }
+    }
+}
 
-$daftar_tagihan_saya = [
-    [
-        'id'          => 1,
-        'jenis'       => 'Sewa',
-        'nominal'     => 1000000,
-        'jatuh_tempo' => '11-10-26'
-    ],
-    [
-        'id'          => 2,
-        'jenis'       => 'Iuran',
-        'nominal'     => 50000,
-        'jatuh_tempo' => '11-10-26'
-    ]
-];
+$nama_penghuni = $_SESSION['user']['nama'] ?? "Penghuni";
+$daftar_tagihan_saya = [];
+$semua_riwayat = [];
+$sukses_pesan = '';
+$error_pesan = '';
+$sql_error_debug = '';
 
-$semua_riwayat = [
-    [
-        'id'             => 101,
-        'judul'          => 'Sewa Bulanan',
-        'tanggal'        => '05 September 2026',
-        'tanggal_filter' => '2026-09-05',
-        'nominal'        => 1200000,
-        'nomor_invoice'  => 'INV/202609/KOS-101',
-        'tanggal_terbit' => '01 September 2026',
-        'jatuh_tempo'    => '11 September 2026',
-        'tanggal_bayar'  => '05 September 2026, 10:15 WIB',
-        'periode_sewa'   => '11 Sep 2026 - 10 Okt 2026'
-    ],
-    [
-        'id'             => 201,
-        'judul'          => 'Iuran Bulanan',
-        'tanggal'        => '06 September 2026',
-        'tanggal_filter' => '2026-09-06',
-        'nominal'        => 50000,
-        'nomor_invoice'  => 'INV/202609/KOS-102',
-        'tanggal_terbit' => '01 September 2026',
-        'jatuh_tempo'    => '11 September 2026',
-        'tanggal_bayar'  => '06 September 2026, 14:30 WIB',
-        'periode_sewa'   => 'Pelunasan Tambahan'
-    ],
-    [
-        'id'             => 103,
-        'judul'          => 'Sewa Bulanan',
-        'tanggal'        => '10 September 2026',
-        'tanggal_filter' => '2026-09-10',
-        'nominal'        => 100000,
-        'nomor_invoice'  => 'INV/202609/KOS-103',
-        'tanggal_terbit' => '01 September 2026',
-        'jatuh_tempo'    => '11 September 2026',
-        'tanggal_bayar'  => '10 September 2026, 19:00 WIB',
-        'periode_sewa'   => 'Pelunasan Tambahan'
-    ]
-];
+if (isset($pdo) && $pdo instanceof PDO) {
 
-// FILTER RENTANG TANGGAL UNTUK RIWAYAT
+    // A. PROSES POST: UPLOAD BUKTI PEMBAYARAN
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tagihan_id'])) {
+        $tagihan_id = (int)$_POST['tagihan_id'];
+        
+        if (isset($_FILES['bukti_transfer']) && $_FILES['bukti_transfer']['error'] === UPLOAD_ERR_OK) {
+            $file_tmp = $_FILES['bukti_transfer']['tmp_name'];
+            $file_name = $_FILES['bukti_transfer']['name'];
+            $ext = pathinfo($file_name, PATHINFO_EXTENSION);
+            
+            $new_filename = 'bukti_' . time() . '_' . rand(100, 999) . '.' . $ext;
+            $upload_dir = __DIR__ . '/../../public/uploads/bukti/';
+            
+            if (!is_dir($upload_dir)) {
+                mkdir($upload_dir, 0777, true);
+            }
+            
+            if (move_uploaded_file($file_tmp, $upload_dir . $new_filename)) {
+                try {
+                    $pdo->beginTransaction();
+
+                    // Ambil nominal dari kategori iuran jika ada, jika tidak default 500000
+                    $stmtTag = $pdo->prepare("
+                        SELECT COALESCE(ki.nominal, 500000) AS nominal 
+                        FROM tagihan t 
+                        LEFT JOIN kategori_iuran ki ON t.kategori_iuran_id = ki.id 
+                        WHERE t.id = ?
+                    ");
+                    $stmtTag->execute([$tagihan_id]);
+                    $tagData = $stmtTag->fetch(PDO::FETCH_ASSOC);
+                    $jumlah_bayar = $tagData['nominal'] ?? 500000;
+
+                    $stmtBayar = $pdo->prepare("
+                        INSERT INTO pembayaran (tagihan_id, bukti_pembayaran, jumlah_bayar, metode_bayar, status_verifikasi, no_kwitansi)
+                        VALUES (?, ?, ?, 'transfer', 'pending', ?)
+                    ");
+                    $no_kwitansi = 'KW/' . date('Ym') . '/' . rand(1000, 9999);
+                    $stmtBayar->execute([$tagihan_id, $new_filename, $jumlah_bayar, $no_kwitansi]);
+
+                    $stmtUpTagihan = $pdo->prepare("UPDATE tagihan SET status_tagihan = 'sebagian' WHERE id = ?");
+                    $stmtUpTagihan->execute([$tagihan_id]);
+
+                    $pdo->commit();
+                    $sukses_pesan = "Bukti pembayaran berhasil dikirim dan sedang menunggu verifikasi.";
+                } catch (Exception $e) {
+                    $pdo->rollBack();
+                    $error_pesan = "Gagal memproses pembayaran: " . $e->getMessage();
+                }
+            } else {
+                $error_pesan = "Gagal mengunggah file foto bukti transfer.";
+            }
+        } else {
+            $error_pesan = "Harap lampirkan file foto bukti pembayaran.";
+        }
+    }
+
+    // B. AMBIL DATA TAGIHAN SAYA SECARA AMAN
+    try {
+        $sqlTagihan = "
+            SELECT 
+                t.id,
+                COALESCE(ki.nama_iuran, 'Sewa Kos / Iuran') AS jenis,
+                COALESCE(ki.nominal, 500000) AS nominal,
+                TO_CHAR(t.tanggal_jatuh_tempo, 'DD-MM-YYYY') AS jatuh_tempo
+            FROM tagihan t
+            LEFT JOIN kategori_iuran ki ON t.kategori_iuran_id = ki.id
+            WHERE t.status_tagihan IN ('belum_bayar', 'sebagian', 'terlambat')
+            ORDER BY t.tanggal_jatuh_tempo ASC
+        ";
+        $stmtT = $pdo->query($sqlTagihan);
+        $daftar_tagihan_saya = $stmtT->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $sql_error_debug = $e->getMessage();
+    }
+
+    // C. AMBIL DATA RIWAYAT TRANSAKSI (LUNAS)
+    try {
+        $sqlRiwayat = "
+            SELECT 
+                p.id,
+                COALESCE(ki.nama_iuran, 'Sewa Bulanan') AS judul,
+                TO_CHAR(p.tanggal_bayar, 'DD Month YYYY') AS tanggal,
+                TO_CHAR(p.tanggal_bayar, 'YYYY-MM-DD') AS tanggal_filter,
+                p.jumlah_bayar AS nominal,
+                p.no_kwitansi AS nomor_invoice,
+                TO_CHAR(p.tanggal_bayar, 'DD Month YYYY') AS tanggal_terbit,
+                TO_CHAR(p.tanggal_bayar, 'DD Month YYYY') AS jatuh_tempo,
+                TO_CHAR(p.tanggal_bayar, 'DD Month YYYY, HH24:MI') || ' WIB' AS tanggal_bayar,
+                'Bulanan' AS periode_sewa,
+                '-' AS no_kamar
+            FROM pembayaran p
+            JOIN tagihan t ON p.tagihan_id = t.id
+            LEFT JOIN kategori_iuran ki ON t.kategori_iuran_id = ki.id
+            WHERE p.status_verifikasi = 'diterima'
+            ORDER BY p.tanggal_bayar DESC
+        ";
+        $stmtR = $pdo->query($sqlRiwayat);
+        $semua_riwayat = $stmtR->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $semua_riwayat = [];
+    }
+}
+
 $date_range = trim($_GET['date_range'] ?? '');
 if (!preg_match('/^\d{4}-\d{2}-\d{2}( to \d{4}-\d{2}-\d{2})?$/', $date_range)) {
     $date_range = '';
@@ -75,7 +144,6 @@ if ($date_range !== '') {
     $tgl_selesai = trim($parts[1] ?? $tgl_mulai);
 }
 
-// Proses filter array riwayat transaksi
 $daftar_riwayat = array_filter($semua_riwayat, function ($r) use ($tgl_mulai, $tgl_selesai) {
     if ($tgl_mulai === '') {
         return true;
@@ -85,10 +153,8 @@ $daftar_riwayat = array_filter($semua_riwayat, function ($r) use ($tgl_mulai, $t
 
 $is_filtered = ($date_range !== '');
 
-// Deteksi Modal Bayar via Query Parameter URL
 $modal_bayar_id = isset($_GET['bayar_id']) ? (int)$_GET['bayar_id'] : null;
 $tagihan_dipilih = null;
-
 if ($modal_bayar_id) {
     foreach ($daftar_tagihan_saya as $item) {
         if ($item['id'] === $modal_bayar_id) {
@@ -98,10 +164,8 @@ if ($modal_bayar_id) {
     }
 }
 
-// Deteksi Modal Invoice
 $modal_invoice_id = isset($_GET['invoice_id']) ? (int)$_GET['invoice_id'] : null;
 $invoice_dipilih = null;
-
 if ($modal_invoice_id) {
     foreach ($semua_riwayat as $item) {
         if ($item['id'] === $modal_invoice_id) {
@@ -118,15 +182,28 @@ if ($modal_invoice_id) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Tagihan &amp; Riwayat</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <!-- Flatpickr CSS untuk kalender range -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
-    <!-- Link CSS Modular -->
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
 <body class="dashboard-body">
+
+    <?php if (!empty($sql_error_debug)): ?>
+        <div style="background: #ef4444; color: white; padding: 12px 20px; margin: 10px; border-radius: 8px; font-weight: 700;">
+            DEBUG ERROR SQL: <?= htmlspecialchars($sql_error_debug); ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if (!empty($sukses_pesan)): ?>
+        <div style="background: #d1fae5; color: #065f46; padding: 12px 20px; margin: 10px; border-radius: 8px; font-weight: 700; text-align: center;">
+            <?= htmlspecialchars($sukses_pesan); ?>
+        </div>
+    <?php endif; ?>
+    <?php if (!empty($error_pesan)): ?>
+        <div style="background: #fee2e2; color: #991b1b; padding: 12px 20px; margin: 10px; border-radius: 8px; font-weight: 700; text-align: center;">
+            <?= htmlspecialchars($error_pesan); ?>
+        </div>
+    <?php endif; ?>
 
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
@@ -143,32 +220,38 @@ if ($modal_invoice_id) {
 
                 <h3 class="section-title-white">Tagihan Saya</h3>
                 <div class="section-group">
-                    <?php foreach ($daftar_tagihan_saya as $t): ?>
-                        <div class="item-tagihan-card">
-                            <div class="item-tagihan-header">
-                                <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']); ?></h4>
-                                <span class="badge-status-krem">Belum bayar</span>
-                            </div>
-                            <div class="item-tagihan-body">
-                                <div class="item-tagihan-left">
-                                    <span>Total tagihan</span>
-                                    <span>Batas bayar</span>
-                                </div>
-                                <div class="item-tagihan-right">
-                                    <span class="nominal-highlight">Rp <?= number_format($t['nominal'], 0, ',', '.'); ?></span>
-                                    <span><?= htmlspecialchars($t['jatuh_tempo']); ?></span>
-                                </div>
-                            </div>
-                            <a href="/?page=tagihan_riwayat&bayar_id=<?= $t['id']; ?>" class="btn-card-action">
-                                Bayar
-                            </a>
+                    <?php if (empty($daftar_tagihan_saya)): ?>
+                        <div class="empty-state-card">
+                            <i class="fa-solid fa-circle-check empty-icon" style="color: #0b5e39;"></i>
+                            <span>Hore! Tidak ada tagihan yang belum dibayar saat ini.</span>
                         </div>
-                    <?php endforeach; ?>
+                    <?php else: ?>
+                        <?php foreach ($daftar_tagihan_saya as $t): ?>
+                            <div class="item-tagihan-card">
+                                <div class="item-tagihan-header">
+                                    <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']); ?></h4>
+                                    <span class="badge-status-krem">Belum bayar</span>
+                                </div>
+                                <div class="item-tagihan-body">
+                                    <div class="item-tagihan-left">
+                                        <span>Total tagihan</span>
+                                        <span>Batas bayar</span>
+                                    </div>
+                                    <div class="item-tagihan-right">
+                                        <span class="nominal-highlight">Rp <?= number_format($t['nominal'], 0, ',', '.'); ?></span>
+                                        <span><?= htmlspecialchars($t['jatuh_tempo']); ?></span>
+                                    </div>
+                                </div>
+                                <a href="/?page=tagihan_riwayat&bayar_id=<?= $t['id']; ?>" class="btn-card-action">
+                                    Bayar
+                                </a>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
 
                 <h3 class="section-title-white">Riwayat Transaksi</h3>
                 
-                <!-- Filter tanggal mobile -->
                 <form method="GET" action="" class="filter-range-form" style="margin-bottom: 12px;">
                     <input type="hidden" name="page" value="tagihan_riwayat">
                     <div class="flatpickr-box-wrapper">
@@ -187,7 +270,7 @@ if ($modal_invoice_id) {
                     <?php if (empty($daftar_riwayat)): ?>
                         <div class="empty-state-card">
                             <i class="fa-solid fa-folder-open empty-icon"></i>
-                            <span>Tidak ada riwayat transaksi pada rentang tanggal yang dipilih</span>
+                            <span>Belum ada riwayat transaksi yang disetujui.</span>
                         </div>
                     <?php else: ?>
                         <?php foreach ($daftar_riwayat as $r): ?>
@@ -229,30 +312,36 @@ if ($modal_invoice_id) {
 
             <h3 class="tagihan-section-title">Tagihan Saya</h3>
             <div class="desktop-tagihan-grid">
-                <?php foreach ($daftar_tagihan_saya as $t): ?>
-                    <div class="item-tagihan-card">
-                        <div class="item-tagihan-header">
-                            <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']); ?></h4>
-                            <span class="badge-status-krem">Belum bayar</span>
-                        </div>
-                        <div class="item-tagihan-body">
-                            <div class="item-tagihan-left">
-                                <span>Total tagihan</span>
-                                <span>Batas bayar</span>
-                            </div>
-                            <div class="item-tagihan-right">
-                                <span class="nominal-highlight">Rp <?= number_format($t['nominal'], 0, ',', '.'); ?></span>
-                                <span><?= htmlspecialchars($t['jatuh_tempo']); ?></span>
-                            </div>
-                        </div>
-                        <a href="/?page=tagihan_riwayat&bayar_id=<?= $t['id']; ?>" class="btn-card-action">
-                            Bayar
-                        </a>
+                <?php if (empty($daftar_tagihan_saya)): ?>
+                    <div class="empty-state-card" style="max-width: 100%;">
+                        <i class="fa-solid fa-circle-check empty-icon" style="color: #0b5e39;"></i>
+                        <span>Hore! Tidak ada tagihan yang belum dibayar saat ini.</span>
                     </div>
-                <?php endforeach; ?>
+                <?php else: ?>
+                    <?php foreach ($daftar_tagihan_saya as $t): ?>
+                        <div class="item-tagihan-card">
+                            <div class="item-tagihan-header">
+                                <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']); ?></h4>
+                                <span class="badge-status-krem">Belum bayar</span>
+                            </div>
+                            <div class="item-tagihan-body">
+                                <div class="item-tagihan-left">
+                                    <span>Total tagihan</span>
+                                    <span>Batas bayar</span>
+                                </div>
+                                <div class="item-tagihan-right">
+                                    <span class="nominal-highlight">Rp <?= number_format($t['nominal'], 0, ',', '.'); ?></span>
+                                    <span><?= htmlspecialchars($t['jatuh_tempo']); ?></span>
+                                </div>
+                            </div>
+                            <a href="/?page=tagihan_riwayat&bayar_id=<?= $t['id']; ?>" class="btn-card-action">
+                                Bayar
+                            </a>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
 
-            <!-- Header Riwayat Transaksi Sejajar dengan Form Filter Tanggal (Desktop) -->
             <div class="riwayat-header-row">
                 <h3 class="tagihan-section-title">Riwayat Transaksi</h3>
 
@@ -273,9 +362,9 @@ if ($modal_invoice_id) {
 
             <div class="desktop-riwayat-list">
                 <?php if (empty($daftar_riwayat)): ?>
-                    <div class="empty-state-card">
+                    <div class="empty-state-card" style="max-width: 100%;">
                         <i class="fa-solid fa-folder-open empty-icon"></i>
-                        <span>Tidak ada riwayat transaksi pada rentang tanggal yang dipilih</span>
+                        <span>Belum ada riwayat transaksi yang disetujui.</span>
                     </div>
                 <?php else: ?>
                     <?php foreach ($daftar_riwayat as $r): ?>
@@ -300,15 +389,14 @@ if ($modal_invoice_id) {
         </main>
     </div>
 
-    <!-- POP-UP MODAL INVOICE -->
+    <!-- MODAL INVOICE -->
     <?php if ($invoice_dipilih): ?>
         <div class="modal-overlay active">
             <div class="invoice-wrapper">
                 <header class="invoice-header-row">
                     <div>
                         <h1 class="invoice-brand-title">SITEMAN - KOS</h1>
-                        <p class="invoice-brand-sub">Sistem Manajemen Operasion Kos</p>
-                        <p class="invoice-brand-sub">Jl. Semanggi Barat No. 2B, Malang</p>
+                        <p class="invoice-brand-sub">Sistem Manajemen Operasional Kos</p>
                     </div>
                     <div class="invoice-tag-box">
                         <h2 class="invoice-main-title">INVOICE SEWA</h2>
@@ -321,8 +409,7 @@ if ($modal_invoice_id) {
                     <div>
                         <div class="meta-col-title">Ditagihkan Kepada</div>
                         <h3 class="meta-text-strong"><?= htmlspecialchars($nama_penghuni); ?></h3>
-                        <p class="meta-text-muted"><i class="fa-solid fa-door-open"></i> Kamar 01</p>
-                        <p class="meta-text-muted"><i class="fa-brands fa-whatsapp"></i> 082764518892</p>
+                        <p class="meta-text-muted"><i class="fa-solid fa-door-open"></i> Kamar <?= htmlspecialchars($invoice_dipilih['no_kamar']); ?></p>
                     </div>
                     <div style="text-align: right;">
                         <div class="meta-col-title">Detail Waktu</div>
@@ -358,11 +445,6 @@ if ($modal_invoice_id) {
                     </div>
                 </div>
 
-                <div class="invoice-notes-card">
-                    <h4><i class="fa-solid fa-building-columns"></i> Petunjuk Pembayaran:</h4>
-                    <p>Silakan transfer via <strong>Transfer Bank BCA</strong> ke rekening <strong>8271-9920-112 a/n Bapak Kos</strong>. Pembayaran telah diverifikasi lunas.</p>
-                </div>
-
                 <div class="invoice-actions">
                     <a href="/?page=tagihan_riwayat" class="btn-invoice-back">
                         <i class="fa-solid fa-xmark"></i> Tutup
@@ -375,7 +457,7 @@ if ($modal_invoice_id) {
         </div>
     <?php endif; ?>
 
-    <!-- POP-UP MODAL BAYAR TAGIHAN -->
+    <!-- MODAL BAYAR TAGIHAN -->
     <?php if ($tagihan_dipilih): ?>
         <div class="modal-overlay active">
             <div class="modal-bayar-card">
@@ -395,7 +477,7 @@ if ($modal_invoice_id) {
                     <div class="modal-rekening-wrapper">
                         <label class="modal-rekening-label">Transfer Ke Rekening</label>
                         <div class="modal-rekening-val">
-                            BCA 12345678 a.n Bapak Kos
+                            BCA 12345678 a.n Pemilik Kos
                         </div>
                     </div>
 
@@ -421,7 +503,6 @@ if ($modal_invoice_id) {
         </div>
     <?php endif; ?>
 
-    <!-- Flatpickr JS CDN -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
         document.addEventListener("DOMContentLoaded", function() {

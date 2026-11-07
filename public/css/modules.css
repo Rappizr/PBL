@@ -1080,6 +1080,18 @@ body.login-body {
   font-weight: 600;
 }
 
+.badge-kamar-putih,
+.desktop-badge-kamar {
+  background-color: #ffffff !important;
+  color: #4ca5b0 !important;
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  padding: 3px 12px !important;
+  border-radius: 9999px !important;
+  display: inline-block !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
 /* ==========================================================================
    7. TAGIHAN & RIWAYAT (MOBILE)
    ========================================================================== */
@@ -4369,4 +4381,26 @@ a.kotak-kapsul-pemilik:active {
     font-weight: 800;
     color: #ffffff;
   }
+}
+
+/* ==========================================================================
+   FIX BADGE KAMAR KAPSUL PUTIH (CHAT PENGHUNI)
+   ========================================================================== */
+.badge-kamar-putih,
+.desktop-badge-kamar {
+  background-color: #ffffff !important;
+  color: #4ca5b0 !important;
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  padding: 3px 12px !important;
+  border-radius: 9999px !important;
+  display: inline-block !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.chat-header-row,
+.desktop-chat-header-row {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
 }

@@ -3,15 +3,55 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$role_user    =$_SESSION['user']['role'] ?? 'penghuni';
-$link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?page=dashboard_penghuni';
+// 1. Ambil koneksi database secara aman
+if (!isset($pdo) || !($pdo instanceof PDO)) {
+    $possible_paths = [
+        __DIR__ . '/../../config/database.php',
+        __DIR__ . '/../config/database.php',
+        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php',
+        dirname(__DIR__, 2) . '/config/database.php',
+        dirname(__DIR__, 3) . '/config/database.php'
+    ];
+    foreach ($possible_paths as $path) {
+        if (file_exists($path)) {
+            require_once $path;
+            break;
+        }
+    }
+}
 
-$penghuniKos = [
-    ['nama' => 'Ridwan', 'kamar' => '01', 'no_wa' => '082764518892'],
-    ['nama' => 'Raffi',  'kamar' => '05', 'no_wa' => '082765678892'],
-    ['nama' => 'Rofiq',  'kamar' => '03', 'no_wa' => '082094518892'],
-    ['nama' => 'Omara',  'kamar' => '04', 'no_wa' => '082764533892'],
-];
+// 2. Ambil data langsung dari tabel penghuni (Meskipun belum masuk penghuni_kamar, TETAP TAMPIL)
+$penghuniKos = [];
+
+if (isset($pdo) && $pdo instanceof PDO) {
+    try {
+
+$sql = "
+    SELECT
+        p.id,
+        p.nama,
+        COALESCE(k.no_kamar, '-') AS kamar,
+        COALESCE(p.no_wa, '-') AS no_wa
+    FROM penghuni p
+    LEFT JOIN penghuni_kamar pk
+        ON p.id = pk.penghuni_id
+    LEFT JOIN kamar k
+        ON pk.kamar_id = k.id
+        AND k.status_kamar = 'terisi'
+    WHERE LOWER(p.status_akun) = 'aktif'
+    ORDER BY k.no_kamar ASC, p.nama ASC
+";
+
+$stmt = $pdo->query($sql);
+$penghuniKos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    } catch (Exception $e) {
+        $penghuniKos = [];
+    }
+}
+
+$role_user    = $_SESSION['user']['role'] ?? 'pemilik';
+$link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?page=dashboard_penghuni';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -25,15 +65,19 @@ $penghuniKos = [
 </head>
 <body class="dashboard-body">
 
-<!-- LAYOUT MOBILE -->
+    <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
         <div>
-            <?php require_once __DIR__ . '/../components/header.php'; ?>
+            <?php 
+                if (file_exists(__DIR__ . '/../components/header.php')) {
+                    require_once __DIR__ . '/../components/header.php'; 
+                }
+            ?>
 
             <main class="chat-container">
                 <div class="subpage-banner-card">
                     <h2 class="subpage-banner-title">Chat Penghuni</h2>
-                    <a href="<?= $link_kembali; ?>" class="btn-kembali-banner">
+                    <a href="<?= htmlspecialchars($link_kembali); ?>" class="btn-kembali-banner">
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
                 </div>
@@ -44,29 +88,49 @@ $penghuniKos = [
                 </div>
 
                 <div class="chat-list" id="chatListMobile">
-                    <?php foreach ($penghuniKos as $p): ?>
-                        <div class="chat-card" data-nama="<?= strtolower($p['nama']); ?>" data-kamar="<?= strtolower($p['kamar']); ?>">
-                            <div class="chat-info">
-                                <div class="chat-header-row">
-                                    <span class="chat-nama"><?= htmlspecialchars($p['nama']); ?></span>
-                                    <span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
-                                </div>
-                                <span class="chat-wa"><?= htmlspecialchars($p['no_wa']); ?></span>
-                            </div>
-                            <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>" target="_blank" class="btn-chat-wa">
-                                <i class="fa-brands fa-whatsapp"></i> Chat
-                            </a>
+                    <?php if (empty($penghuniKos)): ?>
+                        <div class="empty-state-card" style="width: 100%; text-align: center; padding: 20px; background: #fff; border-radius: 12px; margin-top: 10px;">
+                            <i class="fa-solid fa-folder-open" style="font-size: 24px; color: #4ca5b0; margin-bottom: 8px;"></i>
+                            <p style="margin: 0; font-size: 13px; font-weight: 600; color: #4a5568;">Tidak ada data penghuni</p>
                         </div>
-                    <?php endforeach; ?>
+                    <?php else: ?>
+                        <?php foreach ($penghuniKos as $p): ?>
+                            <div class="chat-card" data-nama="<?= strtolower(htmlspecialchars($p['nama'])); ?>" data-kamar="<?= strtolower(htmlspecialchars($p['kamar'])); ?>">
+                                <div class="chat-info">
+                                    <div class="chat-header-row">
+                                       <span class="chat-nama">
+    <?= htmlspecialchars($p['nama']); ?>
+</span>
+
+<div class="badge-kamar-putih"
+<span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
+                                    </div>
+                                    <span class="chat-wa"><?= htmlspecialchars($p['no_wa']); ?></span>
+                                </div>
+                                <a href="https://wa.me/<?= preg_replace('/^0/', '62', preg_replace('/[^0-9]/', '', $p['no_wa'])); ?>" target="_blank" class="btn-chat-wa">
+                                    <i class="fa-brands fa-whatsapp"></i> Chat
+                                </a>
+                            </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </main>
         </div>
 
-        <?php require_once __DIR__ . '/../components/footer.php'; ?>
+        <?php 
+            if (file_exists(__DIR__ . '/../components/footer.php')) {
+                require_once __DIR__ . '/../components/footer.php'; 
+            }
+        ?>
     </div>
 
+    <!-- LAYOUT DESKTOP -->
     <div class="desktop-dashboard-wrapper">
-        <?php require_once __DIR__ . '/../components/sidebar.php'; ?>
+        <?php 
+            if (file_exists(__DIR__ . '/../components/sidebar.php')) {
+                require_once __DIR__ . '/../components/sidebar.php'; 
+            }
+        ?>
 
         <main class="desktop-content">
             <h2 class="desktop-header-title">Chat Penghuni</h2>
@@ -80,24 +144,35 @@ $penghuniKos = [
             </div>
 
             <div class="desktop-chat-list" id="chatListDesktop">
-                <?php foreach ($penghuniKos as$p): ?>
-                    <article class="desktop-chat-card" data-nama="<?= strtolower($p['nama']); ?>" data-kamar="<?= strtolower($p['kamar']); ?>">
-                        <div class="desktop-chat-info">
-                            <div class="desktop-chat-header-row">
-                                <span class="desktop-chat-nama"><?= htmlspecialchars($p['nama']); ?></span>
-                                <span class="desktop-badge-kamar">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
+                <?php if (empty($penghuniKos)): ?>
+                    <div class="empty-state-card" style="width: 100%; text-align: center; padding: 30px; background: #fff; border-radius: 16px; margin-top: 10px; max-width: 820px;">
+                        <i class="fa-solid fa-folder-open" style="font-size: 28px; color: #4ca5b0; margin-bottom: 10px;"></i>
+                        <p style="margin: 0; font-size: 14px; font-weight: 700; color: #4a5568;">Tidak ada data penghuni</p>
+                    </div>
+                <?php else: ?>
+                    <?php foreach ($penghuniKos as $p): ?>
+                        <article class="desktop-chat-card" data-nama="<?= strtolower(htmlspecialchars($p['nama'])); ?>" data-kamar="<?= strtolower(htmlspecialchars($p['kamar'])); ?>">
+                            <div class="desktop-chat-info">
+                                <div class="desktop-chat-header-row">
+                                   <span class="desktop-chat-nama">
+    <?= htmlspecialchars($p['nama']); ?>
+</span>
+
+<span class="desktop-badge-kamar">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
+                                </div>
+                                <span class="desktop-chat-telp"><?= htmlspecialchars($p['no_wa']); ?></span>
                             </div>
-                            <span class="desktop-chat-telp"><?= htmlspecialchars($p['no_wa']); ?></span>
-                        </div>
-                        <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>" target="_blank" class="btn-chat-wa">
-                            <i class="fa-brands fa-whatsapp"></i> Chat
-                        </a>
-                    </article>
-                <?php endforeach; ?>
+                            <a href="https://wa.me/<?= preg_replace('/^0/', '62', preg_replace('/[^0-9]/', '', $p['no_wa'])); ?>" target="_blank" class="btn-chat-wa">
+                                <i class="fa-brands fa-whatsapp"></i> Chat
+                            </a>
+                        </article>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </main>
     </div>
 
+    <!-- Skrip Filter Live Search -->
     <script>
         function setupFilter(inputId, listId) {
             const input = document.getElementById(inputId);

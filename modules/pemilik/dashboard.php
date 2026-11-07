@@ -3,50 +3,73 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Pastikan koneksi $pdo tersedia
+// Panggil koneksi database dengan jalur yang tepat berdasarkan struktur foldermu
 if (!isset($pdo)) {
-    require_once __DIR__ . '/../../config/database.php';
+    $db_path = __DIR__ . '/../../config/database.php';
+    if (file_exists($db_path)) {
+        require_once $db_path;
+    }
 }
 
 $tahun = date('Y');
 
-// 1. HITUNG KAMAR TERISI (Contoh: "13/16" atau dihitung dinamis dari tabel kamar)
-$kamar_terisi_str = "0/0";
-try {
-    // Total kamar keseluruhan
-    $totalKamar = (int)$pdo->query("SELECT COUNT(*) FROM kamar")->fetchColumn();
-    
-    // Total kamar yang terisi / aktif
-    $terisiKamar = (int)$pdo->query("SELECT COUNT(DISTINCT kamar_id) FROM penghuni_kamar WHERE status_kamar = 'aktif'")->fetchColumn();
-    
-    $kamar_terisi_str = $terisiKamar . '/' . $totalKamar;
-} catch (Exception $e) {
-    $kamar_terisi_str = "0/0";
-}
+// Default Fallback Values
+$kamar_terisi_str    = "0/0";
+$menunggu_verif      = 0;
+$pemasukan_tahun_ini = "Rp. 0";
 
-// 2. HITUNG JUMLAH MENUNGGU VERIFIKASI (Dari tabel pembayaran status 'pending')
-$menunggu_verif = 0;
-try {
-    $menunggu_verif = (int)$pdo->query("SELECT COUNT(*) FROM pembayaran WHERE status_verifikasi = 'pending'")->fetchColumn();
-} catch (Exception $e) {
-    $menunggu_verif = 0;
-}
+if (isset($pdo) && $pdo instanceof PDO) {
+    try {
+        // A. HITUNG KAMAR TERISI & TOTAL KAMAR
+        $totalKamar = (int) $pdo->query("SELECT COUNT(*) FROM kamar")->fetchColumn();
 
-// 3. HITUNG TOTAL PEMASUKAN TAHUN INI (Dari tabel buku_kas dengan tipe 'pemasukan')
-$total_pemasukan_val = 0;
-try {
-    $stmtPemasukan = $pdo->prepare("
-        SELECT COALESCE(SUM(nominal), 0) AS total 
-        FROM buku_kas 
-        WHERE tipe_transaksi = 'pemasukan' 
-        AND EXTRACT(YEAR FROM tanggal_transaksi) = :tahun
-    ");
-    $stmtPemasukan->execute([':tahun' => $tahun]);
-    $total_pemasukan_val = (float)$stmtPemasukan->fetchColumn();
-} catch (Exception $e) {
-    $total_pemasukan_val = 0;
+        // Cek kamar berstatus 'terisi' dari tabel kamar
+        $terisiKamar = (int) $pdo->query("
+            SELECT COUNT(*) FROM kamar WHERE status_kamar = 'terisi'
+        ")->fetchColumn();
+
+        // Fallback: jika status kamar di tabel kamar belum di-update, cek dari penghuni_kamar yang 'aktif'
+        if ($terisiKamar === 0 && $totalKamar > 0) {
+            $terisiKamar = (int) $pdo->query("
+                SELECT COUNT(DISTINCT kamar_id) FROM penghuni_kamar WHERE status_kamar = 'aktif'
+            ")->fetchColumn();
+        }
+
+        $kamar_terisi_str = $terisiKamar . '/' . $totalKamar;
+
+        // B. HITUNG JUMLAH MENUNGGU VERIFIKASI (status_verifikasi = 'pending')
+        $menunggu_verif = (int) $pdo->query("
+            SELECT COUNT(*) FROM pembayaran WHERE status_verifikasi = 'pending'
+        ")->fetchColumn();
+
+        // C. HITUNG TOTAL PEMASUKAN TAHUN INI (Dari tabel buku_kas atau pembayaran diterima)
+        $stmtPemasukan = $pdo->prepare("
+            SELECT COALESCE(SUM(nominal), 0) AS total 
+            FROM buku_kas 
+            WHERE tipe_transaksi = 'pemasukan' 
+              AND EXTRACT(YEAR FROM tanggal_transaksi) = :tahun
+        ");
+        $stmtPemasukan->execute([':tahun' => $tahun]);
+        $totalPemasukan = (float) $stmtPemasukan->fetchColumn();
+
+        // Fallback jika buku_kas masih 0, ambil dari pembayaran yang 'diterima'
+        if ($totalPemasukan == 0) {
+            $stmtPembayaran = $pdo->prepare("
+                SELECT COALESCE(SUM(jumlah_bayar), 0) AS total 
+                FROM pembayaran 
+                WHERE status_verifikasi = 'diterima' 
+                  AND EXTRACT(YEAR FROM tanggal_bayar) = :tahun
+            ");
+            $stmtPembayaran->execute([':tahun' => $tahun]);
+            $totalPemasukan = (float) $stmtPembayaran->fetchColumn();
+        }
+
+        $pemasukan_tahun_ini = "Rp. " . number_format($totalPemasukan, 0, ',', '.');
+
+    } catch (Exception $e) {
+        // Tangkap error jika query gagal
+    }
 }
-$pemasukan_tahun_ini = "Rp. " . number_format($total_pemasukan_val, 0, ',', '.');
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -62,6 +85,7 @@ $pemasukan_tahun_ini = "Rp. " . number_format($total_pemasukan_val, 0, ',', '.')
 
 <body class="dashboard-body">
 
+    <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
         <div>
             <?php require_once __DIR__ . '/../components/header.php'; ?>
@@ -100,25 +124,26 @@ $pemasukan_tahun_ini = "Rp. " . number_format($total_pemasukan_val, 0, ',', '.')
         <?php require_once __DIR__ . '/../components/footer.php'; ?>
     </div>
 
+    <!-- LAYOUT DESKTOP -->
     <div class="desktop-dashboard-wrapper">
         <?php require_once __DIR__ . '/../components/sidebar.php'; ?>
 
         <main class="desktop-content">
-            <h2 class="desktop-header-title">Ringkasan Tahun <?= $tahun ?></h2>
-            <p class="desktop-header-subtitle">Kondisi kos per tahun <?= $tahun; ?></p>
+            <h2 class="desktop-header-title">Ringkasan Tahun <?= htmlspecialchars($tahun); ?></h2>
+            <p class="desktop-header-subtitle">Kondisi kos per tahun <?= htmlspecialchars($tahun); ?></p>
 
             <div class="desktop-pemilik-stats-grid">
                 <a href="/?page=manajemen_kamar" class="desktop-pemilik-stat-card">
                     <span class="stat-box-lbl">Kamar Terisi</span>
-                    <span class="stat-box-val"><?= $kamar_terisi_str; ?></span>
+                    <span class="stat-box-val"><?= htmlspecialchars($kamar_terisi_str); ?></span>
                 </a>
                 <a href="/?page=verifikasi_pembayaran" class="desktop-pemilik-stat-card">
                     <span class="stat-box-lbl">Menunggu Verifikasi</span>
-                    <span class="stat-box-val val-danger"><?= $menunggu_verif; ?></span>
+                    <span class="stat-box-val val-danger"><?= htmlspecialchars($menunggu_verif); ?></span>
                 </a>
                 <div class="desktop-pemilik-stat-card stat-card-wide">
                     <span class="stat-box-lbl">Pemasukan Tahun Ini</span>
-                    <span class="stat-box-val val-money"><?= $pemasukan_tahun_ini; ?></span>
+                    <span class="stat-box-val val-money"><?= htmlspecialchars($pemasukan_tahun_ini); ?></span>
                 </div>
             </div>
 
@@ -150,7 +175,7 @@ $pemasukan_tahun_ini = "Rp. " . number_format($total_pemasukan_val, 0, ',', '.')
                     </div>
                     <div class="pemilik-menu-text">
                         <h4>Verifikasi pembayaran</h4>
-                        <p><?= $menunggu_verif; ?> bukti transfer menunggu diverifikasi</p>
+                        <p><?= htmlspecialchars($menunggu_verif); ?> bukti transfer menunggu diverifikasi</p>
                     </div>
                 </a>
 
