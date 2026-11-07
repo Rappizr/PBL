@@ -4485,3 +4485,83 @@ a.kotak-kapsul-pemilik:active {
   gap: 12px;
   width: 100%;
 }
+
+/* ==========================================================================
+   21. TOMBOL LOGOUT & MODAL KONFIRMASI KELUAR
+   ========================================================================== */
+.sidebar-bottom-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  margin-top: auto;
+}
+
+.btn-logout-sidebar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 16px;
+  background-color: rgba(255, 214, 217, 0.18);
+  color: #ffd6d9;
+  border: 1.5px solid rgba(255, 214, 217, 0.45);
+  border-radius: 12px;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.btn-logout-sidebar:hover {
+  background-color: #ffd6d9;
+  color: #8c0c16;
+  border-color: #ffd6d9;
+}
+
+.header-user-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-logout-mobile {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: #ffd6d9;
+  color: #c91818;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+  transition:
+    transform 0.1s ease,
+    background-color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.btn-logout-mobile:hover {
+  background-color: #fca5a5;
+}
+
+.btn-logout-mobile:active {
+  transform: scale(0.93);
+}
+
+#modalKonfirmasiLogout.active {
+  display: flex !important;
+  z-index: 99999 !important;
+}
+
+.btn-ya-keluar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
