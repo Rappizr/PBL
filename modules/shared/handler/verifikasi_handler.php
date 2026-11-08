@@ -8,7 +8,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// 1. Inisialisasi Koneksi Database PDO
 global $pdo;
 if (!isset($pdo) || !($pdo instanceof PDO)) {
     $possible_paths = [
@@ -24,7 +23,6 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
     }
 }
 
-// 2. Deteksi Hak Akses Role
 $currentUser = $_SESSION['user'] ?? [];
 $is_pemilik  = ($currentUser['role'] ?? '') === 'pemilik';
 $is_ketua    = !empty($currentUser['is_pj']) || !empty($currentUser['is_ketua_kos']) || ($currentUser['role'] ?? '') === 'pj';
@@ -33,7 +31,7 @@ $error_verif  = '';
 $pesan_sukses = $_SESSION['pesan_sukses'] ?? '';
 unset($_SESSION['pesan_sukses']);
 
-// 3. Eksekusi Aksi Terima / Tolak Pembayaran
+// Eksekusi Aksi Terima / Tolak Pembayaran
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
     $pembayaran_id = (int) ($_POST['pembayaran_id'] ?? 0);
     $aksi          = trim($_POST['aksi_verifikasi'] ?? '');
@@ -50,10 +48,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                     t.id AS tagihan_id,
                     t.penghuni_kamar_id,
                     t.kategori_iuran_id,
-                    pk.penghuni_id
+                    pk.penghuni_id,
+                    pen.nama AS nama_penghuni
                 FROM pembayaran p
                 JOIN tagihan t ON p.tagihan_id = t.id
                 LEFT JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
+                LEFT JOIN penghuni pen ON pk.penghuni_id = pen.id
                 WHERE p.id = :id AND LOWER(TRIM(p.status_verifikasi)) = 'pending'
             ");
             $stmtCek->execute([':id' => $pembayaran_id]);
@@ -67,15 +67,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
             $tagihan_id   = (int)$bayar['tagihan_id'];
             $jumlah_bayar = (float)$bayar['jumlah_bayar'];
             $penghuni_id  = (int)($bayar['penghuni_id'] ?? 0);
-            $user_auth_id = (int)($_SESSION['user']['id'] ?? 1);
+            $nama_pen     = $bayar['nama_penghuni'] ?? 'Penghuni';
 
-            // Proteksi: Ketua kos dilarang memverifikasi sewa kamar
+            // Proteksi Hak Akses: Ketua kos dilarang memverifikasi sewa kamar
             if (!$is_pemilik && $is_sewa) {
                 throw new Exception("Akses ditolak: Hanya Pemilik Kos yang berhak memverifikasi pembayaran sewa kamar.");
             }
 
             if ($aksi === 'terima') {
-                // 1. Update status pembayaran menjadi 'diterima' (TANPA pemilik_id)
+                // 1. Update status pembayaran menjadi 'diterima'
                 $stmtUpdBayar = $pdo->prepare("
                     UPDATE pembayaran 
                     SET status_verifikasi = 'diterima', 
@@ -92,41 +92,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 ");
                 $stmtUpdTagihan->execute([':tagihan_id' => $tagihan_id]);
 
-                // 3. Catat transaksi ke buku_kas jika belum tercatat
-                $stmtCekKas = $pdo->prepare("SELECT id FROM buku_kas WHERE pembayaran_id = :pid LIMIT 1");
-                $stmtCekKas->execute([':pid' => $pembayaran_id]);
-                $sudahAdaKas = $stmtCekKas->fetchColumn();
+                // 3. Catat ke buku_kas HANYA JIKA IURAN BERSAMA (Uang sewa TIDAK masuk buku_kas bersama)
+                if (!$is_sewa) {
+                    $stmtCekKas = $pdo->prepare("SELECT id FROM buku_kas WHERE pembayaran_id = :pid LIMIT 1");
+                    $stmtCekKas->execute([':pid' => $pembayaran_id]);
+                    $sudahAdaKas = $stmtCekKas->fetchColumn();
 
-                if (!$sudahAdaKas) {
-                    $ket_kas = $is_sewa ? 'Pembayaran Sewa Kamar Terverifikasi' : 'Pembayaran Iuran Terverifikasi';
-                    $stmtKas = $pdo->prepare("
-                        INSERT INTO buku_kas (
-                            keterangan, 
-                            tipe_transaksi, 
-                            nominal, 
-                            tanggal_transaksi, 
-                            " . ($is_pemilik ? "pemilik_id" : "penghuni_id") . ", 
-                            pembayaran_id
-                        )
-                        VALUES (:ket, 'pemasukan', :nominal, NOW(), :uid, :pembayaran_id)
-                    ");
-                    $stmtKas->execute([
-                        ':ket'           => $ket_kas,
-                        ':nominal'       => $jumlah_bayar,
-                        ':uid'           => $is_pemilik ? $user_auth_id : $penghuni_id,
-                        ':pembayaran_id' => $pembayaran_id
-                    ]);
+                    if (!$sudahAdaKas) {
+                        $stmtKas = $pdo->prepare("
+                            INSERT INTO buku_kas (keterangan, tipe_transaksi, nominal, tanggal_transaksi, penghuni_id, pembayaran_id)
+                            VALUES (:ket, 'pemasukan', :nominal, NOW(), :uid, :pembayaran_id)
+                        ");
+                        $stmtKas->execute([
+                            ':ket'           => 'Pembayaran Iuran Terverifikasi (' . $nama_pen . ')',
+                            ':nominal'       => $jumlah_bayar,
+                            ':uid'           => $penghuni_id,
+                            ':pembayaran_id' => $pembayaran_id
+                        ]);
+                    }
                 }
 
-                $_SESSION['pesan_sukses'] = "Pembayaran berhasil diterima dan dicatat ke kas.";
+                $_SESSION['pesan_sukses'] = $is_sewa 
+                    ? "Pembayaran sewa berhasil diterima (tercatat di Analisis Kas)." 
+                    : "Pembayaran iuran berhasil diterima dan dicatat ke kas bersama.";
             } elseif ($aksi === 'tolak') {
-                // 1. Update status pembayaran menjadi 'ditolak' (TANPA pemilik_id)
+                $alasan_pilihan = trim($_POST['alasan_penolakan'] ?? 'Foto / Bukti transfer buram & tidak terbaca');
+                $alasan_custom  = trim($_POST['alasan_lainnya'] ?? '');
+                $alasan_final   = ($alasan_pilihan === 'Lainnya' && $alasan_custom !== '') ? $alasan_custom : $alasan_pilihan;
+
+                // 1. Update status pembayaran menjadi 'ditolak' dan simpan alasannya
                 $stmtUpdBayar = $pdo->prepare("
                     UPDATE pembayaran 
-                    SET status_verifikasi = 'ditolak' 
+                    SET status_verifikasi = 'ditolak',
+                        alasan_penolakan = :alasan
                     WHERE id = :id
                 ");
-                $stmtUpdBayar->execute([':id' => $pembayaran_id]);
+                $stmtUpdBayar->execute([
+                    ':alasan' => $alasan_final,
+                    ':id'     => $pembayaran_id
+                ]);
 
                 // 2. Kembalikan status tagihan ke 'belum_bayar'
                 $stmtUpdTagihan = $pdo->prepare("
@@ -149,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
     }
 }
 
-// 4. Filter Rentang Tanggal
+// Filter Rentang Tanggal
 $date_range = trim($_GET['date_range'] ?? '');
 if (!preg_match('/^\d{4}-\d{2}-\d{2}( to \d{4}-\d{2}-\d{2})?$/', $date_range)) {
     $date_range = '';
@@ -163,12 +167,12 @@ if ($date_range !== '') {
     $tgl_selesai = trim($parts[1] ?? $tgl_mulai);
 }
 
-// 5. Query Ambil Data Pending Berdasarkan Role
+// Query Ambil Data Pending Berdasarkan Role (DENGAN DISTINCT ON AGAR TIDAK DUPLIKAT)
 $daftar_verifikasi = [];
 if (isset($pdo) && ($pdo instanceof PDO)) {
     try {
         $sql = "
-            SELECT 
+            SELECT DISTINCT ON (p.tagihan_id)
                 p.id AS pembayaran_id,
                 p.jumlah_bayar,
                 COALESCE(p.tanggal_bayar, NOW()) AS tanggal_bayar,
@@ -190,8 +194,6 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
             WHERE LOWER(TRIM(p.status_verifikasi)) = 'pending'
         ";
 
-        // PEMILIK: Melihat Sewa dan Iuran
-        // KETUA KOS (PJ): HANYA Melihat Iuran
         if (!$is_pemilik) {
             $sql .= " AND t.kategori_iuran_id IS NOT NULL ";
         }
@@ -203,7 +205,7 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
             $params[':tgl_selesai'] = $tgl_selesai;
         }
 
-        $sql .= " ORDER BY p.id DESC";
+        $sql .= " ORDER BY p.tagihan_id, p.id DESC";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);
