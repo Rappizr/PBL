@@ -3,17 +3,23 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Panggil koneksi database dengan jalur yang tepat berdasarkan struktur foldermu
-if (!isset($pdo)) {
-    $db_path = __DIR__ . '/../../config/database.php';
-    if (file_exists($db_path)) {
-        require_once $db_path;
+global $pdo;
+if (!isset($pdo) || !($pdo instanceof PDO)) {
+    $possible_paths = [
+        __DIR__ . '/../../config/database.php',
+        __DIR__ . '/../../../config/database.php',
+        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
+    ];
+    foreach ($possible_paths as $p) {
+        if (file_exists($p)) {
+            require_once $p;
+            if (isset($pdo) && ($pdo instanceof PDO)) break;
+        }
     }
 }
 
 $tahun = date('Y');
 
-// Default Fallback Values
 $kamar_terisi_str    = "0/0";
 $menunggu_verif      = 0;
 $pemasukan_tahun_ini = "Rp. 0";
@@ -23,52 +29,40 @@ if (isset($pdo) && $pdo instanceof PDO) {
         // A. HITUNG KAMAR TERISI & TOTAL KAMAR
         $totalKamar = (int) $pdo->query("SELECT COUNT(*) FROM kamar")->fetchColumn();
 
-        // Cek kamar berstatus 'terisi' dari tabel kamar
         $terisiKamar = (int) $pdo->query("
-            SELECT COUNT(*) FROM kamar WHERE status_kamar = 'terisi'
+            SELECT COUNT(*) FROM kamar WHERE LOWER(status_kamar) = 'terisi'
         ")->fetchColumn();
 
-        // Fallback: jika status kamar di tabel kamar belum di-update, cek dari penghuni_kamar yang 'aktif'
         if ($terisiKamar === 0 && $totalKamar > 0) {
             $terisiKamar = (int) $pdo->query("
-                SELECT COUNT(DISTINCT kamar_id) FROM penghuni_kamar WHERE status_kamar = 'aktif'
+                SELECT COUNT(DISTINCT kamar_id) FROM penghuni_kamar WHERE LOWER(status_kamar) = 'aktif'
             ")->fetchColumn();
         }
 
         $kamar_terisi_str = $terisiKamar . '/' . $totalKamar;
 
-        // B. HITUNG JUMLAH MENUNGGU VERIFIKASI (status_verifikasi = 'pending')
+        // B. HITUNG JUMLAH MENUNGGU VERIFIKASI (Pemilik: Semua transaksi pending)
         $menunggu_verif = (int) $pdo->query("
-            SELECT COUNT(*) FROM pembayaran WHERE status_verifikasi = 'pending'
+            SELECT COUNT(DISTINCT p.tagihan_id) 
+            FROM pembayaran p
+            WHERE LOWER(TRIM(p.status_verifikasi)) = 'pending'
         ")->fetchColumn();
 
-        // C. HITUNG TOTAL PEMASUKAN TAHUN INI (Dari tabel buku_kas atau pembayaran diterima)
+        // C. HITUNG TOTAL PEMASUKAN SEWA TAHUN INI (HANYA SEWA: t.kategori_iuran_id IS NULL)
         $stmtPemasukan = $pdo->prepare("
-            SELECT COALESCE(SUM(nominal), 0) AS total 
-            FROM buku_kas 
-            WHERE tipe_transaksi = 'pemasukan' 
-              AND EXTRACT(YEAR FROM tanggal_transaksi) = :tahun
+            SELECT COALESCE(SUM(p.jumlah_bayar), 0) AS total 
+            FROM pembayaran p
+            JOIN tagihan t ON p.tagihan_id = t.id
+            WHERE LOWER(TRIM(p.status_verifikasi)) IN ('terverifikasi', 'diterima', 'lunas')
+              AND t.kategori_iuran_id IS NULL
+              AND EXTRACT(YEAR FROM COALESCE(p.tanggal_bayar, NOW())) = :tahun
         ");
         $stmtPemasukan->execute([':tahun' => $tahun]);
         $totalPemasukan = (float) $stmtPemasukan->fetchColumn();
 
-        // Fallback jika buku_kas masih 0, ambil dari pembayaran yang 'diterima'
-        if ($totalPemasukan == 0) {
-            $stmtPembayaran = $pdo->prepare("
-                SELECT COALESCE(SUM(jumlah_bayar), 0) AS total 
-                FROM pembayaran 
-                WHERE status_verifikasi = 'diterima' 
-                  AND EXTRACT(YEAR FROM tanggal_bayar) = :tahun
-            ");
-            $stmtPembayaran->execute([':tahun' => $tahun]);
-            $totalPemasukan = (float) $stmtPembayaran->fetchColumn();
-        }
-
         $pemasukan_tahun_ini = "Rp. " . number_format($totalPemasukan, 0, ',', '.');
 
-    } catch (Exception $e) {
-        // Tangkap error jika query gagal
-    }
+    } catch (Exception $e) {}
 }
 ?>
 <!DOCTYPE html>
@@ -101,7 +95,7 @@ if (isset($pdo) && $pdo instanceof PDO) {
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-chart-simple"></i></div>
                         <span class="menu-label">Analisis Kas</span>
                     </a>
-                    <a href="/?page=verifikasi_pembayaran" class="menu-item-box">
+                    <a href="/?page=verifikasi_bayar" class="menu-item-box">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
                         <span class="menu-label">Verifikasi<br>Pembayaran</span>
                     </a>
@@ -137,7 +131,7 @@ if (isset($pdo) && $pdo instanceof PDO) {
                     <span class="stat-box-lbl">Kamar Terisi</span>
                     <span class="stat-box-val"><?= htmlspecialchars($kamar_terisi_str); ?></span>
                 </a>
-                <a href="/?page=verifikasi_pembayaran" class="desktop-pemilik-stat-card">
+                <a href="/?page=verifikasi_bayar" class="desktop-pemilik-stat-card">
                     <span class="stat-box-lbl">Menunggu Verifikasi</span>
                     <span class="stat-box-val val-danger"><?= htmlspecialchars($menunggu_verif); ?></span>
                 </a>
@@ -169,7 +163,7 @@ if (isset($pdo) && $pdo instanceof PDO) {
                     </div>
                 </a>
 
-                <a href="/?page=verifikasi_pembayaran" class="pemilik-menu-row-card">
+                <a href="/?page=verifikasi_bayar" class="pemilik-menu-row-card">
                     <div class="pemilik-menu-icon-box">
                         <i class="fa-solid fa-list-check"></i>
                     </div>
@@ -213,5 +207,4 @@ if (isset($pdo) && $pdo instanceof PDO) {
     </div>
 
 </body>
-
 </html>

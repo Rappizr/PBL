@@ -37,6 +37,39 @@ unset($_SESSION['pesan_sukses']);
 </head>
 <body class="verifikasi-body">
 
+    <!-- FLOATING TOAST NOTIFIKASI BERHASIL / GAGAL -->
+    <div class="toast-floating-container">
+        <?php if (!empty($pesan_sukses)): ?>
+            <div class="toast-alert toast-success" id="toastAlertBox">
+                <div class="toast-icon">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="toast-content">
+                    <h5 class="toast-title">Verifikasi Berhasil</h5>
+                    <p class="toast-message"><?= htmlspecialchars($pesan_sukses); ?></p>
+                </div>
+                <button type="button" class="toast-close" onclick="closeToast()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($error_verif)): ?>
+            <div class="toast-alert toast-error" id="toastAlertBox">
+                <div class="toast-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div class="toast-content">
+                    <h5 class="toast-title">Verifikasi Gagal</h5>
+                    <p class="toast-message"><?= htmlspecialchars($error_verif); ?></p>
+                </div>
+                <button type="button" class="toast-close" onclick="closeToast()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        <?php endif; ?>
+    </div>
+
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
         <div>
@@ -56,18 +89,6 @@ unset($_SESSION['pesan_sukses']);
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
                 </div>
-
-                <?php if (!empty($pesan_sukses)): ?>
-                    <div class="alert-success verifikasi-alert-center">
-                        <?= htmlspecialchars($pesan_sukses); ?>
-                    </div>
-                <?php endif; ?>
-
-                <?php if (!empty($error_verif)): ?>
-                    <div class="alert-error verifikasi-alert-center">
-                        <?= htmlspecialchars($error_verif); ?>
-                    </div>
-                <?php endif; ?>
 
                 <form method="GET" action="" class="filter-range-form">
                     <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
@@ -91,16 +112,25 @@ unset($_SESSION['pesan_sukses']);
                         </div>
                     <?php else: ?>
                         <?php foreach ($daftar_verifikasi as $v): ?>
+                            <?php $is_tunai = (strtolower($v['metode_bayar']) === 'tunai' || empty($v['foto'])); ?>
                             <div class="verifikasi-card">
                                 <div class="verifikasi-card-body">
-                                    <div class="bukti-wrapper">
-                                        <img src="<?= $v['src_foto']; ?>" alt="Bukti Transfer" class="bukti-img"
-                                             onclick="bukaPopupBukti('<?= $v['src_foto']; ?>', '<?= htmlspecialchars(addslashes($v['nama'])); ?>', '<?= htmlspecialchars(addslashes($v['kamar'])); ?>')">
-                                        <button type="button" class="btn-zoom" title="Perbesar Bukti"
-                                                onclick="bukaPopupBukti('<?= $v['src_foto']; ?>', '<?= htmlspecialchars(addslashes($v['nama'])); ?>', '<?= htmlspecialchars(addslashes($v['kamar'])); ?>')">
-                                            <i class="fa-solid fa-magnifying-glass-plus"></i>
-                                        </button>
-                                    </div>
+                                    <?php if ($is_tunai): ?>
+                                        <div class="bukti-wrapper" style="background-color: #e0f2fe; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: default; box-shadow: none; border: 1.5px solid #bae6fd;">
+                                            <i class="fa-solid fa-hand-holding-dollar" style="font-size: 26px; color: #0284c7;"></i>
+                                            <span style="font-size: 10px; font-weight: 800; color: #0369a1; text-transform: uppercase;">Tunai</span>
+                                        </div>
+                                    <?php else: ?>
+                                        <div class="bukti-wrapper">
+                                            <img src="<?= $v['src_foto']; ?>" alt="Bukti Transfer" class="bukti-img"
+                                                 onclick="bukaPopupBukti('<?= $v['src_foto']; ?>', '<?= htmlspecialchars(addslashes($v['nama'])); ?>', '<?= htmlspecialchars(addslashes($v['kamar'])); ?>')">
+                                            <button type="button" class="btn-zoom" title="Perbesar Bukti"
+                                                    onclick="bukaPopupBukti('<?= $v['src_foto']; ?>', '<?= htmlspecialchars(addslashes($v['nama'])); ?>', '<?= htmlspecialchars(addslashes($v['kamar'])); ?>')">
+                                                <i class="fa-solid fa-magnifying-glass-plus"></i>
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
+
                                     <div class="detail-wrapper">
                                         <div class="user-info-row">
                                             <span class="nama-penghuni"><?= htmlspecialchars($v['nama']); ?></span>
@@ -148,18 +178,6 @@ unset($_SESSION['pesan_sukses']);
                 <?= $is_pemilik ? 'Daftar konfirmasi bukti transfer sewa dan iuran dari penghuni kos' : 'Daftar konfirmasi bukti transfer iuran bersama penghuni kos'; ?>
             </p>
 
-            <?php if (!empty($pesan_sukses)): ?>
-                <div class="alert-success verifikasi-alert-desktop">
-                    <?= htmlspecialchars($pesan_sukses); ?>
-                </div>
-            <?php endif; ?>
-
-            <?php if (!empty($error_verif)): ?>
-                <div class="alert-error verifikasi-alert-desktop">
-                    <?= htmlspecialchars($error_verif); ?>
-                </div>
-            <?php endif; ?>
-
             <form method="GET" action="" class="filter-range-form-desktop verifikasi-filter-desktop-wrap">
                 <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
                 <div class="flatpickr-box-wrapper verifikasi-filter-box-full">
@@ -182,16 +200,25 @@ unset($_SESSION['pesan_sukses']);
                     </div>
                 <?php else: ?>
                     <?php foreach ($daftar_verifikasi as $v): ?>
+                        <?php $is_tunai = (strtolower($v['metode_bayar']) === 'tunai' || empty($v['foto'])); ?>
                         <div class="verifikasi-card">
                             <div class="verifikasi-card-body">
-                                <div class="bukti-wrapper">
-                                    <img src="<?= $v['src_foto']; ?>" alt="Bukti Transfer" class="bukti-img"
-                                         onclick="bukaPopupBukti('<?= $v['src_foto']; ?>', '<?= htmlspecialchars(addslashes($v['nama'])); ?>', '<?= htmlspecialchars(addslashes($v['kamar'])); ?>')">
-                                    <button type="button" class="btn-zoom" title="Perbesar Bukti"
-                                            onclick="bukaPopupBukti('<?= $v['src_foto']; ?>', '<?= htmlspecialchars(addslashes($v['nama'])); ?>', '<?= htmlspecialchars(addslashes($v['kamar'])); ?>')">
-                                        <i class="fa-solid fa-magnifying-glass-plus"></i>
-                                    </button>
-                                </div>
+                                <?php if ($is_tunai): ?>
+                                    <div class="bukti-wrapper" style="background-color: #e0f2fe; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: default; box-shadow: none; border: 1.5px solid #bae6fd;">
+                                        <i class="fa-solid fa-hand-holding-dollar" style="font-size: 28px; color: #0284c7;"></i>
+                                        <span style="font-size: 10px; font-weight: 800; color: #0369a1; text-transform: uppercase;">Tunai</span>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="bukti-wrapper">
+                                        <img src="<?= $v['src_foto']; ?>" alt="Bukti Transfer" class="bukti-img"
+                                             onclick="bukaPopupBukti('<?= $v['src_foto']; ?>', '<?= htmlspecialchars(addslashes($v['nama'])); ?>', '<?= htmlspecialchars(addslashes($v['kamar'])); ?>')">
+                                        <button type="button" class="btn-zoom" title="Perbesar Bukti"
+                                                onclick="bukaPopupBukti('<?= $v['src_foto']; ?>', '<?= htmlspecialchars(addslashes($v['nama'])); ?>', '<?= htmlspecialchars(addslashes($v['kamar'])); ?>')">
+                                            <i class="fa-solid fa-magnifying-glass-plus"></i>
+                                        </button>
+                                    </div>
+                                <?php endif; ?>
+
                                 <div class="detail-wrapper">
                                     <div class="user-info-row">
                                         <span class="nama-penghuni"><?= htmlspecialchars($v['nama']); ?></span>
@@ -222,7 +249,7 @@ unset($_SESSION['pesan_sukses']);
         </main>
     </div>
 
-    <!-- MODAL CUSTOM KONFIRMASI (TERIMA / TOLAK) -->
+    <!-- MODAL CUSTOM KONFIRMASI (TERIMA / TOLAK DENGAN ALASAN) -->
     <div id="modalKonfirmasiVerif" class="modal-overlay" onclick="tutupKonfirmasiAksi()">
         <div class="modal-konfirmasi-verif-card" onclick="event.stopPropagation()">
             <div id="konfirIconBox" class="konfirmasi-verif-icon icon-terima">
@@ -232,12 +259,38 @@ unset($_SESSION['pesan_sukses']);
             <p id="konfirDesc" class="konfirmasi-verif-desc">
                 Apakah Anda yakin ingin memproses pembayaran ini?
             </p>
-            <form id="formEksekusiVerif" method="POST" action="">
+            
+            <form id="formEksekusiVerif" method="POST" action="" onsubmit="handleVerifSubmit(event)">
                 <input type="hidden" name="pembayaran_id" id="modalInputPemId" value="">
                 <input type="hidden" name="aksi_verifikasi" id="modalInputAksi" value="">
+
+                <!-- LIST ALASAN PENOLAKAN -->
+                <div id="boxAlasanTolak" class="alasan-tolak-container" style="display: none;">
+                    <label class="alasan-option-label">
+                        <input type="radio" name="alasan_penolakan" value="Foto / Bukti transfer buram & tidak terbaca" checked onchange="toggleAlasanLain(false)">
+                        <span>Foto bukti buram / tidak terbaca</span>
+                    </label>
+                    <label class="alasan-option-label">
+                        <input type="radio" name="alasan_penolakan" value="Nominal transfer kurang dari total tagihan" onchange="toggleAlasanLain(false)">
+                        <span>Nominal transfer kurang</span>
+                    </label>
+                    <label class="alasan-option-label">
+                        <input type="radio" name="alasan_penolakan" value="Dana belum masuk ke rekening mutasi" onchange="toggleAlasanLain(false)">
+                        <span>Dana belum masuk ke mutasi rekening</span>
+                    </label>
+                    <label class="alasan-option-label">
+                        <input type="radio" name="alasan_penolakan" value="Lainnya" onchange="toggleAlasanLain(true)">
+                        <span>Alasan lainnya</span>
+                    </label>
+
+                    <input type="text" name="alasan_lainnya" id="inputAlasanLainnya" class="input-alasan-lainnya" placeholder="Tuliskan alasan spesifik..." style="display: none;">
+                </div>
+
                 <div class="konfirmasi-verif-actions">
                     <button type="button" class="btn-konfir-batal" onclick="tutupKonfirmasiAksi()">Batal</button>
-                    <button type="submit" id="btnKonfirSubmit" class="btn-konfir-submit btn-terima">Ya, Lanjutkan</button>
+                    <button type="submit" id="btnKonfirSubmit" class="btn-konfir-submit btn-terima">
+                        <span class="btn-text-content" id="btnSubmitText">Ya, Lanjutkan</span>
+                    </button>
                 </div>
             </form>
         </div>
@@ -276,6 +329,22 @@ unset($_SESSION['pesan_sukses']);
             });
         });
 
+        function closeToast() {
+            const toast = document.getElementById('toastAlertBox');
+            if (toast) {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-15px) scale(0.95)';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const toast = document.getElementById('toastAlertBox');
+            if (toast) {
+                setTimeout(closeToast, 5000);
+            }
+        });
+
         function konfirmasiAksi(id, aksi, nama, nominal, tipe) {
             const modal = document.getElementById('modalKonfirmasiVerif');
             const inputId = document.getElementById('modalInputPemId');
@@ -285,27 +354,70 @@ unset($_SESSION['pesan_sukses']);
             const title = document.getElementById('konfirTitle');
             const desc = document.getElementById('konfirDesc');
             const btnSubmit = document.getElementById('btnKonfirSubmit');
+            const btnText = document.getElementById('btnSubmitText');
+            const boxAlasan = document.getElementById('boxAlasanTolak');
+            const inputLain = document.getElementById('inputAlasanLainnya');
+
+            btnSubmit.classList.remove('btn-submit-loading');
 
             inputId.value = id;
             inputAksi.value = aksi;
 
             if (aksi === 'terima') {
+                boxAlasan.style.display = 'none';
                 iconBox.className = 'konfirmasi-verif-icon icon-terima';
                 icon.className = 'fa-solid fa-circle-check';
                 title.innerText = 'Terima Pembayaran?';
                 desc.innerHTML = 'Pembayaran <strong>' + tipe + '</strong> dari <strong>' + nama + '</strong> sebesar <strong>Rp. ' + nominal + '</strong> akan disetujui dan dicatat otomatis ke kas.';
                 btnSubmit.className = 'btn-konfir-submit btn-terima';
-                btnSubmit.innerText = 'Ya, Terima';
+                btnText.innerText = 'Ya, Terima';
             } else {
+                boxAlasan.style.display = 'flex';
+                inputLain.style.display = 'none';
+                inputLain.value = '';
+                
+                const firstRadio = boxAlasan.querySelector('input[type="radio"]');
+                if (firstRadio) firstRadio.checked = true;
+
                 iconBox.className = 'konfirmasi-verif-icon icon-tolak';
                 icon.className = 'fa-solid fa-circle-xmark';
                 title.innerText = 'Tolak Pembayaran?';
-                desc.innerHTML = 'Bukti pembayaran <strong>' + tipe + '</strong> dari <strong>' + nama + '</strong> akan ditolak dan penghuni harus mengunggah bukti baru.';
+                desc.innerHTML = 'Pilih alasan penolakan bukti pembayaran <strong>' + tipe + '</strong> dari <strong>' + nama + '</strong>:';
                 btnSubmit.className = 'btn-konfir-submit btn-tolak';
-                btnSubmit.innerText = 'Ya, Tolak';
+                btnText.innerText = 'Kirim Penolakan';
             }
 
             modal.classList.add('active');
+        }
+
+        function handleVerifSubmit(e) {
+            const inputAksi = document.getElementById('modalInputAksi').value;
+            const inputLain = document.getElementById('inputAlasanLainnya');
+
+            if (inputAksi === 'tolak' && inputLain.style.display === 'block' && inputLain.value.trim() === '') {
+                alert('Silakan tuliskan alasan penolakan secara spesifik.');
+                inputLain.focus();
+                e.preventDefault();
+                return;
+            }
+
+            const btn = document.getElementById('btnKonfirSubmit');
+            if (btn) {
+                btn.classList.add('btn-submit-loading');
+            }
+        }
+
+        function toggleAlasanLain(isLainnya) {
+            const inputLain = document.getElementById('inputAlasanLainnya');
+            if (inputLain) {
+                inputLain.style.display = isLainnya ? 'block' : 'none';
+                if (isLainnya) {
+                    inputLain.focus();
+                    inputLain.required = true;
+                } else {
+                    inputLain.required = false;
+                }
+            }
         }
 
         function tutupKonfirmasiAksi() {

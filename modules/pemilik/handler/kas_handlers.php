@@ -18,43 +18,49 @@ if ($date_range !== '') {
 
 $is_filtered = ($date_range !== '');
 
-// 2. Hitung Total Pemasukan
+// 2. Hitung Total Pemasukan Sewa Pemilik (HANYA TAGIHAN SEWA: t.kategori_iuran_id IS NULL)
 $total_pemasukan = 0;
 try {
-    $stmtTotal = $pdo->query("
-        SELECT COALESCE(SUM(jumlah_bayar), 0) 
-        FROM pembayaran 
-        WHERE LOWER(status_verifikasi) IN ('terverifikasi', 'diterima', 'lunas')
-    ");
-    $total_pemasukan = (float) $stmtTotal->fetchColumn();
+    $sqlTotal = "
+        SELECT COALESCE(SUM(p.jumlah_bayar), 0) 
+        FROM pembayaran p
+        JOIN tagihan t ON p.tagihan_id = t.id
+        WHERE LOWER(TRIM(p.status_verifikasi)) IN ('terverifikasi', 'diterima', 'lunas')
+          AND t.kategori_iuran_id IS NULL
+    ";
     
-    if ($total_pemasukan == 0) {
-        $stmtTotal2 = $pdo->query("
-            SELECT COALESCE(SUM(total_tagihan), 0) 
-            FROM tagihan 
-            WHERE LOWER(status_tagihan) IN ('lunas', 'terverifikasi')
-        ");
-        $total_pemasukan = (float) $stmtTotal2->fetchColumn();
+    if ($tgl_mulai !== '' && $tgl_selesai !== '') {
+        $sqlTotal .= " AND DATE(p.tanggal_bayar) BETWEEN :tgl_mulai AND :tgl_selesai";
+        $stmtTotal = $pdo->prepare($sqlTotal);
+        $stmtTotal->execute([
+            ':tgl_mulai'   => $tgl_mulai,
+            ':tgl_selesai' => $tgl_selesai
+        ]);
+    } else {
+        $stmtTotal = $pdo->query($sqlTotal);
     }
+    
+    $total_pemasukan = (float) $stmtTotal->fetchColumn();
 } catch (PDOException $e) {
     $total_pemasukan = 0;
 }
 
-// 3. Ambil Riwayat Arus Kas (Terverifikasi / Lunas)
+// 3. Ambil Riwayat Arus Kas Sewa (HANYA TAGIHAN SEWA: t.kategori_iuran_id IS NULL)
 $daftar_transaksi = [];
 try {
     $sqlMutasi = "
         SELECT 
             p.id,
-            p.tanggal_bayar AS tanggal,
+            COALESCE(p.tanggal_bayar, NOW()) AS tanggal,
             p.jumlah_bayar AS nominal,
-            pen.nama AS nama_penghuni,
-            CONCAT('Pembayaran Sewa ', pen.nama) AS judul
+            COALESCE(pen.nama, 'Penghuni') AS nama_penghuni,
+            CONCAT('Pembayaran Sewa ', COALESCE(pen.nama, 'Penghuni')) AS judul
         FROM pembayaran p
         JOIN tagihan t ON p.tagihan_id = t.id
-        JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
-        JOIN penghuni pen ON pk.penghuni_id = pen.id
-        WHERE LOWER(p.status_verifikasi) IN ('terverifikasi', 'diterima', 'lunas')
+        LEFT JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
+        LEFT JOIN penghuni pen ON pk.penghuni_id = pen.id
+        WHERE LOWER(TRIM(p.status_verifikasi)) IN ('terverifikasi', 'diterima', 'lunas')
+          AND t.kategori_iuran_id IS NULL
     ";
 
     $paramsMutasi = [];
@@ -64,38 +70,21 @@ try {
         $paramsMutasi[':tgl_selesai'] = $tgl_selesai;
     }
 
-    $sqlMutasi .= " ORDER BY p.tanggal_bayar DESC";
+    $sqlMutasi .= " ORDER BY p.id DESC";
     $stmtMutasi = $pdo->prepare($sqlMutasi);
     $stmtMutasi->execute($paramsMutasi);
     $daftar_transaksi = $stmtMutasi->fetchAll(PDO::FETCH_ASSOC);
-
-    if (empty($daftar_transaksi)) {
-        $sqlTagihanLunas = "
-            SELECT 
-                t.id,
-                t.tanggal_jatuh_tempo AS tanggal,
-                t.total_tagihan AS nominal,
-                pen.nama AS nama_penghuni,
-                CONCAT('Pembayaran Sewa ', pen.nama) AS judul
-            FROM tagihan t
-            JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
-            JOIN penghuni pen ON pk.penghuni_id = pen.id
-            WHERE LOWER(t.status_tagihan) IN ('lunas', 'terverifikasi')
-        ";
-        if ($tgl_mulai !== '' && $tgl_selesai !== '') {
-            $sqlTagihanLunas .= " AND DATE(t.tanggal_jatuh_tempo) BETWEEN " . $pdo->quote($tgl_mulai) . " AND " . $pdo->quote($tgl_selesai);
-        }
-        $sqlTagihanLunas .= " ORDER BY t.id DESC";
-        $daftar_transaksi = $pdo->query($sqlTagihanLunas)->fetchAll(PDO::FETCH_ASSOC);
-    }
 } catch (PDOException $e) {
     $daftar_transaksi = [];
 }
 
-// 4. Tangkap Filter Tab Status
+// 4. Tangkap Filter Tab Status Tagihan Sewa
 $filter_status = strtolower(trim($_GET['filter'] ?? 'semua'));
+if (!in_array($filter_status, ['semua', 'belum_bayar', 'verifikasi'], true)) {
+    $filter_status = 'semua';
+}
 
-// 5. Hitung Counter Badge Tab Secara Akurat Berdasarkan Penghuni Aktif
+// 5. Hitung Counter Badge Tab Khusus Tagihan Sewa
 $count_semua      = 0;
 $count_belum      = 0;
 $count_verifikasi = 0;
@@ -103,12 +92,24 @@ $count_verifikasi = 0;
 try {
     $sqlCount = "
         SELECT 
-            COUNT(DISTINCT pen.id) AS total_semua,
-            COUNT(DISTINCT CASE WHEN LOWER(t.status_tagihan) IN ('belum_bayar', 'menunggu') OR t.status_tagihan IS NULL THEN pen.id END) AS total_belum,
-            COUNT(DISTINCT CASE WHEN LOWER(t.status_tagihan) IN ('proses_verifikasi', 'menunggu_verifikasi', 'verifikasi') THEN pen.id END) AS total_verifikasi
-        FROM penghuni pen
-        JOIN penghuni_kamar pk ON pen.id = pk.penghuni_id AND pk.status_kamar = 'aktif'
-        LEFT JOIN tagihan t ON pk.id = t.penghuni_kamar_id
+            COUNT(DISTINCT pk.id) AS total_semua,
+            COUNT(DISTINCT CASE 
+                WHEN t.status_tagihan IS NULL OR LOWER(TRIM(t.status_tagihan)) != 'lunas' THEN pk.id 
+            END) AS total_belum,
+            COUNT(DISTINCT CASE 
+                WHEN LOWER(TRIM(pem.status_verifikasi)) = 'pending' THEN pk.id 
+            END) AS total_verifikasi
+        FROM penghuni_kamar pk
+        JOIN penghuni pen ON pk.penghuni_id = pen.id
+        JOIN kamar k ON pk.kamar_id = k.id AND k.status_kamar = 'terisi'
+        LEFT JOIN tagihan t ON pk.id = t.penghuni_kamar_id AND t.kategori_iuran_id IS NULL
+        LEFT JOIN (
+            SELECT tagihan_id, MAX(id) AS max_pem_id
+            FROM pembayaran
+            GROUP BY tagihan_id
+        ) lp ON lp.tagihan_id = t.id
+        LEFT JOIN pembayaran pem ON pem.id = lp.max_pem_id
+        WHERE LOWER(COALESCE(pen.status_akun, 'aktif')) = 'aktif'
     ";
     $counts = $pdo->query($sqlCount)->fetch(PDO::FETCH_ASSOC);
 
@@ -119,31 +120,40 @@ try {
     }
 } catch (PDOException $e) {}
 
-// 6. Ambil Data Penghuni Aktif
+// 6. Ambil Daftar Penghuni untuk Tagihan Sewa
 $daftar_penghuni = [];
 try {
     $sqlPenghuni = "
-        SELECT DISTINCT ON (pen.id)
+        SELECT 
+            pen.id AS penghuni_id,
             pen.nama,
             pen.no_wa,
-            k.no_kamar AS kamar,
+            COALESCE(k.no_kamar, '-') AS kamar,
             COALESCE(t.total_tagihan, pk.harga_sewa, 0) AS nominal,
-            COALESCE(t.status_tagihan, 'belum_bayar') AS status_tagihan
-        FROM penghuni pen
-        JOIN penghuni_kamar pk ON pen.id = pk.penghuni_id AND pk.status_kamar = 'aktif'
-        JOIN kamar k ON pk.kamar_id = k.id
-        LEFT JOIN tagihan t ON pk.id = t.penghuni_kamar_id
-        WHERE 1=1
+            COALESCE(t.status_tagihan, 'belum_bayar') AS status_tagihan,
+            pem.status_verifikasi
+        FROM penghuni_kamar pk
+        JOIN penghuni pen ON pk.penghuni_id = pen.id
+        JOIN kamar k ON pk.kamar_id = k.id AND k.status_kamar = 'terisi'
+        LEFT JOIN tagihan t ON pk.id = t.penghuni_kamar_id AND t.kategori_iuran_id IS NULL
+        LEFT JOIN (
+            SELECT tagihan_id, MAX(id) AS max_pem_id
+            FROM pembayaran
+            GROUP BY tagihan_id
+        ) lp ON lp.tagihan_id = t.id
+        LEFT JOIN pembayaran pem ON pem.id = lp.max_pem_id
+        WHERE LOWER(COALESCE(pen.status_akun, 'aktif')) = 'aktif'
     ";
 
     if ($filter_status === 'belum_bayar') {
-        $sqlPenghuni .= " AND (t.status_tagihan IS NULL OR LOWER(t.status_tagihan) IN ('belum_bayar', 'menunggu'))";
+        $sqlPenghuni .= " AND (t.status_tagihan IS NULL OR LOWER(TRIM(t.status_tagihan)) != 'lunas')";
     } elseif ($filter_status === 'verifikasi') {
-        $sqlPenghuni .= " AND LOWER(t.status_tagihan) IN ('proses_verifikasi', 'menunggu_verifikasi', 'verifikasi')";
+        $sqlPenghuni .= " AND LOWER(TRIM(pem.status_verifikasi)) = 'pending'";
     }
 
-    $sqlPenghuni .= " ORDER BY pen.id, t.id DESC";
-    $daftar_penghuni = $pdo->query($sqlPenghuni)->fetchAll(PDO::FETCH_ASSOC);
+    $sqlPenghuni .= " ORDER BY k.no_kamar ASC";
+    $stmtPenghuni = $pdo->query($sqlPenghuni);
+    $daftar_penghuni = $stmtPenghuni->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     $daftar_penghuni = [];
 }

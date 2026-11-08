@@ -1,6 +1,7 @@
 <?php
 /**
  * HANDLER LOGIK & DATABASE KELOLA / MONITORING IURAN
+ * Lokasi: modules/shared/handler/iuran_handler.php
  */
 
 if (session_status() === PHP_SESSION_NONE) {
@@ -282,31 +283,47 @@ if ($can_manage) {
     }
 }
 
-// Saldo Kas Iuran
+// Saldo Kas Iuran Murni (Keluarkan transaksi yang berkaitan dengan sewa)
 $saldo_kas_iuran = 0;
 try {
     $stmtSaldo = $pdo->query("
         SELECT
-            COALESCE(SUM(CASE WHEN LOWER(tipe_transaksi) = 'pemasukan' THEN nominal ELSE 0 END), 0) -
-            COALESCE(SUM(CASE WHEN LOWER(tipe_transaksi) = 'pengeluaran' THEN nominal ELSE 0 END), 0) AS saldo
-        FROM buku_kas
+            COALESCE(SUM(CASE WHEN LOWER(bk.tipe_transaksi) = 'pemasukan' THEN bk.nominal ELSE 0 END), 0) -
+            COALESCE(SUM(CASE WHEN LOWER(bk.tipe_transaksi) = 'pengeluaran' THEN bk.nominal ELSE 0 END), 0) AS saldo
+        FROM buku_kas bk
+        LEFT JOIN pembayaran p ON bk.pembayaran_id = p.id
+        LEFT JOIN tagihan t ON p.tagihan_id = t.id
+        WHERE (bk.pembayaran_id IS NULL OR t.kategori_iuran_id IS NOT NULL)
+          AND bk.keterangan NOT LIKE '%Sewa%'
     ");
     $saldo_kas_iuran = (float) $stmtSaldo->fetchColumn();
 } catch (PDOException $e) {
     catatError('hitung saldo', $e);
 }
 
-// Riwayat Mutasi Buku Kas
+// Riwayat Mutasi Buku Kas Iuran Murni
 $daftar_transaksi = [];
 try {
-    $sqlKas = "SELECT id, keterangan AS judul, tipe_transaksi AS tipe, nominal, tanggal_transaksi AS tanggal FROM buku_kas WHERE 1=1";
+    $sqlKas = "
+        SELECT 
+            bk.id, 
+            bk.keterangan AS judul, 
+            bk.tipe_transaksi AS tipe, 
+            bk.nominal, 
+            bk.tanggal_transaksi AS tanggal 
+        FROM buku_kas bk
+        LEFT JOIN pembayaran p ON bk.pembayaran_id = p.id
+        LEFT JOIN tagihan t ON p.tagihan_id = t.id
+        WHERE (bk.pembayaran_id IS NULL OR t.kategori_iuran_id IS NOT NULL)
+          AND bk.keterangan NOT LIKE '%Sewa%'
+    ";
     $paramsKas = [];
     if ($tgl_mulai !== '' && $tgl_selesai !== '') {
-        $sqlKas .= " AND DATE(tanggal_transaksi) BETWEEN :tgl_mulai AND :tgl_selesai";
+        $sqlKas .= " AND DATE(bk.tanggal_transaksi) BETWEEN :tgl_mulai AND :tgl_selesai";
         $paramsKas[':tgl_mulai']   = $tgl_mulai;
         $paramsKas[':tgl_selesai'] = $tgl_selesai;
     }
-    $sqlKas .= " ORDER BY tanggal_transaksi DESC";
+    $sqlKas .= " ORDER BY bk.tanggal_transaksi DESC";
     $stmtKas = $pdo->prepare($sqlKas);
     $stmtKas->execute($paramsKas);
     $rawKas = $stmtKas->fetchAll(PDO::FETCH_ASSOC);

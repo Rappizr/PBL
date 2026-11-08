@@ -34,13 +34,14 @@ foreach ($handler_paths as $hp) {
     }
 }
 
-// 3. Eksekusi Fungsi Handler (Passing $pdo & Session secara Eksplisit)
+// 3. Eksekusi Fungsi Handler
 $nama_penghuni = $_SESSION['user']['nama'] ?? ($_SESSION['nama'] ?? 'Penghuni');
 $pk_id         = function_exists('resolvePenghuniKamarId') ? resolvePenghuniKamarId($pdo, $_SESSION['user'] ?? []) : (int)($_SESSION['user']['penghuni_kamar_id'] ?? 0);
 
 $post_res      = function_exists('handleUploadBuktiBayar') ? handleUploadBuktiBayar($pdo) : ['sukses' => '', 'error' => ''];
-$sukses_pesan  = $post_res['sukses'] ?? ($sukses_pesan ?? '');
-$error_pesan   = $post_res['error'] ?? ($error_pesan ?? '');
+$sukses_pesan  = $post_res['sukses'] ?? ($sukses_pesan ?? ($_SESSION['pesan_sukses'] ?? ''));
+$error_pesan   = $post_res['error'] ?? ($error_pesan ?? ($_SESSION['pesan_error'] ?? ''));
+unset($_SESSION['pesan_sukses'], $_SESSION['pesan_error']);
 
 $daftar_tagihan_saya = function_exists('fetchDaftarTagihan') ? fetchDaftarTagihan($pdo, $pk_id) : ($daftar_tagihan_saya ?? []);
 $semua_riwayat       = function_exists('fetchRiwayatTransaksi') ? fetchRiwayatTransaksi($pdo, $pk_id) : ($semua_riwayat ?? []);
@@ -95,12 +96,38 @@ if (isset($_GET['invoice_id'])) {
 </head>
 <body class="dashboard-body">
 
-    <?php if (!empty($sukses_pesan)): ?>
-        <div class="alert-box-sukses"><?= htmlspecialchars($sukses_pesan); ?></div>
-    <?php endif; ?>
-    <?php if (!empty($error_pesan)): ?>
-        <div class="alert-box-error"><?= htmlspecialchars($error_pesan); ?></div>
-    <?php endif; ?>
+    <!-- FLOATING TOAST NOTIFIKASI BERHASIL / GAGAL -->
+    <div class="toast-floating-container">
+        <?php if (!empty($sukses_pesan)): ?>
+            <div class="toast-alert toast-success" id="toastAlertBox">
+                <div class="toast-icon">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="toast-content">
+                    <h5 class="toast-title">Berhasil Terkirim</h5>
+                    <p class="toast-message"><?= htmlspecialchars($sukses_pesan); ?></p>
+                </div>
+                <button type="button" class="toast-close" onclick="closeToast()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($error_pesan)): ?>
+            <div class="toast-alert toast-error" id="toastAlertBox">
+                <div class="toast-icon">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <div class="toast-content">
+                    <h5 class="toast-title">Gagal Mengirim</h5>
+                    <p class="toast-message"><?= htmlspecialchars($error_pesan); ?></p>
+                </div>
+                <button type="button" class="toast-close" onclick="closeToast()">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        <?php endif; ?>
+    </div>
 
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
@@ -126,15 +153,18 @@ if (isset($_GET['invoice_id'])) {
                         <?php foreach ($daftar_tagihan_saya as $t): ?>
                             <?php 
                                 $is_lunas   = ($t['status_tagihan'] === 'lunas');
-                                $is_pending = ($t['status_tagihan'] === 'sebagian');
+                                $is_pending = (($t['status_verif'] ?? '') === 'pending' || $t['status_tagihan'] === 'sebagian');
+                                $is_ditolak = (($t['status_verif'] ?? '') === 'ditolak');
                             ?>
-                            <div class="item-tagihan-card">
+                            <div class="item-tagihan-card <?= $is_ditolak ? 'tagihan-ditolak' : ''; ?>">
                                 <div class="item-tagihan-header">
                                     <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']); ?></h4>
                                     <?php if ($is_lunas): ?>
                                         <span class="badge-tagihan-lunas">Lunas</span>
                                     <?php elseif ($is_pending): ?>
                                         <span class="badge-tagihan-pending">Menunggu Verifikasi</span>
+                                    <?php elseif ($is_ditolak): ?>
+                                        <span class="badge-tagihan-pending badge-tagihan-ditolak">Ditolak</span>
                                     <?php else: ?>
                                         <span class="badge-tagihan-belum">Belum bayar</span>
                                     <?php endif; ?>
@@ -150,10 +180,21 @@ if (isset($_GET['invoice_id'])) {
                                     </div>
                                 </div>
 
+                                <?php if ($is_ditolak && !empty($t['alasan_penolakan'])): ?>
+                                    <div class="box-alasan-ditolak">
+                                        <i class="fa-solid fa-circle-exclamation"></i>
+                                        <span><strong>Ditolak:</strong> <?= htmlspecialchars($t['alasan_penolakan']); ?></span>
+                                    </div>
+                                <?php endif; ?>
+
                                 <?php if ($is_lunas): ?>
                                     <div class="btn-card-action btn-card-lunas"><i class="fa-solid fa-circle-check"></i> Lunas</div>
                                 <?php elseif ($is_pending): ?>
                                     <div class="btn-card-action btn-card-pending"><i class="fa-solid fa-clock"></i> Diproses</div>
+                                <?php elseif ($is_ditolak): ?>
+                                    <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>" class="btn-card-action btn-card-upload-ulang">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i> Upload Ulang Bukti
+                                    </a>
                                 <?php else: ?>
                                     <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>" class="btn-card-action">Bayar</a>
                                 <?php endif; ?>
@@ -224,15 +265,18 @@ if (isset($_GET['invoice_id'])) {
                     <?php foreach ($daftar_tagihan_saya as $t): ?>
                         <?php 
                             $is_lunas   = ($t['status_tagihan'] === 'lunas');
-                            $is_pending = ($t['status_tagihan'] === 'sebagian');
+                            $is_pending = (($t['status_verif'] ?? '') === 'pending' || $t['status_tagihan'] === 'sebagian');
+                            $is_ditolak = (($t['status_verif'] ?? '') === 'ditolak');
                         ?>
-                        <div class="item-tagihan-card">
+                        <div class="item-tagihan-card <?= $is_ditolak ? 'tagihan-ditolak' : ''; ?>">
                             <div class="item-tagihan-header">
                                 <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']); ?></h4>
                                 <?php if ($is_lunas): ?>
                                     <span class="badge-tagihan-lunas">Lunas</span>
                                 <?php elseif ($is_pending): ?>
                                     <span class="badge-tagihan-pending">Menunggu Verifikasi</span>
+                                <?php elseif ($is_ditolak): ?>
+                                    <span class="badge-tagihan-pending badge-tagihan-ditolak">Ditolak</span>
                                 <?php else: ?>
                                     <span class="badge-tagihan-belum">Belum bayar</span>
                                 <?php endif; ?>
@@ -248,10 +292,21 @@ if (isset($_GET['invoice_id'])) {
                                 </div>
                             </div>
 
+                            <?php if ($is_ditolak && !empty($t['alasan_penolakan'])): ?>
+                                <div class="box-alasan-ditolak">
+                                    <i class="fa-solid fa-circle-exclamation"></i>
+                                    <span><strong>Ditolak:</strong> <?= htmlspecialchars($t['alasan_penolakan']); ?></span>
+                                </div>
+                            <?php endif; ?>
+
                             <?php if ($is_lunas): ?>
                                 <div class="btn-card-action btn-card-lunas"><i class="fa-solid fa-circle-check"></i> Lunas</div>
                             <?php elseif ($is_pending): ?>
                                 <div class="btn-card-action btn-card-pending"><i class="fa-solid fa-clock"></i> Diproses</div>
+                            <?php elseif ($is_ditolak): ?>
+                                <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>" class="btn-card-action btn-card-upload-ulang">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i> Upload Ulang Bukti
+                                </a>
                             <?php else: ?>
                                 <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>" class="btn-card-action">Bayar</a>
                             <?php endif; ?>
@@ -367,7 +422,7 @@ if (isset($_GET['invoice_id'])) {
         </div>
     <?php endif; ?>
 
-    <!-- MODAL BAYAR -->
+    <!-- MODAL BAYAR (PILIHAN METODE TRANSFER ATAU TUNAI) -->
     <?php if ($tagihan_dipilih): ?>
         <div class="modal-overlay active">
             <div class="modal-bayar-card">
@@ -380,34 +435,68 @@ if (isset($_GET['invoice_id'])) {
                     <span class="modal-ringkasan-batas">Batas bayar <?= htmlspecialchars($tagihan_dipilih['jatuh_tempo']); ?></span>
                 </div>
 
-                <form action="/?page=tagihan_riwayat" method="POST" enctype="multipart/form-data" class="modal-form-upload-tagihan">
+                <form action="/?page=tagihan_riwayat" method="POST" enctype="multipart/form-data" class="modal-form-upload-tagihan" onsubmit="handleKirimBuktiSubmit(event)">
                     <input type="hidden" name="tagihan_id" value="<?= $tagihan_dipilih['id']; ?>">
-                    <div class="modal-rekening-wrapper">
-                        <label class="modal-rekening-label">Transfer Ke Rekening</label>
-                        <div class="modal-rekening-val">BCA 12345678 a.n Pemilik Kos</div>
-                    </div>
-                    <div class="modal-upload-wrapper">
-                        <label class="modal-rekening-label">Upload Bukti Pembayaran</label>
-                        <label class="modal-upload-box" id="dropAreaBukti">
-                            <input type="file" name="bukti_transfer" id="inputBuktiTransfer" accept="image/*" required onchange="previewFotoBukti(this)">
-                            
-                            <!-- Tampilan Awal (Placeholder) -->
-                            <div id="placeholderBukti" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;">
-                                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4ca5b0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
-                                    <polyline points="7 9 12 4 17 9"></polyline>
-                                    <line x1="12" y1="4" x2="12" y2="16"></line>
-                                </svg>
-                                <p class="modal-upload-text">Ketuk untuk pilih foto</p>
-                            </div>
 
-                            <!-- Tampilan Setelah Foto Dipilih (Preview) -->
-                            <img id="imgPreviewBukti" src="#" alt="Preview Bukti" style="display: none; width: 100%; height: 100%; object-fit: contain; border-radius: 14px; padding: 4px; box-sizing: border-box;">
-                        </label>
+                    <!-- PILIHAN METODE PEMBAYARAN -->
+                    <div class="metode-bayar-group">
+                        <label class="modal-rekening-label">Metode Pembayaran</label>
+                        <div class="metode-bayar-grid">
+                            <label class="metode-bayar-option">
+                                <input type="radio" name="metode_bayar" value="transfer" checked onchange="toggleMetodeBayar('transfer')" class="metode-radio-input">
+                                <span><i class="fa-solid fa-building-columns"></i> Transfer</span>
+                            </label>
+                            <label class="metode-bayar-option">
+                                <input type="radio" name="metode_bayar" value="tunai" onchange="toggleMetodeBayar('tunai')" class="metode-radio-input">
+                                <span><i class="fa-solid fa-money-bill-wave"></i> Tunai (Cash)</span>
+                            </label>
+                        </div>
                     </div>
+
+                    <!-- BLOK TRANSFER (REKENING + UPLOAD BUKTI) -->
+                    <div id="blokMetodeTransfer" class="blok-metode-transfer">
+                        <div class="modal-rekening-wrapper">
+                            <label class="modal-rekening-label">Transfer Ke Rekening</label>
+                            <div class="modal-rekening-val">BCA 12345678 a.n Pemilik Kos</div>
+                        </div>
+
+                        <div class="modal-upload-wrapper">
+                            <label class="modal-rekening-label">Upload Bukti Pembayaran</label>
+                            <label class="modal-upload-box" id="dropAreaBukti">
+                                <input type="file" name="bukti_transfer" id="inputBuktiTransfer" accept="image/*" required onchange="previewFotoBukti(this)">
+                                
+                                <div id="placeholderBukti" class="placeholder-bukti-content">
+                                    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#4ca5b0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path>
+                                        <polyline points="7 9 12 4 17 9"></polyline>
+                                        <line x1="12" y1="4" x2="12" y2="16"></line>
+                                    </svg>
+                                    <p class="modal-upload-text">Ketuk untuk pilih foto struk</p>
+                                </div>
+
+                                <img id="imgPreviewBukti" src="#" alt="Preview Bukti" class="preview-bukti-img">
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- BLOK TUNAI / CASH -->
+                    <div id="blokMetodeTunai" class="blok-metode-tunai">
+                        <div class="tunai-info-wrapper">
+                            <i class="fa-solid fa-hand-holding-dollar tunai-info-icon"></i>
+                            <div>
+                                <h4 class="tunai-info-title">Pembayaran Tunai Langsung</h4>
+                                <p class="tunai-info-desc">
+                                    Silakan serahkan uang tunai sebesar <strong>Rp <?= number_format($tagihan_dipilih['nominal'], 0, ',', '.'); ?></strong> ke Pemilik / Pengurus Kos. Setelah uang diterima, status tagihan Anda akan diverifikasi.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="modal-bayar-actions">
                         <a href="/?page=tagihan_riwayat" class="btn-bayar-batal">Batal</a>
-                        <button type="submit" class="btn-bayar-kirim">Kirim Bukti</button>
+                        <button type="submit" id="btnSubmitBukti" class="btn-bayar-kirim">
+                            <span class="btn-text-content" id="btnSubmitText">Kirim Bukti</span>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -428,7 +517,35 @@ if (isset($_GET['invoice_id'])) {
                     }
                 }
             });
+
+            const toast = document.getElementById('toastAlertBox');
+            if (toast) {
+                setTimeout(closeToast, 5000);
+            }
         });
+
+        // Toggle Tampilan Antara Transfer dan Tunai
+        function toggleMetodeBayar(metode) {
+            const blokTransfer = document.getElementById('blokMetodeTransfer');
+            const blokTunai    = document.getElementById('blokMetodeTunai');
+            const fileInput    = document.getElementById('inputBuktiTransfer');
+            const btnText      = document.getElementById('btnSubmitText');
+
+            if (metode === 'transfer') {
+                if (blokTransfer) blokTransfer.style.display = 'flex';
+                if (blokTunai) blokTunai.style.display = 'none';
+                if (fileInput) fileInput.required = true;
+                if (btnText) btnText.innerText = 'Kirim Bukti';
+            } else {
+                if (blokTransfer) blokTransfer.style.display = 'none';
+                if (blokTunai) blokTunai.style.display = 'block';
+                if (fileInput) {
+                    fileInput.required = false;
+                    fileInput.value = '';
+                }
+                if (btnText) btnText.innerText = 'Konfirmasi Bayar Tunai';
+            }
+        }
 
         function previewFotoBukti(input) {
             const file = input.files[0];
@@ -451,6 +568,40 @@ if (isset($_GET['invoice_id'])) {
                 if (placeholder) {
                     placeholder.style.display = 'flex';
                 }
+            }
+        }
+
+        function handleKirimBuktiSubmit(e) {
+            const radios = document.getElementsByName('metode_bayar');
+            let metode = 'transfer';
+            for (const r of radios) {
+                if (r.checked) {
+                    metode = r.value;
+                    break;
+                }
+            }
+
+            if (metode === 'transfer') {
+                const fileInput = document.getElementById('inputBuktiTransfer');
+                if (!fileInput.files || fileInput.files.length === 0) {
+                    alert('Silakan pilih foto struk pembayaran transfer terlebih dahulu.');
+                    e.preventDefault();
+                    return;
+                }
+            }
+
+            const btn = document.getElementById('btnSubmitBukti');
+            if (btn) {
+                btn.classList.add('btn-submit-loading');
+            }
+        }
+
+        function closeToast() {
+            const toast = document.getElementById('toastAlertBox');
+            if (toast) {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-15px) scale(0.95)';
+                setTimeout(() => toast.remove(), 300);
             }
         }
     </script>
