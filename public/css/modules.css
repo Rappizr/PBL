@@ -561,7 +561,9 @@ body.login-body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .kas-transaksi-left,
@@ -569,7 +571,8 @@ body.login-body {
   display: flex;
   align-items: center;
   gap: 10px;
-  min-width: 0;
+  flex: 1;
+  min-width: 0 !important;
 }
 
 .kas-icon-box,
@@ -591,24 +594,31 @@ body.login-body {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
+  min-width: 0 !important;
 }
 
 .kas-item-title,
+.kelola-tx-title,
 .kelola-tx-info h4 {
   color: #ffffff;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 800;
   margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: block !important;
+  width: 100% !important;
 }
 
 .kas-item-date,
+.kelola-tx-date,
 .kelola-tx-info span {
   color: rgba(255, 255, 255, 0.9);
   font-size: 10.5px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .kas-nominal-pill,
@@ -633,6 +643,14 @@ body.login-body {
   padding: 6px 12px;
   border-radius: 12px;
   white-space: nowrap;
+}
+
+.kas-nominal-pill,
+.desktop-mutasi-badge-green,
+.kelola-nominal-green,
+.kelola-nominal-red {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
 }
 
 .kas-filter-row,
@@ -5307,4 +5325,411 @@ a.kotak-kapsul-pemilik:active {
   font-size: 12px;
   color: #64748b;
   line-height: 1.45;
+}
+
+/* ==========================================================================
+   27. TOMBOL CETAK PDF LAPORAN KAS & IURAN
+   ========================================================================== */
+.btn-cetak-pdf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #ffffff !important;
+  color: #1a4d55 !important;
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  text-decoration: none;
+  box-shadow: 2px 3px 0px #c8924b;
+  border: 1.5px solid #4ca5b0;
+  box-sizing: border-box;
+  white-space: nowrap;
+  transition:
+    transform 0.1s ease,
+    background-color 0.15s ease;
+}
+
+.btn-cetak-pdf:hover {
+  background-color: #f0fdfa !important;
+  transform: translateY(-1px);
+}
+
+.btn-cetak-pdf:active {
+  transform: translateY(1px);
+}
+
+.btn-cetak-pdf i {
+  color: #c91818;
+  font-size: 14px;
+}
+
+/* Wrapper Bar Tombol Aksi & Filter */
+.toolbar-cetak-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar-cetak-row-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+@media print {
+  .sidebar,
+  .sidebar-bottom-group,
+  .header-user-actions,
+  .btn-cetak-pdf,
+  .filter-range-form,
+  .filter-range-form-desktop,
+  .kas-filter-row,
+  .kelola-filter-row,
+  .desktop-kelola-filter-row,
+  .iuran-desktop-actions-row,
+  .btn-action,
+  .btn-chat {
+    display: none !important;
+  }
+
+  body,
+  .desktop-dashboard-wrapper,
+  .desktop-content {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: #000000 !important;
+  }
+} /* ==========================================================================
+   27. TOMBOL CETAK PDF LAPORAN KAS & IURAN
+   ========================================================================== */
+.btn-cetak-pdf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background-color: #ffffff !important;
+  color: #1a4d55 !important;
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  text-decoration: none;
+  box-shadow: 2px 3px 0px #c8924b;
+  border: 1.5px solid #4ca5b0;
+  box-sizing: border-box;
+  white-space: nowrap;
+  transition:
+    transform 0.1s ease,
+    background-color 0.15s ease;
+}
+
+.btn-cetak-pdf:hover {
+  background-color: #f0fdfa !important;
+  transform: translateY(-1px);
+}
+
+.btn-cetak-pdf:active {
+  transform: translateY(1px);
+}
+
+.btn-cetak-pdf i {
+  color: #c91818;
+  font-size: 14px;
+}
+
+/* Wrapper Bar Tombol Aksi & Filter */
+.toolbar-cetak-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.toolbar-cetak-row-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+@media print {
+  .sidebar,
+  .sidebar-bottom-group,
+  .header-user-actions,
+  .btn-cetak-pdf,
+  .filter-range-form,
+  .filter-range-form-desktop,
+  .kas-filter-row,
+  .kelola-filter-row,
+  .desktop-kelola-filter-row,
+  .iuran-desktop-actions-row,
+  .btn-action,
+  .btn-chat {
+    display: none !important;
+  }
+
+  body,
+  .desktop-dashboard-wrapper,
+  .desktop-content {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    color: #000000 !important;
+  }
+}
+
+/* ==========================================================================
+   28. HALAMAN CETAK LAPORAN ARUS KAS & BUKU KAS IURAN (PDF & PRINT MODERN)
+   ========================================================================== */
+body.laporan-print-body {
+  font-family: 'Segoe UI', Arial, Helvetica, sans-serif;
+  color: #1e293b;
+  margin: 0;
+  padding: 30px;
+  font-size: 12.5px;
+  background-color: #ffffff;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+/* Container Kertas A4 */
+.laporan-page-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Bar Aksi Atas (Hilang saat cetak) */
+.no-print-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 12px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.no-print-bar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-action-print {
+  background-color: #0f766e;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  transition: opacity 0.15s ease;
+}
+
+.btn-action-print:hover {
+  opacity: 0.9;
+}
+
+.btn-action-close {
+  background-color: #64748b;
+  color: #ffffff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 13px;
+  transition: opacity 0.15s ease;
+}
+
+.btn-action-close:hover {
+  opacity: 0.9;
+}
+
+/* KOP SURAT */
+.laporan-kop-surat {
+  text-align: center;
+  border-bottom: 2px solid #0f766e;
+  padding-bottom: 14px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.laporan-kop-title {
+  margin: 0 0 2px 0;
+  font-size: 22px;
+  font-weight: 900;
+  color: #0f766e;
+  letter-spacing: 1px;
+}
+
+.laporan-kop-sub {
+  margin: 0 0 6px 0;
+  color: #64748b;
+  font-size: 11.5px;
+}
+
+.laporan-kop-heading {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 6px 0 0 0;
+  background-color: #e6fffa !important;
+  color: #0f766e !important;
+  padding: 4px 14px;
+  border-radius: 9999px;
+  letter-spacing: 0.5px;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+/* KOTAK INFORMASI / META */
+.laporan-meta-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8fafc !important;
+  border: 1px solid #e2e8f0;
+  border-left: 4px solid #0f766e;
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 18px;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.laporan-meta-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11.5px;
+}
+
+.laporan-meta-col span strong {
+  color: #334155;
+}
+
+/* TABEL LAPORAN FORMAL */
+.laporan-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+
+.laporan-data-table th {
+  background-color: #0f766e !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  padding: 9px 10px;
+  border: 1px solid #0f766e;
+  text-align: left;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.laporan-data-table td {
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+
+.laporan-data-table tbody tr:nth-child(even) {
+  background-color: #f8fafc !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.laporan-empty-cell {
+  padding: 28px !important;
+  color: #64748b;
+  text-align: center;
+}
+
+/* BARIS TOTAL */
+.laporan-row-total td {
+  background-color: #f1f5f9 !important;
+  font-weight: 800;
+  border-top: 2px solid #0f766e !important;
+  color: #0f172a;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.laporan-row-saldo-bersih td {
+  background-color: #e6fffa !important;
+  font-weight: 800;
+  border-top: 1.5px solid #0f766e;
+  color: #0f766e !important;
+  font-size: 13px;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.laporan-text-masuk {
+  color: #047857 !important;
+  font-weight: 700;
+}
+
+.laporan-text-keluar {
+  color: #b91c1c !important;
+  font-weight: 700;
+}
+
+/* TANDA TANGAN */
+.laporan-ttd-wrapper {
+  margin-top: 36px;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  page-break-inside: avoid;
+}
+
+.laporan-ttd-box {
+  text-align: center;
+  min-width: 200px;
+}
+
+.laporan-ttd-nama {
+  margin-top: 55px;
+  margin-bottom: 0;
+  font-weight: 800;
+  font-size: 12.5px;
+  text-decoration: underline;
+}
+
+.laporan-ttd-role {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+/* Print CSS Settings */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 15mm 15mm 15mm 15mm;
+  }
+  .no-print-bar {
+    display: none !important;
+  }
+  body.laporan-print-body {
+    padding: 0 !important;
+  }
 }

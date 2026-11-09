@@ -4,7 +4,6 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/handler/kas_handlers.php';
-
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -14,10 +13,7 @@ require_once __DIR__ . '/handler/kas_handlers.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Analisis Kas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
-    <!-- Flatpickr CSS untuk Kalender Range -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
@@ -42,16 +38,23 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                     <span class="kas-total-value">Rp. <?= number_format($total_pemasukan, 0, ',', '.'); ?></span>
                 </div>
 
-                <!-- Form Mobile -->
-                <form method="GET" action="" id="formFilterMobile" class="filter-range-form">
+                <!-- Tombol Cetak PDF Mobile -->
+                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                    <button type="button" onclick="bukaModalCetakKas()" class="btn-cetak-pdf" style="flex: 1;">
+                        <i class="fa-solid fa-file-pdf"></i> Cetak PDF
+                    </button>
+                </div>
+
+                <form method="GET" action="" id="formFilterMobile" class="filter-range-form" style="margin-top: 6px;">
                     <input type="hidden" name="page" value="arus_kas">
                     <div class="flatpickr-box-wrapper">
                         <i class="fa-regular fa-calendar date-icon"></i>
                         <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
                             placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
                         <?php if ($is_filtered): ?>
-                        <a href="/?page=arus_kas" class="btn-reset-range" title="Reset"><i
-                                class="fa-solid fa-rotate-left"></i></a>
+                        <a href="/?page=arus_kas" class="btn-reset-range" title="Reset">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </a>
                         <?php endif; ?>
                     </div>
                 </form>
@@ -123,8 +126,7 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                                 <h4 class="kas-penghuni-name"><?= htmlspecialchars($p['nama']); ?></h4>
                                 <span class="badge-kamar-putih"><?= htmlspecialchars($p['kamar']); ?></span>
                             </div>
-                            <span class="kas-penghuni-nominal">Rp.
-                                <?= number_format((float)$tx['nominal'], 0, ',', '.'); ?></span>
+                            <span class="kas-penghuni-nominal">Rp. <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
                         </div>
                         <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>?text=Halo%20<?= urlencode($p['nama']); ?>%2C%20ini%20mengenai%20tagihan%20sewa%20kamar."
                             target="_blank" class="btn-chat-wa">
@@ -151,17 +153,21 @@ require_once __DIR__ . '/handler/kas_handlers.php';
             <div class="desktop-kelola-stats" style="grid-template-columns: minmax(280px, 340px);">
                 <div class="desktop-kelola-stat-card">
                     <span class="desktop-kelola-stat-label">Total Pemasukan</span>
-                    <span class="desktop-kelola-stat-val">Rp.
-                        <?= number_format($total_pemasukan, 0, ',', '.'); ?></span>
+                    <span class="desktop-kelola-stat-val">Rp. <?= number_format($total_pemasukan, 0, ',', '.'); ?></span>
                 </div>
             </div>
 
-            <!-- Header Riwayat Arus Kas & Form Range Sejajar -->
-            <div class="desktop-range-filter-wrapper">
-                <h3 class="desktop-section-title" style="margin: 0;">Riwayat Arus Kas</h3>
+            <!-- Header Riwayat Arus Kas, Tombol Cetak PDF, & Form Range Sejajar -->
+            <div class="desktop-range-filter-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <h3 class="desktop-section-title" style="margin: 0;">Riwayat Arus Kas</h3>
+                    <button type="button" onclick="bukaModalCetakKas()" class="btn-cetak-pdf">
+                        <i class="fa-solid fa-file-pdf"></i> Cetak PDF
+                    </button>
+                </div>
 
                 <!-- Form Desktop -->
-                <form method="GET" action="" id="formFilterDesktop" class="filter-range-form-desktop">
+                <form method="GET" action="" id="formFilterDesktop" class="filter-range-form-desktop" style="margin: 0;">
                     <input type="hidden" name="page" value="arus_kas">
                     <div class="flatpickr-box-wrapper">
                         <i class="fa-regular fa-calendar date-icon"></i>
@@ -239,12 +245,9 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                     <div class="desktop-penghuni-info">
                         <div class="desktop-penghuni-top">
                             <h4><?= htmlspecialchars($p['nama']); ?></h4>
-                            <span class="badge-kamar-putih">Kamar
-                                <?= htmlspecialchars($p['kamar']); ?>
-                            </span>
+                            <span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                         </div>
-                        <span class="desktop-penghuni-nominal">Rp.
-                            <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
+                        <span class="desktop-penghuni-nominal">Rp. <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
                     </div>
                     <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>?text=Halo%20<?= urlencode($p['nama']); ?>%2C%20ini%20mengenai%20tagihan%20sewa%20kamar."
                         target="_blank" class="btn-chat-wa">
@@ -257,7 +260,68 @@ require_once __DIR__ . '/handler/kas_handlers.php';
         </main>
     </div>
 
-    <!-- Script Flatpickr -->
+    <!-- MODAL PILIH PERIODE CETAK KAS (PEMILIK) -->
+    <div id="modalFilterCetakKas" class="modal-overlay" onclick="tutupModalCetakKas()">
+        <div class="modal-card" onclick="event.stopPropagation()" style="max-width: 440px;">
+            <h3 class="modal-title"><i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> Cetak Laporan Arus Kas</h3>
+            <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 16px 0;">Pilih cakupan waktu laporan arus kas sewa yang ingin dicetak.</p>
+
+            <form action="/" method="GET" target="_blank" onsubmit="tutupModalCetakKas()">
+                <input type="hidden" name="page" value="cetak_kas">
+
+                <div class="modal-field">
+                    <label class="modal-label">Cakupan Periode</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                        <label class="alasan-option-label" style="padding: 8px; font-size: 11.5px; justify-content: center;">
+                            <input type="radio" name="periode" value="bulanan" checked onchange="toggleFormCetakKas('bulanan')">
+                            <span>Bulanan</span>
+                        </label>
+                        <label class="alasan-option-label" style="padding: 8px; font-size: 11.5px; justify-content: center;">
+                            <input type="radio" name="periode" value="tahunan" onchange="toggleFormCetakKas('tahunan')">
+                            <span>Tahunan</span>
+                        </label>
+                        <label class="alasan-option-label" style="padding: 8px; font-size: 11.5px; justify-content: center;">
+                            <input type="radio" name="periode" value="semua" onchange="toggleFormCetakKas('semua')">
+                            <span>Semua</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-field" id="boxKasBulan">
+                    <label class="modal-label" for="selectBulanKas">Pilih Bulan</label>
+                    <select name="bulan" id="selectBulanKas" class="modal-input">
+                        <?php
+                        $bulan_list = [
+                            1=>'Januari', 2=>'Februari', 3=>'Maret', 4=>'April',
+                            5=>'Mei', 6=>'Juni', 7=>'Juli', 8=>'Agustus',
+                            9=>'September', 10=>'Oktober', 11=>'November', 12=>'Desember'
+                        ];
+                        $current_m = (int)date('n');
+                        foreach ($bulan_list as $num => $nm): ?>
+                            <option value="<?= $num; ?>" <?= ($num === $current_m) ? 'selected' : ''; ?>><?= $nm; ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="modal-field" id="boxKasTahun">
+                    <label class="modal-label" for="selectTahunKas">Pilih Tahun</label>
+                    <select name="tahun" id="selectTahunKas" class="modal-input">
+                        <?php
+                        $tahun_skrg = (int)date('Y');
+                        for ($y = $tahun_skrg; $y >= $tahun_skrg - 5; $y--): ?>
+                            <option value="<?= $y; ?>" <?= ($y === $tahun_skrg) ? 'selected' : ''; ?>><?= $y; ?></option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+
+                <div class="modal-actions" style="margin-top: 20px;">
+                    <button type="button" class="btn-modal-cancel" onclick="tutupModalCetakKas()">Batal</button>
+                    <button type="submit" class="btn-modal-submit" style="background-color: #0f766e;">Buka & Cetak PDF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
     document.querySelectorAll('.flatpickr-range-input').forEach(function(input) {
@@ -273,6 +337,31 @@ require_once __DIR__ . '/handler/kas_handlers.php';
             }
         });
     });
+
+    function bukaModalCetakKas() {
+        const modal = document.getElementById('modalFilterCetakKas');
+        if (modal) modal.classList.add('active');
+    }
+
+    function tutupModalCetakKas() {
+        const modal = document.getElementById('modalFilterCetakKas');
+        if (modal) modal.classList.remove('active');
+    }
+
+    function toggleFormCetakKas(tipe) {
+        const boxBulan = document.getElementById('boxKasBulan');
+        const boxTahun = document.getElementById('boxKasTahun');
+        if (tipe === 'bulanan') {
+            boxBulan.style.display = 'block';
+            boxTahun.style.display = 'block';
+        } else if (tipe === 'tahunan') {
+            boxBulan.style.display = 'none';
+            boxTahun.style.display = 'block';
+        } else {
+            boxBulan.style.display = 'none';
+            boxTahun.style.display = 'none';
+        }
+    }
     </script>
 </body>
 
