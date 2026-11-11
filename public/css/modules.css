@@ -793,7 +793,7 @@ body.login-body {
 .iuran-header-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  /* justify-content: space-between; */
   margin-top: 16px;
   margin-bottom: 8px;
   width: 100%;
@@ -1334,7 +1334,7 @@ body.login-body {
   gap: 8px;
   background-color: #ffffff;
   border-radius: 9999px;
-  padding: 5px 6px 5px 16px;
+  padding: 8px 16px;
   box-shadow: 2px 3px 0px #c8924b;
   border: 1.5px solid #4ca5b0;
   box-sizing: border-box;
@@ -1357,7 +1357,6 @@ body.login-body {
 .flatpickr-box-wrapper .flatpickr-input {
   flex: 1 1 auto;
   min-width: 0 !important;
-  width: 200px !important;
   margin: 0 !important;
   padding: 0 !important;
   border: none !important;

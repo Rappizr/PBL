@@ -299,8 +299,8 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                 <span class="desktop-kelola-stat-val">Rp. <?= number_format((float)$saldo_kas_iuran, 0, ',', '.'); ?></span>
             </div>
 
-            <div class="iuran-header-row" style="display: flex; align-items: center; justify-content: space-between; gap: 14px; max-width: 824px; margin-bottom: 16px;">
-                <div style="display: flex; align-items: center; gap: 14px;">
+            <div class="iuran-header-row" style="display: flex; align-items: center; gap: 8px; max-width: 824px; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
                     <h3 class="desktop-section-title" style="margin: 0;">Riwayat Transaksi Iuran</h3>
                     <!-- Tombol Cetak PDF Desktop Penghuni Biasa -->
                     <button type="button" onclick="bukaModalCetakIuran()" class="btn-cetak-pdf">
