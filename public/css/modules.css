@@ -4531,6 +4531,7 @@ a.kotak-kapsul-pemilik:active {
   text-align: left;
   transition: all 0.2s ease;
   box-sizing: border-box;
+  margin-top: 16px;
 }
 
 .btn-logout-sidebar:hover {
