@@ -127,6 +127,9 @@ a.kotak-kapsul-pemilik {
 }
 
 .tulisan-nama {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;

@@ -113,6 +113,7 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
 - [XAMPP](https://www.apachefriends.org/) / Laragon / server lokal lain dengan **PHP** dan **MySQL**
 - PHP versi 8.0 ke atas (disarankan)
 - Browser web
+- Composer
 
 ### Langkah-langkah
 
@@ -121,6 +122,7 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
    ```bash
    git clone https://github.com/Rappizr/PBL siteman-kos
    cd siteman-kos
+   composer install
    ```
 
 2. **Konfigurasi koneksi database**, sesuaikan kredensial (host, user, password, nama database) pada file konfigurasi `.env`:
@@ -131,6 +133,8 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
    DB_NAME=<You Database Name>
    DB_USER=<You Database Username>
    DB_PASSWORD=<You Database Password>
+   EMAIL_USERNAME=
+   EMAIL_PASSWORD
    ```
 
 3. **Memulai aplikasi** melalui CLI:

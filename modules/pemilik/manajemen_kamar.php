@@ -92,6 +92,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -100,7 +101,12 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
+<<<<<<< HEAD
 <body class="dashboard-body">
+=======
+
+<body class="kamar-body">
+>>>>>>> 084a895840015712b75ba42c891adbf1a4d281d4
 
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
@@ -135,14 +141,14 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                     <p class="kamar-empty-state-mobile">Belum ada kamar di database.</p>
                 <?php else: ?>
                     <?php foreach ($daftar_kamar as $kamar): ?>
-                        <?php 
-                            $nama_penghuni = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
-                            $is_kosong = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
-                            $status_bayar_lower = strtolower($kamar['status_bayar'] ?? 'lunas');
+                        <?php
+                        $nama_penghuni = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
+                        $is_kosong = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
+                        $status_bayar_lower = strtolower($kamar['status_bayar'] ?? 'lunas');
                         ?>
-                        <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>" 
-                           class="kamar-card">
-                            
+                        <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
+                            class="kamar-card">
+
                             <?php if ($is_kosong): ?>
                                 <span class="badge-status badge-kosong">Kosong</span>
                             <?php elseif ($status_bayar_lower === 'lunas'): ?>
@@ -151,7 +157,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                                 <span class="badge-status badge-belum">Belum</span>
                             <?php endif; ?>
 
-                            <div class="kamar-nomor"><?= htmlspecialchars($kamar['no_kamar']) ?></div>
+                            <div class="kamar-nomor"><?= htmlspecialchars(sprintf('%02d', intval($kamar['no_kamar']))) ?></div>
                             <div class="kamar-nama"><?= htmlspecialchars($nama_penghuni) ?></div>
                         </a>
                     <?php endforeach; ?>
@@ -194,27 +200,32 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                         <p class="kamar-empty-state-desktop">Belum ada kamar tersimpan.</p>
                     <?php else: ?>
                         <?php foreach ($daftar_kamar as $kamar): ?>
-                            <?php 
-                                $nama_penghuni = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
-                                $is_kosong = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
-                                $status_bayar_lower = strtolower($kamar['status_bayar'] ?? 'lunas');
+                            <?php
+                            $nama_penghuni = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
+                            $is_kosong = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
+                            $status_bayar_lower = strtolower($kamar['status_bayar'] ?? 'lunas');
                             ?>
-                            <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>" 
-                               class="kamar-card-white">
-                                
-                                <?php if ($is_kosong): ?>
-                                    <span class="badge-kamar-status badge-kamar-kosong">Kosong</span>
-                                <?php elseif ($status_bayar_lower === 'lunas'): ?>
-                                    <span class="badge-kamar-status badge-kamar-lunas">Lunas</span>
-                                <?php else: ?>
-                                    <span class="badge-kamar-status badge-kamar-belum">Belum</span>
-                                <?php endif; ?>
+                            <?php if ($is_kosong): ?>
+                                <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
+                                    class="kamar-card-gray">
+                            <?php else: ?>
+                                <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
+                                    class="kamar-card-white">
+                            <?php endif; ?>
 
-                                <div class="kamar-card-number"><?= htmlspecialchars($kamar['no_kamar']) ?></div>
-                                <div class="kamar-card-resident"><?= htmlspecialchars($nama_penghuni) ?></div>
-                            </a>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                                    <?php if ($is_kosong): ?>
+                                        <span class="badge-kamar-status badge-kamar-kosong">Kosong</span>
+                                    <?php elseif ($status_bayar_lower === 'lunas'): ?>
+                                        <span class="badge-kamar-status badge-kamar-lunas">Lunas</span>
+                                    <?php else: ?>
+                                        <span class="badge-kamar-status badge-kamar-belum">Belum</span>
+                                    <?php endif; ?>
+
+                                    <div class="kamar-card-number"><?= htmlspecialchars(sprintf('%02d', intval($kamar['no_kamar']))) ?></div>
+                                    <div class="kamar-card-resident"><?= htmlspecialchars($nama_penghuni) ?></div>
+                                    </a>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                 </div>
 
                 <div class="kamar-desktop-bottom-bar">
@@ -235,12 +246,13 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
     </div>
 
     <!-- LOAD MODAL-MODAL TERPISAH -->
-    <?php 
-        require_once __DIR__ . '/modals/modal_tambah_kamar.php';
-        require_once __DIR__ . '/modals/modal_kelola_skema.php';
-        require_once __DIR__ . '/modals/modal_tambah_penghuni.php';
-        require_once __DIR__ . '/modals/modal_detail_kamar.php';
+    <?php
+    require_once __DIR__ . '/modals/modal_tambah_kamar.php';
+    require_once __DIR__ . '/modals/modal_kelola_skema.php';
+    require_once __DIR__ . '/modals/modal_tambah_penghuni.php';
+    require_once __DIR__ . '/modals/modal_detail_kamar.php';
     ?>
 
 </body>
+
 </html>

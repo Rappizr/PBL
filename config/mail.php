@@ -3,6 +3,7 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../misc/loadenv.php';
 
 function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode_otp): bool
 {
@@ -16,9 +17,8 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'sitemankos@gmail.com';
-        $mail->Password   = 'wjhazhuiipdqpetb'; 
-        
+        $mail->Username   = getenv('EMAIL_USERNAME') ?: ($_ENV['EMAIL_USERNAME'] ?? null);
+        $mail->Password   = getenv('EMAIL_PASSWORD') ?: ($_ENV['EMAIL_PASSWORD'] ?? null);
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port       = 465;
 

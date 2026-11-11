@@ -59,6 +59,7 @@ if ($role_user === 'pemilik') {
         $_SESSION['user']['pin']   = $pin_aktif;
     }
 } else {
+<<<<<<< HEAD
     // Data Penghuni & PJ (Ambil no_wa dan kontak_wali)
     $stmt = $pdo->prepare("
         SELECT p.id, p.pin, p.nama, p.no_wa, p.kontak_wali, p.email, p.is_ketua_kos, COALESCE(k.no_kamar, '-') AS no_kamar
@@ -91,6 +92,16 @@ if ($role_user === 'pemilik') {
         $_SESSION['user']['is_pj']       = $is_pj;
         $_SESSION['user']['is_ketua_kos']= $is_pj;
     }
+=======
+    $stmt = $pdo->prepare("SELECT nama, no_wa, email FROM penghuni WHERE id = :id LIMIT 1");
+    $stmt->execute(['id' => $user_id]);
+    $dataPenghuni = $stmt->fetch(PDO::FETCH_ASSOC);
+    $is_pj      = $_SESSION['user']['is_pj'] ?? ($_SESSION['user']['is_ketua_kos'] ?? false);
+    $nama_user  = $_SESSION['user']['nama'] ?? ($dataPenghuni['nama'] ?? 'Penghuni');
+    $no_kamar   = $_SESSION['user']['no_kamar'] ?? null;
+    $email_user = $_SESSION['user']['email'] ?? ($dataPenghuni['email'] ?? null);
+    $no_wa      = $_SESSION['user']['no_wa'] ?? ($dataPenghuni['no_wa'] ?? null);
+>>>>>>> 084a895840015712b75ba42c891adbf1a4d281d4
 }
 
 $link_kembali = ($role_user === 'pemilik')
@@ -262,10 +273,20 @@ $role_icon = match (true) {
                             </span>
                         </div>
 
+<<<<<<< HEAD
+=======
+                        <?php if ($role_user === 'pemilik'): ?>
+                            <div class="profile-info-row">
+                                <span class="profile-info-label"><i class="fa-solid fa-credit-card"></i> No. Rekening</span>
+                                <span class="profile-info-value"><?= htmlspecialchars($no_rekening ?? '-'); ?></span>
+                            </div>
+                            <?php endif; ?>
+>>>>>>> 084a895840015712b75ba42c891adbf1a4d281d4
                         <div class="profile-info-row">
                             <span class="profile-info-label"><i class="fa-solid fa-phone"></i> WhatsApp</span>
                             <span class="profile-info-value"><?= htmlspecialchars($no_wa ?? '-'); ?></span>
                         </div>
+<<<<<<< HEAD
 
                         <?php if ($role_user !== 'pemilik'): ?>
                         <div class="profile-info-row">
@@ -280,6 +301,8 @@ $role_icon = match (true) {
                             <span class="profile-info-value"><?= htmlspecialchars($no_rekening ?? '-'); ?></span>
                         </div>
                         <?php endif; ?>
+=======
+>>>>>>> 084a895840015712b75ba42c891adbf1a4d281d4
 
                     </div>
                 </div>
