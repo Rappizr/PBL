@@ -1,4 +1,6 @@
 <?php
+// Set default timezone PHP ke WIB
+date_default_timezone_set('Asia/Jakarta');
 
 // Opsional: load .env hanya kalau sedang di local
 $envFile = __DIR__ . '/../.env';
@@ -36,6 +38,8 @@ try {
         $password
     );
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Sinkronisasi timezone koneksi PostgreSQL
+    $pdo->exec("SET TIME ZONE 'Asia/Jakarta';");
 } catch (PDOException $e) {
     die("Koneksi ke database gagal: " . $e->getMessage());
 }

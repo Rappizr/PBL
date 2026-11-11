@@ -2,34 +2,57 @@
 /** @var string|null $show_modal */
 /** @var string $nama_user */
 /** @var string|null $no_wa */
+/** @var string|null $kontak_wali */
 /** @var string|null $no_rekening */
 /** @var string $pin_aktif */
 
 $show_modal = $show_modal ?? ($_GET['modal'] ?? null);
 $nama_user  = $nama_user  ?? ($_SESSION['user']['nama'] ?? '');
 
-if (!isset($pdo)) {
-    require_once __DIR__ . '/../../../config/database.php';
+global $pdo;
+if (!isset($pdo) || !($pdo instanceof PDO)) {
+    $possible_paths = [
+        __DIR__ . '/../../../config/database.php',
+        __DIR__ . '/../../config/database.php',
+        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
+    ];
+    foreach ($possible_paths as $p) {
+        if (file_exists($p)) {
+            require_once $p;
+            if (isset($pdo) && ($pdo instanceof PDO)) break;
+        }
+    }
 }
 
-$user_id_aktif = $_SESSION['user']['id'] ?? 1;
-$stmtPin = $pdo->prepare("SELECT pin, email FROM pemilik WHERE id = :id LIMIT 1");
-$stmtPin->execute(['id' => $user_id_aktif]);
-$dataDb = $stmtPin->fetch(PDO::FETCH_ASSOC);
+$user_id_aktif = (int)($_SESSION['user']['id'] ?? 1);
+$role_aktif    = $_SESSION['user']['role'] ?? 'pemilik';
 
-if ($dataDb) {
-    $pin_aktif  = trim((string)$dataDb['pin']);
-    $email_user = trim((string)$dataDb['email']);
-    $_SESSION['user']['pin']   = $pin_aktif;
-    $_SESSION['user']['email'] = $email_user;
-} else {
-    $pin_aktif  = $pin_aktif  ?? ($_SESSION['user']['pin'] ?? '');
-    $email_user = $email_user ?? ($_SESSION['user']['email'] ?? '');
+if (isset($pdo) && ($pdo instanceof PDO)) {
+    if ($role_aktif === 'pemilik') {
+        $stmtPin = $pdo->prepare("SELECT pin, email FROM pemilik WHERE id = :id LIMIT 1");
+    } else {
+        $stmtPin = $pdo->prepare("SELECT pin, email, kontak_wali FROM penghuni WHERE id = :id LIMIT 1");
+    }
+    $stmtPin->execute([':id' => $user_id_aktif]);
+    $dataDb = $stmtPin->fetch(PDO::FETCH_ASSOC);
+
+    if ($dataDb) {
+        $pin_aktif   = trim((string)$dataDb['pin']);
+        $email_user  = trim((string)$dataDb['email']);
+        if ($role_aktif !== 'pemilik' && isset($dataDb['kontak_wali'])) {
+            $kontak_wali = $dataDb['kontak_wali'];
+        }
+        $_SESSION['user']['pin']   = $pin_aktif;
+        $_SESSION['user']['email'] = $email_user;
+    } else {
+        $pin_aktif   = $pin_aktif  ?? ($_SESSION['user']['pin'] ?? '');
+        $email_user  = $email_user ?? ($_SESSION['user']['email'] ?? '');
+    }
 }
 ?>
 
 <!-- =========================================================================
-     MODAL 1: UBAH DATA PROFIL
+     MODAL 1: UBAH DATA PROFIL (DISESUAIKAN BERDASARKAN ROLE)
      ========================================================================= -->
 <?php if ($show_modal === 'ubah_profil'): ?>
     <div class="modal-overlay active">
@@ -38,13 +61,19 @@ if ($dataDb) {
             <form action="/?page=profile" method="POST" class="modal-form" id="formEditProfil">
                 <input type="hidden" name="action" value="ubah_profil">
                 
+                <!-- Input Nama: Angka dilarang total -->
                 <div class="modal-field">
                     <label class="modal-label" for="edit_nama">Nama Lengkap</label>
                     <input type="text" id="edit_nama" name="nama"
                            class="modal-input" placeholder="Masukkan nama lengkap"
-                           value="<?= htmlspecialchars($nama_user); ?>" required>
+                           value="<?= htmlspecialchars($nama_user); ?>" 
+                           pattern="^[a-zA-Z\s'.]+$" 
+                           title="Nama hanya boleh berisi huruf, spasi, tanda petik, dan titik."
+                           oninput="this.value = this.value.replace(/[^a-zA-Z\s'.]/g, '')"
+                           required autocomplete="name">
                 </div>
 
+                <!-- Input Nomor WhatsApp -->
                 <div class="modal-field">
                     <label class="modal-label" for="edit_wa">Nomor WhatsApp</label>
                     <input type="tel" id="edit_wa" name="no_wa"
@@ -53,6 +82,8 @@ if ($dataDb) {
                            value="<?= htmlspecialchars($no_wa ?? ''); ?>">
                 </div>
 
+                <!-- Jika Pemilik: Tampilkan Nomor Rekening -->
+                <?php if ($role_aktif === 'pemilik'): ?>
                 <div class="modal-field">
                     <label class="modal-label" for="edit_rek">Nomor Rekening</label>
                     <input type="text" id="edit_rek" name="no_rekening"
@@ -60,6 +91,16 @@ if ($dataDb) {
                            inputmode="numeric" pattern="[0-9]*" maxlength="25"
                            value="<?= htmlspecialchars($no_rekening ?? ''); ?>">
                 </div>
+                <?php else: ?>
+                <!-- Jika Penghuni/PJ: Tampilkan Kontak Wali (Bukan Rekening) -->
+                <div class="modal-field">
+                    <label class="modal-label" for="edit_wali">Kontak Wali</label>
+                    <input type="tel" id="edit_wali" name="kontak_wali"
+                           class="modal-input" placeholder="Contoh: 08883199088"
+                           inputmode="numeric" pattern="[0-9]*" maxlength="15"
+                           value="<?= htmlspecialchars($kontak_wali ?? ''); ?>">
+                </div>
+                <?php endif; ?>
 
                 <div class="modal-actions">
                     <a href="/?page=profile" class="btn-modal-cancel">Batal</a>
@@ -71,32 +112,40 @@ if ($dataDb) {
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const waInput = document.getElementById('edit_wa');
-            const rekInput = document.getElementById('edit_rek');
+            const namaInput = document.getElementById('edit_nama');
+            const waInput   = document.getElementById('edit_wa');
+            const waliInput = document.getElementById('edit_wali');
+            const rekInput  = document.getElementById('edit_rek');
+
+            function filterHanyaHuruf() {
+                this.value = this.value.replace(/[^a-zA-Z\s'.]/g, '');
+            }
 
             function filterHanyaAngka() {
                 this.value = this.value.replace(/[^0-9]/g, '');
             }
 
-            if (waInput) {
-                waInput.addEventListener('input', filterHanyaAngka);
-                waInput.addEventListener('paste', function() {
-                    setTimeout(() => { this.value = this.value.replace(/[^0-9]/g, ''); }, 10);
+            if (namaInput) {
+                namaInput.addEventListener('input', filterHanyaHuruf);
+                namaInput.addEventListener('paste', function() {
+                    setTimeout(() => { this.value = this.value.replace(/[^a-zA-Z\s'.]/g, ''); }, 10);
                 });
             }
 
-            if (rekInput) {
-                rekInput.addEventListener('input', filterHanyaAngka);
-                rekInput.addEventListener('paste', function() {
-                    setTimeout(() => { this.value = this.value.replace(/[^0-9]/g, ''); }, 10);
-                });
-            }
+            [waInput, waliInput, rekInput].forEach(function(input) {
+                if (input) {
+                    input.addEventListener('input', filterHanyaAngka);
+                    input.addEventListener('paste', function() {
+                        setTimeout(() => { this.value = this.value.replace(/[^0-9]/g, ''); }, 10);
+                    });
+                }
+            });
         });
     </script>
 <?php endif; ?>
 
 <!-- =========================================================================
-     MODAL 2: UBAH PIN (PIN LAMA TERKUNCI / HANYA BISA DILIHAT)
+     MODAL 2: UBAH PIN
      ========================================================================= -->
 <?php if ($show_modal === 'ubah_password'): ?>
     <div class="modal-overlay active">
@@ -106,7 +155,6 @@ if ($dataDb) {
             <form action="/?page=profile" method="POST" class="modal-form" id="formUbahPin">
                 <input type="hidden" name="action" value="ubah_password">
                 
-                <!-- PIN Lama: Readonly, Teks Hitam Jelas, Bisa Dilihat Matanya -->
                 <div class="modal-field">
                     <label class="modal-label" for="password_lama">Pin Lama</label>
                     <div class="input-password-wrapper">
@@ -119,7 +167,6 @@ if ($dataDb) {
                     </div>
                 </div>
 
-                <!-- PIN Baru -->
                 <div class="modal-field">
                     <label class="modal-label" for="password_baru">Pin Baru</label>
                     <div class="input-password-wrapper">
@@ -133,7 +180,6 @@ if ($dataDb) {
                     <span class="pin-hint-msg" id="msgPinBaru"></span>
                 </div>
 
-                <!-- Konfirmasi PIN Baru -->
                 <div class="modal-field">
                     <label class="modal-label" for="password_konfirmasi">Konfirmasi Pin Baru</label>
                     <div class="input-password-wrapper">
@@ -171,7 +217,8 @@ if ($dataDb) {
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            const pinLamaVal = document.getElementById('password_lama').value.trim();
+            const pinLamaEl = document.getElementById('password_lama');
+            const pinLamaVal = pinLamaEl ? pinLamaEl.value.trim() : '';
             const pinBaru = document.getElementById('password_baru');
             const pinKonf = document.getElementById('password_konfirmasi');
             const btnSubmit = document.getElementById('btnSubmitPin');
@@ -184,14 +231,15 @@ if ($dataDb) {
                 validasiForm();
             }
 
-            pinBaru.addEventListener('input', sanitizeNumeric);
-            pinKonf.addEventListener('input', sanitizeNumeric);
+            if (pinBaru && pinKonf) {
+                pinBaru.addEventListener('input', sanitizeNumeric);
+                pinKonf.addEventListener('input', sanitizeNumeric);
+            }
 
             function validasiForm() {
-                const valBaru = pinBaru.value;
-                const valKonf = pinKonf.value;
+                const valBaru = pinBaru ? pinBaru.value : '';
+                const valKonf = pinKonf ? pinKonf.value : '';
 
-                // 1. Validasi PIN Baru
                 let pinBaruValid = false;
                 if (valBaru.length > 0 && valBaru.length < 6) {
                     msgBaru.textContent = 'PIN baru harus 6 digit angka.';
@@ -209,7 +257,6 @@ if ($dataDb) {
                     msgBaru.textContent = '';
                 }
 
-                // 2. Validasi Konfirmasi PIN
                 let pinKonfValid = false;
                 if (valKonf.length > 0) {
                     if (valKonf !== valBaru) {
@@ -224,7 +271,6 @@ if ($dataDb) {
                     msgKonf.textContent = '';
                 }
 
-                // 3. Status Tombol Simpan
                 if (pinBaruValid && pinKonfValid) {
                     btnSubmit.disabled = false;
                     btnSubmit.classList.remove('btn-disabled');
@@ -238,7 +284,7 @@ if ($dataDb) {
 <?php endif; ?>
 
 <!-- =========================================================================
-     MODAL 3: UBAH EMAIL (EMAIL LAMA READONLY TEKS HITAM)
+     MODAL 3: UBAH EMAIL
      ========================================================================= -->
 <?php if ($show_modal === 'ubah_email'): ?>
     <div class="modal-overlay active">
@@ -248,7 +294,6 @@ if ($dataDb) {
             <form action="/?page=profile" method="POST" class="modal-form" id="formUbahEmail">
                 <input type="hidden" name="action" value="ubah_email">
                 
-                <!-- Email Saat Ini: Readonly, Background Putih, Teks Hitam Biasa -->
                 <div class="modal-field">
                     <label class="modal-label" for="email_lama">Email Saat Ini</label>
                     <input type="email" id="email_lama" name="email_lama"
@@ -256,7 +301,6 @@ if ($dataDb) {
                            value="<?= htmlspecialchars($email_user ?? 'Belum diatur'); ?>" readonly autocomplete="off">
                 </div>
 
-                <!-- Email Baru -->
                 <div class="modal-field">
                     <label class="modal-label" for="email_baru">Email Baru</label>
                     <input type="email" id="email_baru" name="email_baru"
@@ -265,7 +309,6 @@ if ($dataDb) {
                     <span class="pin-hint-msg" id="msgEmailBaru"></span>
                 </div>
 
-                <!-- Konfirmasi dengan PIN + Ikon Mata -->
                 <div class="modal-field">
                     <label class="modal-label" for="password_verifikasi">Konfirmasi dengan PIN</label>
                     <div class="input-password-wrapper">

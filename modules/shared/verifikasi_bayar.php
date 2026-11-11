@@ -35,7 +35,7 @@ unset($_SESSION['pesan_sukses']);
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
-<body class="verifikasi-body">
+<body class="dashboard-body">
 
     <!-- FLOATING TOAST NOTIFIKASI BERHASIL / GAGAL -->
     <div class="toast-floating-container">

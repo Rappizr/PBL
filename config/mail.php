@@ -6,6 +6,9 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode_otp): bool
 {
+    // KUNCI: Kunci zona waktu ke WIB (Asia/Jakarta)
+    date_default_timezone_set('Asia/Jakarta');
+
     $mail = new PHPMailer(true);
 
     try {
@@ -31,8 +34,8 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
         $mail->setFrom('sitemankos@gmail.com', 'SITEMAN - KOS');
         $mail->addAddress($email_tujuan, $nama_tujuan);
 
-        // Nomor Referensi Surat & Tanggal Realtime
-        $no_surat = 'SK/OTP/' . date('Ymd') . '/' . strtoupper(bin2hex(random_bytes(3)));
+        // Nomor Referensi Surat & Tanggal Realtime WIB
+        $no_surat  = 'SK/OTP/' . date('Ymd') . '/' . strtoupper(bin2hex(random_bytes(3)));
         $tgl_surat = date('d F Y, H:i') . ' WIB';
 
         // Konten Email Berbentuk Surat Resmi

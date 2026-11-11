@@ -100,7 +100,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
-<body class="kamar-body">
+<body class="dashboard-body">
 
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">

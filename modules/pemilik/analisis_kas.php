@@ -38,7 +38,6 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                     <span class="kas-total-value">Rp. <?= number_format($total_pemasukan, 0, ',', '.'); ?></span>
                 </div>
 
-                <!-- Tombol Cetak PDF Mobile -->
                 <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
                     <button type="button" onclick="bukaModalCetakKas()" class="btn-cetak-pdf" style="flex: 1;">
                         <i class="fa-solid fa-file-pdf"></i> Cetak PDF
@@ -46,13 +45,13 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                 </div>
 
                 <form method="GET" action="" id="formFilterMobile" class="filter-range-form" style="margin-top: 6px;">
-                    <input type="hidden" name="page" value="arus_kas">
+                    <input type="hidden" name="page" value="analisis_kas">
                     <div class="flatpickr-box-wrapper">
                         <i class="fa-regular fa-calendar date-icon"></i>
                         <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
                             placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
                         <?php if ($is_filtered): ?>
-                        <a href="/?page=arus_kas" class="btn-reset-range" title="Reset">
+                        <a href="/?page=analisis_kas" class="btn-reset-range" title="Reset">
                             <i class="fa-solid fa-rotate-left"></i>
                         </a>
                         <?php endif; ?>
@@ -157,7 +156,6 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                 </div>
             </div>
 
-            <!-- Header Riwayat Arus Kas, Tombol Cetak PDF, & Form Range Sejajar -->
             <div class="desktop-range-filter-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
                 <div style="display: flex; align-items: center; gap: 14px;">
                     <h3 class="desktop-section-title" style="margin: 0;">Riwayat Arus Kas</h3>
@@ -166,15 +164,14 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                     </button>
                 </div>
 
-                <!-- Form Desktop -->
                 <form method="GET" action="" id="formFilterDesktop" class="filter-range-form-desktop" style="margin: 0;">
-                    <input type="hidden" name="page" value="arus_kas">
+                    <input type="hidden" name="page" value="analisis_kas">
                     <div class="flatpickr-box-wrapper">
                         <i class="fa-regular fa-calendar date-icon"></i>
                         <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
                             placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
                         <?php if ($is_filtered): ?>
-                        <a href="/?page=arus_kas" class="btn-reset-range" title="Reset Filter">
+                        <a href="/?page=analisis_kas" class="btn-reset-range" title="Reset Filter">
                             <i class="fa-solid fa-rotate-left"></i> Reset
                         </a>
                         <?php endif; ?>
