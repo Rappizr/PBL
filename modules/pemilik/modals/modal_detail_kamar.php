@@ -269,6 +269,23 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
         </div>
     </div>
 
+    <!-- MODAL KONFIRMASI TRANSFER KETUA KOS (CUSTOM MODAL) -->
+    <div id="modalKonfirmasiKetua" class="modal-overlay" style="z-index: 1050;">
+        <div class="modal-card-konfirmasi-kamar">
+            <div class="konfirmasi-icon-wrapper" style="background-color: #fef3c7; color: #d97706;">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <h3 class="konfirmasi-title">Ganti Ketua Kost?</h3>
+            <p class="konfirmasi-desc" id="descKonfirmasiKetua">
+                Ketua Kost saat ini adalah <strong id="namaKetuaLamaText"></strong>.<br><br>Apakah Anda yakin ingin memindahkan jabatan Ketua Kost kepada penghuni ini?
+            </p>
+            <div class="konfirmasi-actions">
+                <button type="button" class="btn-konfirmasi-batal" onclick="batalTransferKetua()">Batal</button>
+                <button type="button" class="btn-konfirmasi-pindah" id="btnSetujuTransferKetua">Ya, Pindahkan</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL KONFIRMASI HAPUS PENGHUNI -->
     <div id="modalKonfirmasiHapus" class="modal-overlay">
         <div class="modal-card-konfirmasi-kamar">
@@ -347,6 +364,11 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
         if (modal) modal.classList.remove('active');
     }
 
+    function batalTransferKetua() {
+        const modal = document.getElementById('modalKonfirmasiKetua');
+        if (modal) modal.classList.remove('active');
+    }
+
     function hitungTanggalSelesaiDetail() {
         const sel = document.getElementById('detailSkemaId');
         if (!sel || sel.selectedIndex === -1) return;
@@ -376,22 +398,33 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
     document.addEventListener('DOMContentLoaded', function() {
         const formDetail = document.getElementById('formDetailPenghuni');
         const detailIsKetuaKos = document.getElementById('detailIsKetuaKos');
+        const modalKetua = document.getElementById('modalKonfirmasiKetua');
+        const btnSetujuKetua = document.getElementById('btnSetujuTransferKetua');
+        const namaKetuaLamaText = document.getElementById('namaKetuaLamaText');
+
         const namaKetuaLama = "<?= htmlspecialchars($ketuaAktif['nama'] ?? '') ?>";
         const idKetuaLama = "<?= htmlspecialchars($ketuaAktif['id'] ?? '') ?>";
         const idPenghuniSekarang = "<?= htmlspecialchars($kamar_terpilih['penghuni_id'] ?? '') ?>";
 
+        let disetujuiTransfer = false;
+
         if (formDetail) {
             formDetail.addEventListener('submit', function(e) {
                 if (detailIsKetuaKos && detailIsKetuaKos.value === '1') {
-                    if (namaKetuaLama !== '' && idKetuaLama !== idPenghuniSekarang) {
-                        const konfirmasi = confirm(
-                            `Ketua Kost saat ini adalah ${namaKetuaLama}.\n\nApakah Anda yakin ingin memindahkan jabatan Ketua Kost kepada penghuni ini?`
-                        );
-                        if (!konfirmasi) {
-                            e.preventDefault();
-                        }
+                    if (namaKetuaLama !== '' && idKetuaLama !== idPenghuniSekarang && !disetujuiTransfer) {
+                        e.preventDefault();
+                        if (namaKetuaLamaText) namaKetuaLamaText.textContent = namaKetuaLama;
+                        if (modalKetua) modalKetua.classList.add('active');
                     }
                 }
+            });
+        }
+
+        if (btnSetujuKetua && formDetail) {
+            btnSetujuKetua.addEventListener('click', function() {
+                disetujuiTransfer = true;
+                if (modalKetua) modalKetua.classList.remove('active');
+                formDetail.submit();
             });
         }
 
