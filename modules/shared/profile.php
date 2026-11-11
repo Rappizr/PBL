@@ -4,23 +4,37 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Hubungkan file koneksi database PDO
-require_once __DIR__ . '/../../config/database.php';
+global $pdo;
+if (!isset($pdo) || !($pdo instanceof PDO)) {
+    $possible_paths = [
+        __DIR__ . '/../../config/database.php',
+        __DIR__ . '/../../../config/database.php',
+        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
+    ];
+    foreach ($possible_paths as $p) {
+        if (file_exists($p)) {
+            require_once $p;
+            if (isset($pdo) && ($pdo instanceof PDO)) break;
+        }
+    }
+}
 
 $role_user = $_SESSION['user']['role'] ?? 'pemilik';
-$user_id   = $_SESSION['user']['id'] ?? 1;
+$user_id   = (int)($_SESSION['user']['id'] ?? 1);
+
+// 1. Panggil Handler Pemrosesan Form POST
+require_once __DIR__ . '/handler/profile_handler.php';
 
 // Flash messages
 $pesan_sukses = $_SESSION['pesan_sukses'] ?? '';
 $pesan_error  = $_SESSION['pesan_error'] ?? '';
 unset($_SESSION['pesan_sukses'], $_SESSION['pesan_error']);
 
-// 1. Panggil Handler Pemrosesan Form POST
-require_once __DIR__ . '/handler/profile_handler.php';
-
 // 2. Pengambilan Data Profil
-$nama_user   = 'Pemilik Kos';
+$nama_user   = 'Pengguna';
 $email_user  = null;
 $no_wa       = null;
+$kontak_wali = null;
 $no_rekening = null;
 $no_kamar    = null;
 $is_pj       = false;
@@ -28,11 +42,11 @@ $pin_aktif   = '';
 
 if ($role_user === 'pemilik') {
     $stmt = $pdo->prepare("SELECT id, pin, nama, no_wa, no_rekening, email FROM pemilik WHERE id = :id LIMIT 1");
-    $stmt->execute(['id' => $user_id]);
+    $stmt->execute([':id' => $user_id]);
     $dataPemilik = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($dataPemilik) {
-        $user_id     = $dataPemilik['id'];
+        $user_id     = (int)$dataPemilik['id'];
         $nama_user   = $dataPemilik['nama'];
         $email_user  = $dataPemilik['email'];
         $no_wa       = $dataPemilik['no_wa'];
@@ -45,10 +59,38 @@ if ($role_user === 'pemilik') {
         $_SESSION['user']['pin']   = $pin_aktif;
     }
 } else {
-    $is_pj      = $_SESSION['user']['is_pj'] ?? ($_SESSION['user']['is_ketua_kos'] ?? false);
-    $nama_user  = $_SESSION['user']['nama'] ?? 'Penghuni';
-    $no_kamar   = $_SESSION['user']['no_kamar'] ?? null;
-    $email_user = $_SESSION['user']['email'] ?? null;
+    // Data Penghuni & PJ (Ambil no_wa dan kontak_wali)
+    $stmt = $pdo->prepare("
+        SELECT p.id, p.pin, p.nama, p.no_wa, p.kontak_wali, p.email, p.is_ketua_kos, COALESCE(k.no_kamar, '-') AS no_kamar
+        FROM penghuni p
+        LEFT JOIN penghuni_kamar pk ON p.id = pk.penghuni_id
+        LEFT JOIN kamar k ON pk.kamar_id = k.id
+        WHERE p.id = :id
+        ORDER BY pk.id DESC
+        LIMIT 1
+    ");
+    $stmt->execute([':id' => $user_id]);
+    $dataPenghuni = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($dataPenghuni) {
+        $user_id     = (int)$dataPenghuni['id'];
+        $nama_user   = $dataPenghuni['nama'];
+        $email_user  = $dataPenghuni['email'];
+        $no_wa       = $dataPenghuni['no_wa'];
+        $kontak_wali = $dataPenghuni['kontak_wali'];
+        $no_kamar    = $dataPenghuni['no_kamar'];
+        $is_pj       = !empty($dataPenghuni['is_ketua_kos']) || $role_user === 'pj';
+        $pin_aktif   = trim((string)$dataPenghuni['pin']);
+
+        $_SESSION['user']['id']           = $user_id;
+        $_SESSION['user']['nama']         = $nama_user;
+        $_SESSION['user']['email']        = $email_user;
+        $_SESSION['user']['no_wa']        = $no_wa;
+        $_SESSION['user']['kontak_wali']  = $kontak_wali;
+        $_SESSION['user']['no_kamar']     = $no_kamar;
+        $_SESSION['user']['is_pj']        = $is_pj;
+        $_SESSION['user']['is_ketua_kos'] = $is_pj;
+    }
 }
 
 $link_kembali = ($role_user === 'pemilik')
@@ -77,8 +119,8 @@ $role_icon = match (true) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Profil Akun</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=1.0">
+    <link rel="stylesheet" href="/css/modules.css?v=1.0">
 </head>
 <body class="dashboard-body">
 
@@ -132,21 +174,25 @@ $role_icon = match (true) {
                             </span>
                         </div>
 
-                        <?php if ($role_user === 'pemilik'): ?>
                         <div class="profile-info-row">
                             <span class="profile-info-label"><i class="fa-solid fa-phone"></i> WhatsApp</span>
                             <span class="profile-info-value"><?= htmlspecialchars($no_wa ?? '-'); ?></span>
                         </div>
+
+                        <?php if ($role_user !== 'pemilik'): ?>
+                        <div class="profile-info-row">
+                            <span class="profile-info-label"><i class="fa-solid fa-user-group"></i> Kontak Wali</span>
+                            <span class="profile-info-value"><?= htmlspecialchars($kontak_wali ?? '-'); ?></span>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if ($role_user === 'pemilik'): ?>
                         <div class="profile-info-row">
                             <span class="profile-info-label"><i class="fa-solid fa-credit-card"></i> No. Rekening</span>
                             <span class="profile-info-value"><?= htmlspecialchars($no_rekening ?? '-'); ?></span>
                         </div>
                         <?php endif; ?>
 
-                        <div class="profile-info-row">
-                            <span class="profile-info-label"><i class="fa-solid fa-hashtag"></i> ID Akun</span>
-                            <span class="profile-info-value profile-muted"><?= htmlspecialchars((string) $user_id); ?></span>
-                        </div>
                     </div>
                 </div>
 
@@ -216,21 +262,25 @@ $role_icon = match (true) {
                             </span>
                         </div>
 
-                        <?php if ($role_user === 'pemilik'): ?>
                         <div class="profile-info-row">
                             <span class="profile-info-label"><i class="fa-solid fa-phone"></i> WhatsApp</span>
                             <span class="profile-info-value"><?= htmlspecialchars($no_wa ?? '-'); ?></span>
                         </div>
+
+                        <?php if ($role_user !== 'pemilik'): ?>
+                        <div class="profile-info-row">
+                            <span class="profile-info-label"><i class="fa-solid fa-user-group"></i> Kontak Wali</span>
+                            <span class="profile-info-value"><?= htmlspecialchars($kontak_wali ?? '-'); ?></span>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if ($role_user === 'pemilik'): ?>
                         <div class="profile-info-row">
                             <span class="profile-info-label"><i class="fa-solid fa-credit-card"></i> No. Rekening</span>
                             <span class="profile-info-value"><?= htmlspecialchars($no_rekening ?? '-'); ?></span>
                         </div>
                         <?php endif; ?>
 
-                        <div class="profile-info-row">
-                            <span class="profile-info-label"><i class="fa-solid fa-hashtag"></i> ID Akun</span>
-                            <span class="profile-info-value profile-muted"><?= htmlspecialchars((string) $user_id); ?></span>
-                        </div>
                     </div>
                 </div>
 

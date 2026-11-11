@@ -101,7 +101,6 @@ switch ($page) {
         require_once __DIR__ . '/../modules/pemilik/manajemen_kamar.php';
         break;
         
-    case 'arus_kas':
     case 'analisis_kas':
         require_once __DIR__ . '/../modules/pemilik/analisis_kas.php';
         break;
@@ -115,7 +114,6 @@ switch ($page) {
         break;
         
     case 'verifikasi_bayar':
-    case 'verifikasi_pembayaran':
         require_once __DIR__ . '/../modules/shared/verifikasi_bayar.php';
         break;
 

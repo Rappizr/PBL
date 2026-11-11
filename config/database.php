@@ -1,21 +1,9 @@
 <?php
+// Set default timezone PHP ke WIB
+date_default_timezone_set('Asia/Jakarta');
 
 // Opsional: load .env hanya kalau sedang di local
-$envFile = __DIR__ . '/../.env';
-if (file_exists($envFile)) {
-    $lines = file($envFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-    foreach ($lines as $line) {
-        $line = trim($line);
-        if ($line === '' || str_starts_with($line, '#')) {
-            continue;
-        }
-        [$key, $value] = array_pad(explode('=', $line, 2), 2, '');
-        $key = trim($key);
-        $value = trim($value, " \t\"'");
-        putenv("$key=$value");
-        $_ENV[$key] = $value;
-    }
-}
+require_once __DIR__ . '/../misc/loadenv.php';
 
 // Ambil dari environment (berfungsi di Vercel + local)
 $host     = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? null);
@@ -36,6 +24,8 @@ try {
         $password
     );
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    // Sinkronisasi timezone koneksi PostgreSQL
+    $pdo->exec("SET TIME ZONE 'Asia/Jakarta';");
 } catch (PDOException $e) {
     die("Koneksi ke database gagal: " . $e->getMessage());
 }

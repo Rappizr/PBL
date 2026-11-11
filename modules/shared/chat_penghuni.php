@@ -26,7 +26,7 @@ $penghuniKos = [];
 if (isset($pdo) && $pdo instanceof PDO) {
     try {
         $sql = "
-            SELECT
+            SELECT 
                 p.id,
                 p.nama,
                 COALESCE(k.no_kamar, '-') AS kamar,
@@ -35,7 +35,8 @@ if (isset($pdo) && $pdo instanceof PDO) {
             LEFT JOIN penghuni_kamar pk ON p.id = pk.penghuni_id
             LEFT JOIN kamar k ON pk.kamar_id = k.id AND k.status_kamar = 'terisi'
             WHERE LOWER(p.status_akun) = 'aktif'
-            ORDER BY k.no_kamar ASC, p.nama ASC
+            ORDER BY 
+                NULLIF(regexp_replace(k.no_kamar, '\D', '', 'g'), '')::INTEGER ASC NULLS LAST;
         ";
 
         $stmt = $pdo->query($sql);
@@ -50,6 +51,7 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -58,15 +60,16 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
+
 <body class="dashboard-body">
 
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
         <div>
-            <?php 
-                if (file_exists(__DIR__ . '/../components/header.php')) {
-                    require_once __DIR__ . '/../components/header.php'; 
-                }
+            <?php
+            if (file_exists(__DIR__ . '/../components/header.php')) {
+                require_once __DIR__ . '/../components/header.php';
+            }
             ?>
 
             <main class="chat-container">
@@ -108,19 +111,19 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
             </main>
         </div>
 
-        <?php 
-            if (file_exists(__DIR__ . '/../components/footer.php')) {
-                require_once __DIR__ . '/../components/footer.php'; 
-            }
+        <?php
+        if (file_exists(__DIR__ . '/../components/footer.php')) {
+            require_once __DIR__ . '/../components/footer.php';
+        }
         ?>
     </div>
 
     <!-- LAYOUT DESKTOP -->
     <div class="desktop-dashboard-wrapper">
-        <?php 
-            if (file_exists(__DIR__ . '/../components/sidebar.php')) {
-                require_once __DIR__ . '/../components/sidebar.php'; 
-            }
+        <?php
+        if (file_exists(__DIR__ . '/../components/sidebar.php')) {
+            require_once __DIR__ . '/../components/sidebar.php';
+        }
         ?>
 
         <main class="desktop-content">
@@ -181,4 +184,5 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
         setupFilter('searchInputDesktop', 'chatListDesktop');
     </script>
 </body>
+
 </html>

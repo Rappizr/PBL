@@ -22,28 +22,30 @@ body {
   box-sizing: border-box;
 }
 
-.dashboard-body,
-.verifikasi-body,
-.kamar-body {
-  background-color: #20242c;
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  padding: 0;
-  margin: 0;
-}
+@media (max-width: 991px) {
+  body.dashboard-body,
+  body.verifikasi-body,
+  body.kamar-body {
+    background-color: #f3ca81 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 100vh;
+  }
 
-.mobile-container {
-  background-color: #f3ca81;
-  width: 100%;
-  max-width: 412px;
-  min-height: 100vh;
-  padding: 36px 20px 24px 20px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  box-sizing: border-box;
+  .mobile-container {
+    width: 100% !important;
+    max-width: 412px !important;
+    margin: 0 auto !important;
+    padding: 24px 20px !important;
+    box-shadow: none !important;
+  }
+
+  .desktop-dashboard-wrapper {
+    display: none !important;
+  }
 }
 
 /* ==========================================================================
@@ -125,6 +127,9 @@ a.kotak-kapsul-pemilik {
 }
 
 .tulisan-nama {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;

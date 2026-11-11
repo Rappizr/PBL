@@ -184,9 +184,9 @@ foreach ($daftar_tagihan as $t) {
                     </a>
 
                     <?php if ($is_pj): ?>
-                        <a href="/?page=verifikasi_bayar" class="menu-item-box" style="grid-column: span 2;">
+                        <a href="/?page=verifikasi_bayar" class="menu-item-box">
                             <div class="menu-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
-                            <span class="menu-label">Verifikasi Pembayaran</span>
+                            <span class="menu-label">Verifikasi<br>Pembayaran</span>
                         </a>
                     <?php endif; ?>
 
@@ -222,7 +222,6 @@ foreach ($daftar_tagihan as $t) {
                         </div>
                     </div>
                     <?php if ($ringkasan['sewa']['is_actionable'] && $ringkasan['sewa']['id']): ?>
-                        <!-- Link Langsung Membuka Modal Pembayaran Sewa -->
                         <a href="/?page=tagihan_riwayat&bayar_id=<?= $ringkasan['sewa']['id']; ?>" class="btn-upload-bukti">
                             <?= htmlspecialchars($ringkasan['sewa']['action_label']); ?>
                         </a>
@@ -249,7 +248,6 @@ foreach ($daftar_tagihan as $t) {
                         </div>
                     </div>
                     <?php if ($ringkasan['iuran']['is_actionable'] && $ringkasan['iuran']['id']): ?>
-                        <!-- Link Langsung Membuka Modal Pembayaran Iuran -->
                         <a href="/?page=tagihan_riwayat&bayar_id=<?= $ringkasan['iuran']['id']; ?>" class="btn-upload-bukti">
                             <?= htmlspecialchars($ringkasan['iuran']['action_label']); ?>
                         </a>
@@ -267,22 +265,22 @@ foreach ($daftar_tagihan as $t) {
                     <div class="desktop-menu-icon"><i class="fa-solid fa-receipt"></i></div>
                     <span class="desktop-menu-label">Tagihan &amp;<br>Riwayat</span>
                 </a>
+                
+                <a href="/?page=peraturan_kost" class="desktop-menu-card">
+                    <div class="desktop-menu-icon"><i class="fa-solid fa-book-open"></i></div>
+                    <span class="desktop-menu-label">Peraturan<br>Kos</span>
+                </a>
+                
+                <a href="/?page=chat_penghuni" class="desktop-menu-card">
+                    <div class="desktop-menu-icon"><i class="fa-solid fa-comment-dots"></i></div>
+                    <span class="desktop-menu-label">Chat<br>Penghuni</span>
+                </a>
 
                 <a href="/?page=<?= $is_pj ? 'kelola_iuran' : 'monitoring_iuran'; ?>" class="desktop-menu-card">
                     <div class="desktop-menu-icon">
                         <i class="fa-solid <?= $is_pj ? 'fa-wallet' : 'fa-chart-pie'; ?>"></i>
                     </div>
                     <span class="desktop-menu-label"><?= $is_pj ? 'Kelola &amp; Monitor<br>Iuran' : 'Monitoring &amp;<br>Tagihan Iuran'; ?></span>
-                </a>
-
-                <a href="/?page=peraturan_kost" class="desktop-menu-card">
-                    <div class="desktop-menu-icon"><i class="fa-solid fa-book-open"></i></div>
-                    <span class="desktop-menu-label">Peraturan<br>Kos</span>
-                </a>
-
-                <a href="/?page=chat_penghuni" class="desktop-menu-card">
-                    <div class="desktop-menu-icon"><i class="fa-solid fa-comment-dots"></i></div>
-                    <span class="desktop-menu-label">Chat<br>Penghuni</span>
                 </a>
 
                 <?php if ($is_pj): ?>

@@ -4,7 +4,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Sinkronisasi Real-Time Nama & Status dari Database
 global $pdo;
 if (!isset($pdo) || !($pdo instanceof PDO)) {
     $possible_db = [
@@ -45,7 +44,6 @@ $nama_user   = $_SESSION['user']['nama'] ?? ($role_user === 'pemilik' ? 'Bapak K
 $currentPage = $_GET['page'] ?? 'dashboard';
 ?>
 <aside class="desktop-sidebar">
-    <!-- BAGIAN ATAS: BRAND, PROFIL & MENU NAVIGASI -->
     <div>
         <h1 class="sidebar-brand">SITEMAN - KOS</h1>
         <a href="/?page=profile" class="sidebar-profile <?= $currentPage === 'profile' ? 'active' : '' ?>">
@@ -55,20 +53,20 @@ $currentPage = $_GET['page'] ?? 'dashboard';
 
         <nav class="sidebar-nav">
             <?php if ($role_user === 'pemilik'): ?>
-                <a href="/?page=dashboard_pemilik" class="nav-item <?= $currentPage === 'dashboard_pemilik' ? 'active' : '' ?>">
+                <a href="/?page=dashboard_pemilik" class="nav-item <?= in_array($currentPage, ['dashboard_pemilik', 'dashboard']) ? 'active' : '' ?>">
                     <i class="fa-solid fa-table-cells-large"></i><span>Dashboard</span>
                 </a>
                 <a href="/?page=manajemen_kamar" class="nav-item <?= $currentPage === 'manajemen_kamar' ? 'active' : '' ?>">
-                    <i class="fa-solid fa-warehouse"></i><span>Manajemen Kamar</span>
+                    <i class="fa-solid fa-warehouse"></i><span>Manajemen Kamar & Penghuni</span>
                 </a>
-                <a href="/?page=arus_kas" class="nav-item <?= $currentPage === 'arus_kas' ? 'active' : '' ?>">
+                <a href="/?page=analisis_kas" class="nav-item <?= $currentPage === 'analisis_kas' ? 'active' : '' ?>">
                     <i class="fa-solid fa-wallet"></i><span>Analisis Kas</span>
                 </a>
                 <a href="/?page=edit_tatib" class="nav-item <?= $currentPage === 'edit_tatib' ? 'active' : '' ?>">
                     <i class="fa-solid fa-book-open"></i><span>Manajemen Peraturan Kos</span>
                 </a>
             <?php else: ?>
-                <a href="/?page=dashboard_penghuni" class="nav-item <?= $currentPage === 'dashboard_penghuni' ? 'active' : '' ?>">
+                <a href="/?page=dashboard_penghuni" class="nav-item <?= in_array($currentPage, ['dashboard_penghuni', 'dashboard']) ? 'active' : '' ?>">
                     <i class="fa-solid fa-table-cells-large"></i><span>Dashboard</span>
                 </a>
                 <a href="/?page=tagihan_riwayat" class="nav-item <?= $currentPage === 'tagihan_riwayat' ? 'active' : '' ?>">
@@ -84,21 +82,20 @@ $currentPage = $_GET['page'] ?? 'dashboard';
             </a>
 
             <?php if ($role_user === 'pemilik' || $is_pj): ?>
-                <a href="/?page=kelola_iuran" class="nav-item <?= $currentPage === 'kelola_iuran' ? 'active' : '' ?>">
+                <a href="/?page=kelola_iuran" class="nav-item <?= in_array($currentPage, ['kelola_iuran', 'iuran']) ? 'active' : '' ?>">
                     <i class="fa-solid fa-chart-pie"></i><span>Kelola Iuran</span>
                 </a>
-                <a href="/?page=verifikasi_pembayaran" class="nav-item <?= $currentPage === 'verifikasi_pembayaran' ? 'active' : '' ?>">
+                <a href="/?page=verifikasi_bayar" class="nav-item <?= $currentPage === 'verifikasi_bayar' ? 'active' : '' ?>">
                     <i class="fa-solid fa-list-check"></i><span>Verifikasi Bayar</span>
                 </a>
             <?php else: ?>
-                <a href="/?page=monitoring_iuran" class="nav-item <?= $currentPage === 'monitoring_iuran' ? 'active' : '' ?>">
+                <a href="/?page=monitoring_iuran" class="nav-item <?= in_array($currentPage, ['monitoring_iuran', 'iuran']) ? 'active' : '' ?>">
                     <i class="fa-solid fa-chart-pie"></i><span>Monitoring Iuran</span>
                 </a>
             <?php endif; ?>
         </nav>
     </div>
 
-    <!-- BAGIAN BAWAH: TOMBOL KELUAR TEPAT DI ATAS FOOTER -->
     <div class="sidebar-bottom-group">
         <button type="button" class="btn-logout-sidebar" onclick="bukaModalLogoutSidebar()">
             <i class="fa-solid fa-right-from-bracket"></i>
@@ -112,7 +109,6 @@ $currentPage = $_GET['page'] ?? 'dashboard';
     </div>
 </aside>
 
-<!-- MODAL POP-UP KONFIRMASI LOGOUT UNTUK DESKTOP SIDEBAR -->
 <div id="modalKonfirmasiLogoutSidebar" class="modal-overlay" onclick="tutupModalLogoutSidebar()">
     <div class="modal-card-konfirmasi-kamar" onclick="event.stopPropagation()">
         <div class="konfirmasi-icon-wrapper" id="logoutIconBoxSidebar">

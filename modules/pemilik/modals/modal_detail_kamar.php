@@ -1,18 +1,27 @@
 <?php
+/** @var PDO $pdo */
 $modal_aktif    = $modal_aktif ?? ($_GET['modal'] ?? '');
 $current_page   = $current_page ?? ($_GET['page'] ?? 'manajemen_kamar');
 $kamar_terpilih = $kamar_terpilih ?? null;
 $daftar_kamar   = $daftar_kamar ?? [];
 $list_skema     = $list_skema ?? [];
 
-// Baca file fisik langsung dari disk menggunakan jalur absolut project
+// Ambil data Ketua Kost aktif dari database jika ada
+$ketuaAktif = null;
+if (isset($pdo) && $pdo instanceof PDO) {
+    try {
+        $stmtCekKetua = $pdo->query("SELECT id, nama FROM penghuni WHERE is_ketua_kos = true LIMIT 1");
+        $ketuaAktif = $stmtCekKetua ? $stmtCekKetua->fetch(PDO::FETCH_ASSOC) : null;
+    } catch (Exception $e) {}
+}
+
+// Baca file fisik foto KTP
 $foto_ktp_file = trim($kamar_terpilih['foto_ktp'] ?? '');
 $ktp_src_data  = '';
 $ada_ktp       = false;
 
 if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower($foto_ktp_file) !== 'null') {
     $lokasi_file = __DIR__ . '/../../../public/uploads/ktp/' . $foto_ktp_file;
-    
     if (file_exists($lokasi_file)) {
         $ext = strtolower(pathinfo($lokasi_file, PATHINFO_EXTENSION));
         $mime_type = ($ext === 'png') ? 'image/png' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg');
@@ -22,6 +31,7 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
     }
 }
 ?>
+
 <?php if ($modal_aktif === 'detail_kamar' && $kamar_terpilih): ?>
     <?php $is_kosong = ($kamar_terpilih['status_kamar'] === 'kosong' || empty($kamar_terpilih['nama'])); ?>
     <div class="modal-overlay active">
@@ -34,7 +44,7 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                 </span>
             </div>
 
-            <form action="?page=<?= htmlspecialchars($current_page); ?>" method="POST" class="detail-kamar-form">
+            <form action="?page=<?= htmlspecialchars($current_page); ?>" method="POST" class="detail-kamar-form" id="formDetailPenghuni">
                 <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($kamar_terpilih['nomor']); ?>">
 
                 <?php if ($is_kosong): ?>
@@ -103,7 +113,7 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                         </select>
                     </div>
 
-                    <!-- Dokumen Foto KTP (Thumbnail & Klik Pop-up) -->
+                    <!-- Dokumen Foto KTP -->
                     <div class="detail-form-group">
                         <label class="detail-label">Dokumen Identitas (KTP)</label>
                         <?php if ($ada_ktp): ?>
@@ -125,7 +135,7 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                         <?php endif; ?>
                     </div>
 
-                    <!-- Skema Sewa Terpilih (Dropdown Dinamis) -->
+                    <!-- Skema Sewa Terpilih -->
                     <div class="detail-form-group">
                         <label class="detail-label" for="detailSkemaId">Skema Sewa Terpilih</label>
                         <select id="detailSkemaId" name="skema_id" class="detail-select-pill" onchange="hitungTanggalSelesaiDetail()" required>
@@ -258,49 +268,49 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
             </form>
         </div>
     </div>
+
+    <!-- MODAL KONFIRMASI HAPUS PENGHUNI -->
+    <div id="modalKonfirmasiHapus" class="modal-overlay">
+        <div class="modal-card-konfirmasi-kamar">
+            <div class="konfirmasi-icon-wrapper">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="konfirmasi-title">Konfirmasi Hapus</h3>
+            <p class="konfirmasi-desc">
+                Apakah Anda yakin ingin mengeluarkan dan <strong>menghapus akun <?= htmlspecialchars($kamar_terpilih['nama'] ?? 'penghuni ini'); ?></strong> dari sistem? Tindakan ini tidak dapat dibatalkan.
+            </p>
+
+            <form action="?page=<?= htmlspecialchars($current_page); ?>" method="POST">
+                <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($kamar_terpilih['nomor'] ?? ''); ?>">
+                <div class="konfirmasi-actions">
+                    <button type="button" class="btn-konfirmasi-batal" onclick="tutupModalKonfirmasiHapus()">Batal</button>
+                    <button type="submit" name="hapus_penghuni" class="btn-konfirmasi-hapus">Ya, Hapus</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI HAPUS KAMAR -->
+    <div id="modalKonfirmasiHapusKamar" class="modal-overlay">
+        <div class="modal-card-konfirmasi-kamar">
+            <div class="konfirmasi-icon-wrapper">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <h3 class="konfirmasi-title">Hapus Kamar?</h3>
+            <p class="konfirmasi-desc">
+                Apakah Anda yakin ingin menghapus <strong>Kamar <?= htmlspecialchars($kamar_terpilih['nomor'] ?? ''); ?></strong> dari daftar? Tindakan ini tidak dapat dibatalkan.
+            </p>
+
+            <form action="?page=<?= htmlspecialchars($current_page); ?>" method="POST">
+                <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($kamar_terpilih['nomor'] ?? ''); ?>">
+                <div class="konfirmasi-actions">
+                    <button type="button" class="btn-konfirmasi-batal" onclick="tutupModalKonfirmasiHapusKamar()">Batal</button>
+                    <button type="submit" name="hapus_kamar" class="btn-konfirmasi-hapus">Ya, Hapus</button>
+                </div>
+            </form>
+        </div>
+    </div>
 <?php endif; ?>
-
-<!-- MODAL KONFIRMASI HAPUS PENGHUNI -->
-<div id="modalKonfirmasiHapus" class="modal-overlay">
-    <div class="modal-card-konfirmasi-kamar">
-        <div class="konfirmasi-icon-wrapper">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-        </div>
-        <h3 class="konfirmasi-title">Konfirmasi Hapus</h3>
-        <p class="konfirmasi-desc">
-            Apakah Anda yakin ingin mengeluarkan dan <strong>menghapus akun <?= htmlspecialchars($kamar_terpilih['nama'] ?? 'penghuni ini'); ?></strong> dari sistem? Tindakan ini tidak dapat dibatalkan.
-        </p>
-
-        <form action="?page=<?= htmlspecialchars($current_page); ?>" method="POST">
-            <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($kamar_terpilih['nomor'] ?? ''); ?>">
-            <div class="konfirmasi-actions">
-                <button type="button" class="btn-konfirmasi-batal" onclick="tutupModalKonfirmasiHapus()">Batal</button>
-                <button type="submit" name="hapus_penghuni" class="btn-konfirmasi-hapus">Ya, Hapus</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- MODAL KONFIRMASI HAPUS KAMAR -->
-<div id="modalKonfirmasiHapusKamar" class="modal-overlay">
-    <div class="modal-card-konfirmasi-kamar">
-        <div class="konfirmasi-icon-wrapper">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-        </div>
-        <h3 class="konfirmasi-title">Hapus Kamar?</h3>
-        <p class="konfirmasi-desc">
-            Apakah Anda yakin ingin menghapus <strong>Kamar <?= htmlspecialchars($kamar_terpilih['nomor'] ?? ''); ?></strong> dari daftar? Tindakan ini tidak dapat dibatalkan.
-        </p>
-
-        <form action="?page=<?= htmlspecialchars($current_page); ?>" method="POST">
-            <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($kamar_terpilih['nomor'] ?? ''); ?>">
-            <div class="konfirmasi-actions">
-                <button type="button" class="btn-konfirmasi-batal" onclick="tutupModalKonfirmasiHapusKamar()">Batal</button>
-                <button type="submit" name="hapus_kamar" class="btn-konfirmasi-hapus">Ya, Hapus</button>
-            </div>
-        </form>
-    </div>
-</div>
 
 <script>
     function bukaModalKonfirmasiHapus() {
@@ -330,15 +340,11 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
 
     function bukaPopupKtpDirect() {
         const modal = document.getElementById('modalLightboxKtp');
-        if (modal) {
-            modal.classList.add('active');
-        }
+        if (modal) modal.classList.add('active');
     }
     function tutupPopupKtp() {
         const modal = document.getElementById('modalLightboxKtp');
-        if (modal) {
-            modal.classList.remove('active');
-        }
+        if (modal) modal.classList.remove('active');
     }
 
     function hitungTanggalSelesaiDetail() {
@@ -368,16 +374,37 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        const wa = document.getElementById('detailWa');
-        const wali = document.getElementById('detailWali');
-        const pin = document.getElementById('detailPin');
+        const formDetail = document.getElementById('formDetailPenghuni');
+        const detailIsKetuaKos = document.getElementById('detailIsKetuaKos');
+        const namaKetuaLama = "<?= htmlspecialchars($ketuaAktif['nama'] ?? '') ?>";
+        const idKetuaLama = "<?= htmlspecialchars($ketuaAktif['id'] ?? '') ?>";
+        const idPenghuniSekarang = "<?= htmlspecialchars($kamar_terpilih['penghuni_id'] ?? '') ?>";
+
+        if (formDetail) {
+            formDetail.addEventListener('submit', function(e) {
+                if (detailIsKetuaKos && detailIsKetuaKos.value === '1') {
+                    if (namaKetuaLama !== '' && idKetuaLama !== idPenghuniSekarang) {
+                        const konfirmasi = confirm(
+                            `Ketua Kost saat ini adalah ${namaKetuaLama}.\n\nApakah Anda yakin ingin memindahkan jabatan Ketua Kost kepada penghuni ini?`
+                        );
+                        if (!konfirmasi) {
+                            e.preventDefault();
+                        }
+                    }
+                }
+            });
+        }
+
+        const waDetail = document.getElementById('detailWa');
+        const waliDetail = document.getElementById('detailWali');
+        const pinDetail = document.getElementById('detailPin');
 
         function filterHanyaAngka() {
             this.value = this.value.replace(/[^0-9]/g, '');
         }
 
-        if (wa) wa.addEventListener('input', filterHanyaAngka);
-        if (wali) wali.addEventListener('input', filterHanyaAngka);
-        if (pin) pin.addEventListener('input', filterHanyaAngka);
+        if (waDetail) waDetail.addEventListener('input', filterHanyaAngka);
+        if (waliDetail) waliDetail.addEventListener('input', filterHanyaAngka);
+        if (pinDetail) pinDetail.addEventListener('input', filterHanyaAngka);
     });
 </script>

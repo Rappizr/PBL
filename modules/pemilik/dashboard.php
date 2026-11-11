@@ -41,14 +41,14 @@ if (isset($pdo) && $pdo instanceof PDO) {
 
         $kamar_terisi_str = $terisiKamar . '/' . $totalKamar;
 
-        // B. HITUNG JUMLAH MENUNGGU VERIFIKASI (Pemilik: Semua transaksi pending)
+        // B. HITUNG JUMLAH MENUNGGU VERIFIKASI
         $menunggu_verif = (int) $pdo->query("
             SELECT COUNT(DISTINCT p.tagihan_id) 
             FROM pembayaran p
             WHERE LOWER(TRIM(p.status_verifikasi)) = 'pending'
         ")->fetchColumn();
 
-        // C. HITUNG TOTAL PEMASUKAN SEWA TAHUN INI (HANYA SEWA: t.kategori_iuran_id IS NULL)
+        // C. HITUNG TOTAL PEMASUKAN SEWA TAHUN INI
         $stmtPemasukan = $pdo->prepare("
             SELECT COALESCE(SUM(p.jumlah_bayar), 0) AS total 
             FROM pembayaran p
@@ -91,7 +91,7 @@ if (isset($pdo) && $pdo instanceof PDO) {
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-warehouse"></i></div>
                         <span class="menu-label">Manajemen<br>Kamar &amp; Penghuni</span>
                     </a>
-                    <a href="/?page=arus_kas" class="menu-item-box">
+                    <a href="/?page=analisis_kas" class="menu-item-box">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-chart-simple"></i></div>
                         <span class="menu-label">Analisis Kas</span>
                     </a>
@@ -135,10 +135,10 @@ if (isset($pdo) && $pdo instanceof PDO) {
                     <span class="stat-box-lbl">Menunggu Verifikasi</span>
                     <span class="stat-box-val val-danger"><?= htmlspecialchars($menunggu_verif); ?></span>
                 </a>
-                <div class="desktop-pemilik-stat-card stat-card-wide">
+                <a href="/?page=analisis_kas" class="desktop-pemilik-stat-card stat-card-wide">
                     <span class="stat-box-lbl">Pemasukan Tahun Ini</span>
                     <span class="stat-box-val val-money"><?= htmlspecialchars($pemasukan_tahun_ini); ?></span>
-                </div>
+                </a>
             </div>
 
             <h3 class="desktop-menu-list-title">Menu utama</h3>
@@ -153,37 +153,7 @@ if (isset($pdo) && $pdo instanceof PDO) {
                     </div>
                 </a>
 
-                <a href="/?page=kelola_iuran" class="pemilik-menu-row-card">
-                    <div class="pemilik-menu-icon-box">
-                        <i class="fa-solid fa-chart-pie"></i>
-                    </div>
-                    <div class="pemilik-menu-text">
-                        <h4>Monitoring &amp; Tagihan iuran</h4>
-                        <p>Pemasukan, Tunggakan, Kas</p>
-                    </div>
-                </a>
-
-                <a href="/?page=verifikasi_bayar" class="pemilik-menu-row-card">
-                    <div class="pemilik-menu-icon-box">
-                        <i class="fa-solid fa-list-check"></i>
-                    </div>
-                    <div class="pemilik-menu-text">
-                        <h4>Verifikasi pembayaran</h4>
-                        <p><?= htmlspecialchars($menunggu_verif); ?> bukti transfer menunggu diverifikasi</p>
-                    </div>
-                </a>
-
-                <a href="/?page=chat_penghuni" class="pemilik-menu-row-card">
-                    <div class="pemilik-menu-icon-box">
-                        <i class="fa-solid fa-comments"></i>
-                    </div>
-                    <div class="pemilik-menu-text">
-                        <h4>Chat penghuni</h4>
-                        <p>Hubungi penghuni langsung melalui Whatsapp</p>
-                    </div>
-                </a>
-
-                <a href="/?page=arus_kas" class="pemilik-menu-row-card">
+                <a href="/?page=analisis_kas" class="pemilik-menu-row-card">
                     <div class="pemilik-menu-icon-box">
                         <i class="fa-solid fa-wallet"></i>
                     </div>
@@ -202,6 +172,38 @@ if (isset($pdo) && $pdo instanceof PDO) {
                         <p>Mengatur Peraturan Kos</p>
                     </div>
                 </a>
+
+                <a href="/?page=chat_penghuni" class="pemilik-menu-row-card">
+                    <div class="pemilik-menu-icon-box">
+                        <i class="fa-solid fa-comments"></i>
+                    </div>
+                    <div class="pemilik-menu-text">
+                        <h4>Chat penghuni</h4>
+                        <p>Hubungi penghuni langsung melalui Whatsapp</p>
+                    </div>
+                </a>
+
+                <a href="/?page=kelola_iuran" class="pemilik-menu-row-card">
+                    <div class="pemilik-menu-icon-box">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <div class="pemilik-menu-text">
+                        <h4>Kelola Iuran</h4>
+                        <p>Pemasukan, Tunggakan, Kas</p>
+                    </div>
+                </a>
+
+                <a href="/?page=verifikasi_bayar" class="pemilik-menu-row-card">
+                    <div class="pemilik-menu-icon-box">
+                        <i class="fa-solid fa-list-check"></i>
+                    </div>
+                    <div class="pemilik-menu-text">
+                        <h4>Verifikasi Bayar</h4>
+                        <p><?= htmlspecialchars($menunggu_verif); ?> bukti transfer menunggu diverifikasi</p>
+                    </div>
+                </a>
+
+
             </div>
         </main>
     </div>
