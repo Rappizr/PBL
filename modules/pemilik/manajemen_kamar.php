@@ -151,7 +151,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                                 <span class="badge-status badge-belum">Belum</span>
                             <?php endif; ?>
 
-                            <div class="kamar-nomor"><?= htmlspecialchars($kamar['no_kamar']) ?></div>
+                            <div class="kamar-nomor"><?= htmlspecialchars(sprintf('%02d', intval($kamar['no_kamar']))) ?></div>
                             <div class="kamar-nama"><?= htmlspecialchars($nama_penghuni) ?></div>
                         </a>
                     <?php endforeach; ?>
@@ -210,7 +210,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                                     <span class="badge-kamar-status badge-kamar-belum">Belum</span>
                                 <?php endif; ?>
 
-                                <div class="kamar-card-number"><?= htmlspecialchars($kamar['no_kamar']) ?></div>
+                                <div class="kamar-card-number"><?= htmlspecialchars(sprintf('%02d', intval($kamar['no_kamar']))) ?></div>
                                 <div class="kamar-card-resident"><?= htmlspecialchars($nama_penghuni) ?></div>
                             </a>
                         <?php endforeach; ?>
