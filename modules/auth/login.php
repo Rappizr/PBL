@@ -61,16 +61,22 @@ if (isset($_SESSION['login_error'])) {
             <?php if ($role === 'penghuni'): ?>
                 <div class="input-wrapper">
                     <i class="fa-solid fa-house input-icon"></i>
-                    <input type="text" inputmode="numeric" pattern="[0-9]+" name="number"
-                        class="input-field" placeholder="Nomor Kamar" required autocomplete="off">
+                    <input type="text" inputmode="numeric" pattern="[0-9]+" name="number" id="inputNumber"
+                        class="input-field" placeholder="Nomor Kamar"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                        required autocomplete="off">
                 </div>
             <?php endif; ?>
 
-            <div class="input-wrapper">
+            <div class="input-wrapper reset-pin-container">
                 <i class="fa-solid fa-key input-icon"></i>
                 <input type="password" pattern="[0-9]{6}" inputmode="numeric"
-                    minlength="6" maxlength="6" autocomplete="off" required
-                    name="pin" class="input-field" placeholder="PIN (6 Digit)">
+                    minlength="6" maxlength="6" autocomplete="off" data-lpignore="true" required
+                    name="pin" id="inputPinLogin" class="input-field reset-pin-field" placeholder="PIN (6 Digit)"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)">
+                <button type="button" class="reset-eye-button" onclick="togglePinLogin(event)" title="Lihat PIN">
+                    <i id="iconMataLogin" class="fa-solid fa-eye-slash"></i>
+                </button>
             </div>
             
             <a href="/?page=reset" class="link-lupa">Lupa kata sandi?</a>
@@ -87,6 +93,45 @@ if (isset($_SESSION['login_error'])) {
     <?php require_once __DIR__ . '/../components/footer.php'; ?>
 
     <script>
+        function togglePinLogin(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const input = document.getElementById('inputPinLogin');
+            const icon = document.getElementById('iconMataLogin');
+            if (!input || !icon) return;
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye-slash';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const pinInput = document.getElementById('inputPinLogin');
+            const numInput = document.getElementById('inputNumber');
+
+            if (pinInput) {
+                pinInput.addEventListener('paste', function () {
+                    setTimeout(() => {
+                        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+                    }, 10);
+                });
+            }
+
+            if (numInput) {
+                numInput.addEventListener('paste', function () {
+                    setTimeout(() => {
+                        this.value = this.value.replace(/[^0-9]/g, '');
+                    }, 10);
+                });
+            }
+        });
+
         document.getElementById('loginForm').addEventListener('submit', function() {
             const btn = document.getElementById('submitBtn');
             btn.querySelector('.btn-text').textContent = 'Memproses...';

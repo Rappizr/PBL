@@ -136,6 +136,10 @@ switch ($page) {
     case 'chat_penghuni':
         require_once __DIR__ . '/../modules/shared/chat_penghuni.php';
         break;
+    
+    case 'cetak_invoice':
+    require_once __DIR__ . '/../modules/penghuni/cetak_invoice.php';
+    break;
         
     case 'iuran':                     
     case 'kelola_iuran':

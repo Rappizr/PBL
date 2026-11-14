@@ -228,9 +228,9 @@ if (isset($_GET['invoice_id'])) {
                                     <h4 class="item-tagihan-name"><?= htmlspecialchars($r['judul']); ?></h4>
                                     <div class="riwayat-status-actions">
                                         <span class="badge-status-lunas">Lunas</span>
-                                        <a href="/?page=tagihan_riwayat&invoice_id=<?= $r['id']; ?>" class="btn-invoice-pill">
-                                            <i class="fa-solid fa-file-invoice"></i> Invoice
-                                        </a>
+<a href="/?page=tagihan_riwayat&invoice_id=<?= $r['id']; ?>" class="btn-invoice-pill">
+    <i class="fa-solid fa-file-invoice"></i> Invoice
+</a>
                                     </div>
                                 </div>
                                 <div class="item-tagihan-body">
@@ -345,9 +345,9 @@ if (isset($_GET['invoice_id'])) {
                             <div class="desktop-riwayat-right">
                                 <div class="riwayat-status-actions">
                                     <span class="badge-lunas-pill">Lunas</span>
-                                    <a href="/?page=tagihan_riwayat&invoice_id=<?= $r['id']; ?>" class="btn-invoice-pill">
-                                        <i class="fa-solid fa-file-invoice"></i> Invoice
-                                    </a>
+<a href="/?page=tagihan_riwayat&invoice_id=<?= $r['id']; ?>" class="btn-invoice-pill">
+    <i class="fa-solid fa-file-invoice"></i> Invoice
+</a>
                                 </div>
                                 <span class="desktop-riwayat-nominal">Rp <?= number_format($r['nominal'], 0, ',', '.'); ?></span>
                             </div>
@@ -367,11 +367,12 @@ if (isset($_GET['invoice_id'])) {
                         <h1 class="invoice-brand-title">SITEMAN - KOS</h1>
                         <p class="invoice-brand-sub">Sistem Manajemen Operasional Kos</p>
                     </div>
-                    <div class="invoice-tag-box">
-                        <h2 class="invoice-main-title">INVOICE SEWA</h2>
-                        <p class="invoice-number"><?= htmlspecialchars($invoice_dipilih['nomor_invoice']); ?></p>
-                        <span class="badge-invoice-status badge-status-paid"><i class="fa-solid fa-circle-check"></i> Lunas</span>
-                    </div>
+<div class="invoice-tag-box">
+    <?php $is_sewa = (stripos($invoice_dipilih['judul'], 'sewa') !== false); ?>
+    <h2 class="invoice-main-title"><?= $is_sewa ? 'INVOICE SEWA' : 'INVOICE IURAN'; ?></h2>
+    <p class="invoice-number"><?= htmlspecialchars($invoice_dipilih['nomor_invoice']); ?></p>
+    <span class="badge-invoice-status badge-status-paid"><i class="fa-solid fa-circle-check"></i> Lunas</span>
+</div>
                 </header>
 
                 <section class="invoice-meta-grid">
