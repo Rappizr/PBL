@@ -198,7 +198,7 @@ $query_tanggal = !empty($date_range) ? '&date_range=' . urlencode($date_range) :
                                     class="fa-solid fa-chevron-left"></i></button>
                             <?php endif; ?>
 
-                            <span class="verif-page-badge">Hal <?= $page_mobile; ?> /
+                            <span class="verif-page-badge"> <?= $page_mobile; ?> /
                                 <?= $total_hal_mob; ?></span>
 
                             <?php if ($page_mobile < $total_hal_mob): ?>
