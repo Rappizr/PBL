@@ -6164,6 +6164,114 @@ body.laporan-print-body {
 }
 
 /* ==========================================================================
+   34. VERIFIKASI COMPACT DESKTOP & PAGINATION (MOBILE + DESKTOP)
+   ========================================================================== */
+/* ==========================================================================
+   34. VERIFIKASI PAGINATION (MOBILE + DESKTOP)
+   ========================================================================== */
+.verif-pagination-wrapper {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-top: 22px !important;
+  margin-bottom: 16px !important;
+  width: 100% !important;
+}
+
+.verif-pagination-desktop {
+  max-width: 650px !important;
+}
+
+.verif-page-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.verif-page-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Tombol Panah Prev/Next */
+.verif-page-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  color: #1a4d55;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  box-shadow: 2px 3px 0px #c8924b;
+  cursor: pointer;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+}
+
+.verif-page-btn:hover:not(:disabled) {
+  transform: translate(-1px, -2px);
+  box-shadow: 3px 5px 0px #c8924b;
+  background-color: #4ca5b0;
+  color: #ffffff;
+}
+
+.verif-page-btn:active:not(:disabled) {
+  transform: translate(1px, 2px);
+  box-shadow: 1px 1px 0px #c8924b;
+}
+
+.verif-page-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Tombol Angka Halaman (Desktop) */
+.verif-page-num {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  color: #1a4d55;
+  font-size: 12.5px;
+  font-weight: 800;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 3px 0px #c8924b;
+  transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+}
+
+.verif-page-num:hover:not(.active) {
+  transform: translate(-1px, -2px);
+  box-shadow: 3px 5px 0px #c8924b;
+  background-color: #e8f6f8;
+}
+
+.verif-page-num.active {
+  background-color: #4ca5b0;
+  color: #ffffff;
+  cursor: default;
+}
+
+/* Pill Info Halaman (Mobile) */
+.verif-page-badge {
+  background-color: #4ca5b0;
+  color: #ffffff;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 800;
+  box-shadow: 2px 3px 0px #c8924b;
+}
+
+/* ==========================================================================
    RESET PIN / PASSWORD PAGE STYLING
    ========================================================================== */
 .reset-alert-gap {

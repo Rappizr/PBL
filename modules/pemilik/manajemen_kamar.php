@@ -77,6 +77,21 @@ $stmtKamarMobile->bindValue(':offset', $offset_mobile, PDO::PARAM_INT);
 $stmtKamarMobile->execute();
 $daftar_kamar_mobile = $stmtKamarMobile->fetchAll(PDO::FETCH_ASSOC);
 
+// --- C. Semua Kamar Kosong ---
+$stmtKamarKosong = $pdo->query("
+    SELECT 
+        k.id AS kamar_id,
+        k.no_kamar,
+        k.status_kamar,
+        COALESCE(p.nama, '') AS nama_penghuni
+    FROM kamar k
+    LEFT JOIN penghuni_kamar pk ON k.id = pk.kamar_id
+    LEFT JOIN penghuni p ON pk.penghuni_id = p.id
+    WHERE k.status_kamar = 'kosong' OR p.id IS NULL
+    ORDER BY k.no_kamar::INTEGER ASC
+");
+$daftar_kamar_kosong = $stmtKamarKosong->fetchAll(PDO::FETCH_ASSOC);
+
 // 4. Data Kamar Terpilih untuk Modal Detail
 $nomor_pilih = $_GET['nomor'] ?? '';
 $kamar_terpilih = null;
