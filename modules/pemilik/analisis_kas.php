@@ -38,13 +38,13 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                     <span class="kas-total-value">Rp. <?= number_format($total_pemasukan, 0, ',', '.'); ?></span>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                    <button type="button" onclick="bukaModalCetakKas()" class="btn-cetak-pdf" style="flex: 1;">
+                <div class="kas-cetak-mobile-row">
+                    <button type="button" onclick="bukaModalCetakKas()" class="btn-cetak-pdf kas-btn-cetak-full">
                         <i class="fa-solid fa-file-pdf"></i> Cetak PDF
                     </button>
                 </div>
 
-                <form method="GET" action="" id="formFilterMobile" class="filter-range-form" style="margin-top: 6px;">
+                <form method="GET" action="" id="formFilterMobile" class="filter-range-form kas-filter-form-mobile">
                     <input type="hidden" name="page" value="analisis_kas">
                     <div class="flatpickr-box-wrapper">
                         <i class="fa-regular fa-calendar date-icon"></i>
@@ -73,11 +73,12 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                             </div>
                             <div class="kas-transaksi-info">
                                 <span class="kas-item-title"><?= htmlspecialchars($tx['judul']); ?></span>
-                                <span class="kas-item-date"><?= htmlspecialchars($tx['tanggal']); ?></span>
+                                <span
+                                    class="kas-item-date"><?= date('Y-m-d H:i:s', strtotime($tx['tanggal'])); ?></span>
                             </div>
                         </div>
                         <span class="desktop-mutasi-badge-green">
-                            Rp. <?= htmlspecialchars($tx['nominal']); ?>
+                            Rp. <?= number_format((float)$tx['nominal'], 0, ',', '.'); ?>
                         </span>
                     </div>
                     <?php endforeach; ?>
@@ -101,11 +102,9 @@ require_once __DIR__ . '/handler/kas_handlers.php';
 
                 <div class="kas-penghuni-list">
                     <?php if (empty($daftar_penghuni)): ?>
-                    <div class="empty-state-card"
-                        style="background: #ffffff; padding: 24px; border-radius: 16px; text-align: center; color: #4a5568; margin-top: 12px; box-shadow: 2px 3px 0px #c8924b;">
-                        <i class="fa-regular fa-folder-open"
-                            style="font-size: 28px; margin-bottom: 8px; color: #4ca5b0;"></i>
-                        <p style="margin: 0; font-size: 13.5px; font-weight: 700;">
+                    <div class="kas-empty-penghuni-mobile">
+                        <i class="fa-regular fa-folder-open"></i>
+                        <p>
                             <?php 
                                 if ($filter_status === 'verifikasi') {
                                     echo 'Tidak ada pembayaran yang menunggu verifikasi';
@@ -125,7 +124,8 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                                 <h4 class="kas-penghuni-name"><?= htmlspecialchars($p['nama']); ?></h4>
                                 <span class="badge-kamar-putih"><?= htmlspecialchars($p['kamar']); ?></span>
                             </div>
-                            <span class="kas-penghuni-nominal">Rp. <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
+                            <span class="kas-penghuni-nominal">Rp.
+                                <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
                         </div>
                         <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>?text=Halo%20<?= urlencode($p['nama']); ?>%2C%20ini%20mengenai%20tagihan%20sewa%20kamar."
                             target="_blank" class="btn-chat-wa">
@@ -149,22 +149,23 @@ require_once __DIR__ . '/handler/kas_handlers.php';
             <h2 class="desktop-header-title">Analisis Kas</h2>
             <p class="desktop-header-subtitle">Laporan arus kas dan status pembayaran penghuni</p>
 
-            <div class="desktop-kelola-stats" style="grid-template-columns: minmax(280px, 340px);">
+            <div class="desktop-kelola-stats kas-desktop-single-stat">
                 <div class="desktop-kelola-stat-card">
                     <span class="desktop-kelola-stat-label">Total Pemasukan</span>
-                    <span class="desktop-kelola-stat-val">Rp. <?= number_format($total_pemasukan, 0, ',', '.'); ?></span>
+                    <span class="desktop-kelola-stat-val">Rp.
+                        <?= number_format($total_pemasukan, 0, ',', '.'); ?></span>
                 </div>
             </div>
 
-            <div class="desktop-range-filter-wrapper" style="display: flex; align-items: center; justify-content: space-between; gap: 14px;">
-                <div style="display: flex; align-items: center; gap: 14px;">
-                    <h3 class="desktop-section-title" style="margin: 0;">Riwayat Arus Kas</h3>
+            <div class="desktop-range-filter-wrapper">
+                <div class="kas-desktop-section-left">
+                    <h3 class="desktop-section-title kas-title-no-margin">Riwayat Arus Kas</h3>
                     <button type="button" onclick="bukaModalCetakKas()" class="btn-cetak-pdf">
                         <i class="fa-solid fa-file-pdf"></i> Cetak PDF
                     </button>
                 </div>
 
-                <form method="GET" action="" id="formFilterDesktop" class="filter-range-form-desktop" style="margin: 0;">
+                <form method="GET" action="" id="formFilterDesktop" class="filter-range-form-desktop">
                     <input type="hidden" name="page" value="analisis_kas">
                     <div class="flatpickr-box-wrapper">
                         <i class="fa-regular fa-calendar date-icon"></i>
@@ -220,11 +221,9 @@ require_once __DIR__ . '/handler/kas_handlers.php';
 
             <div class="desktop-penghuni-list">
                 <?php if (empty($daftar_penghuni)): ?>
-                <div class="empty-state-card"
-                    style="background: #ffffff; padding: 32px; border-radius: 20px; text-align: center; color: #4a5568; margin-top: 14px; box-shadow: 4px 6px 0px #c8924b; max-width: 820px;">
-                    <i class="fa-regular fa-folder-open"
-                        style="font-size: 32px; margin-bottom: 10px; color: #4ca5b0;"></i>
-                    <p style="margin: 0; font-size: 14px; font-weight: 700;">
+                <div class="kas-empty-penghuni-desktop">
+                    <i class="fa-regular fa-folder-open"></i>
+                    <p>
                         <?php 
                             if ($filter_status === 'verifikasi') {
                                 echo 'Tidak ada pembayaran yang menunggu verifikasi';
@@ -244,7 +243,8 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                             <h4><?= htmlspecialchars($p['nama']); ?></h4>
                             <span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                         </div>
-                        <span class="desktop-penghuni-nominal">Rp. <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
+                        <span class="desktop-penghuni-nominal">Rp.
+                            <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
                     </div>
                     <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>?text=Halo%20<?= urlencode($p['nama']); ?>%2C%20ini%20mengenai%20tagihan%20sewa%20kamar."
                         target="_blank" class="btn-chat-wa">
@@ -259,25 +259,26 @@ require_once __DIR__ . '/handler/kas_handlers.php';
 
     <!-- MODAL PILIH PERIODE CETAK KAS (PEMILIK) -->
     <div id="modalFilterCetakKas" class="modal-overlay" onclick="tutupModalCetakKas()">
-        <div class="modal-card" onclick="event.stopPropagation()" style="max-width: 440px;">
-            <h3 class="modal-title"><i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> Cetak Laporan Arus Kas</h3>
-            <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 16px 0;">Pilih cakupan waktu laporan arus kas sewa yang ingin dicetak.</p>
+        <div class="modal-card modal-cetak-kas-card" onclick="event.stopPropagation()">
+            <h3 class="modal-title"><i class="fa-solid fa-file-pdf icon-pdf-red"></i> Cetak Laporan Arus Kas</h3>
+            <p class="modal-cetak-kas-sub">Pilih cakupan waktu laporan arus kas sewa yang ingin dicetak.</p>
 
             <form action="/" method="GET" target="_blank" onsubmit="tutupModalCetakKas()">
                 <input type="hidden" name="page" value="cetak_kas">
 
                 <div class="modal-field">
                     <label class="modal-label">Cakupan Periode</label>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
-                        <label class="alasan-option-label" style="padding: 8px; font-size: 11.5px; justify-content: center;">
-                            <input type="radio" name="periode" value="bulanan" checked onchange="toggleFormCetakKas('bulanan')">
+                    <div class="periode-radio-grid">
+                        <label class="alasan-option-label periode-radio-option">
+                            <input type="radio" name="periode" value="bulanan" checked
+                                onchange="toggleFormCetakKas('bulanan')">
                             <span>Bulanan</span>
                         </label>
-                        <label class="alasan-option-label" style="padding: 8px; font-size: 11.5px; justify-content: center;">
+                        <label class="alasan-option-label periode-radio-option">
                             <input type="radio" name="periode" value="tahunan" onchange="toggleFormCetakKas('tahunan')">
                             <span>Tahunan</span>
                         </label>
-                        <label class="alasan-option-label" style="padding: 8px; font-size: 11.5px; justify-content: center;">
+                        <label class="alasan-option-label periode-radio-option">
                             <input type="radio" name="periode" value="semua" onchange="toggleFormCetakKas('semua')">
                             <span>Semua</span>
                         </label>
@@ -295,7 +296,8 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                         ];
                         $current_m = (int)date('n');
                         foreach ($bulan_list as $num => $nm): ?>
-                            <option value="<?= $num; ?>" <?= ($num === $current_m) ? 'selected' : ''; ?>><?= $nm; ?></option>
+                        <option value="<?= $num; ?>" <?= ($num === $current_m) ? 'selected' : ''; ?>><?= $nm; ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -306,14 +308,14 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                         <?php
                         $tahun_skrg = (int)date('Y');
                         for ($y = $tahun_skrg; $y >= $tahun_skrg - 5; $y--): ?>
-                            <option value="<?= $y; ?>" <?= ($y === $tahun_skrg) ? 'selected' : ''; ?>><?= $y; ?></option>
+                        <option value="<?= $y; ?>" <?= ($y === $tahun_skrg) ? 'selected' : ''; ?>><?= $y; ?></option>
                         <?php endfor; ?>
                     </select>
                 </div>
 
-                <div class="modal-actions" style="margin-top: 20px;">
+                <div class="modal-actions modal-cetak-actions">
                     <button type="button" class="btn-modal-cancel" onclick="tutupModalCetakKas()">Batal</button>
-                    <button type="submit" class="btn-modal-submit" style="background-color: #0f766e;">Buka & Cetak PDF</button>
+                    <button type="submit" class="btn-modal-submit btn-cetak-submit-teal">Buka & Cetak PDF</button>
                 </div>
             </form>
         </div>

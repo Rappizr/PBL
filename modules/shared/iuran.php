@@ -1,7 +1,5 @@
 <?php
-/**
- * VIEW KELOLA / MONITORING IURAN
- */
+
 require_once __DIR__ . '/handler/iuran_handler.php';
 ?>
 <!DOCTYPE html>
@@ -43,16 +41,20 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                         <span class="kelola-stat-value"><?= $sudah_bayar . '/' . $total_penghuni; ?></span>
                     </div>
                     <div class="kelola-stat-card">
-                        <span class="kelola-stat-label"><?= htmlspecialchars($nama_iuran_saat_ini ?? 'Iuran Aktif'); ?></span>
-                        <span class="kelola-stat-value">Rp. <?= number_format((float)$nominal_iuran_saat_ini, 0, ',', '.'); ?></span>
+                        <span
+                            class="kelola-stat-label"><?= htmlspecialchars($nama_iuran_saat_ini ?? 'Iuran Aktif'); ?></span>
+                        <span class="kelola-stat-value">Rp.
+                            <?= number_format((float)$nominal_iuran_saat_ini, 0, ',', '.'); ?></span>
                         <small class="kelola-stat-periode">
-                            Periode: <?= date('d/m/Y', strtotime($tgl_mulai_iuran)); ?> s/d <?= date('d/m/Y', strtotime($tgl_selesai_iuran)); ?>
+                            Periode: <?= date('d/m/Y', strtotime($tgl_mulai_iuran)); ?> s/d
+                            <?= date('d/m/Y', strtotime($tgl_selesai_iuran)); ?>
                         </small>
                     </div>
                 </div>
 
-                <div class="kelola-action-row" style="flex-wrap: wrap; gap: 8px;">
-                    <a href="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran" class="btn-kelola-action">
+                <div class="kelola-action-row iuran-action-row-mobile">
+                    <a href="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran"
+                        class="btn-kelola-action">
                         <span class="icon-kelola-white"><i class="fa-solid fa-plus"></i></span>
                         Tambah Pengeluaran
                     </a>
@@ -63,34 +65,36 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                         <span class="icon-kelola-white"><i class="fa-solid fa-wallet"></i></span>
                         Rp. <?= number_format((float)$saldo_kas_iuran, 0, ',', '.'); ?>
                     </div>
-                    <button type="button" onclick="bukaModalCetakIuran()" class="btn-cetak-pdf" style="width: 100%;">
+                    <button type="button" onclick="bukaModalCetakIuran()" class="btn-cetak-pdf iuran-btn-full">
                         <i class="fa-solid fa-file-pdf"></i> Cetak PDF Laporan Iuran
                     </button>
                 </div>
                 <?php else: ?>
-                <div class="kas-total-card" style="margin-bottom: 4px;">
+                <div class="kas-total-card iuran-saldo-card-mobile">
                     <span class="kas-total-label">Saldo Bersih</span>
                     <span class="kas-total-value">Rp. <?= number_format((float)$saldo_kas_iuran, 0, ',', '.'); ?></span>
                 </div>
-                <div style="margin: 6px 0 2px 0;">
-                    <button type="button" onclick="bukaModalCetakIuran()" class="btn-cetak-pdf" style="width: 100%;">
+                <div class="iuran-cetak-wrap-mobile">
+                    <button type="button" onclick="bukaModalCetakIuran()" class="btn-cetak-pdf iuran-btn-full">
                         <i class="fa-solid fa-file-pdf"></i> Cetak PDF Rekap Iuran
                     </button>
                 </div>
-                <h3 class="section-title-white" style="font-size: 15px; margin: 10px 0 4px 2px;">Riwayat Transaksi Iuran</h3>
+                <h3 class="section-title-white iuran-subtitle-mobile">Riwayat Transaksi Iuran</h3>
                 <?php endif; ?>
 
                 <!-- Filter tanggal Mobile -->
-                <form method="GET" action="" class="filter-range-form" style="margin-top: 10px;">
+                <form method="GET" action="" class="filter-range-form iuran-filter-form-mobile">
                     <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
                     <?php if ($filter_status !== 'semua'): ?>
                     <input type="hidden" name="filter" value="<?= htmlspecialchars($filter_status); ?>">
                     <?php endif; ?>
                     <div class="flatpickr-box-wrapper">
                         <i class="fa-regular fa-calendar date-icon"></i>
-                        <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>" placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                        <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
+                            placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
                         <?php if ($is_filtered): ?>
-                        <a href="<?= urlIuran($current_page, ['filter' => $filter_status]); ?>" class="btn-reset-range" title="Reset">
+                        <a href="<?= urlIuran($current_page, ['filter' => $filter_status]); ?>" class="btn-reset-range"
+                            title="Reset">
                             <i class="fa-solid fa-rotate-left"></i>
                         </a>
                         <?php endif; ?>
@@ -125,7 +129,8 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                 <?php if ($can_manage): ?>
                 <div class="kelola-filter-row">
                     <?php foreach ($filter_tabs as $key => $tab): ?>
-                    <a href="<?= urlIuran($current_page, ['filter' => $key, 'date_range' => $date_range]); ?>" class="filter-pill <?= $filter_status === $key ? 'active' : 'inactive'; ?>">
+                    <a href="<?= urlIuran($current_page, ['filter' => $key, 'date_range' => $date_range]); ?>"
+                        class="filter-pill <?= $filter_status === $key ? 'active' : 'inactive'; ?>">
                         <?= htmlspecialchars($tab['label']); ?> (<?= (int)$tab['jumlah']; ?>)
                     </a>
                     <?php endforeach; ?>
@@ -133,9 +138,9 @@ require_once __DIR__ . '/handler/iuran_handler.php';
 
                 <div class="kelola-penghuni-list">
                     <?php if (empty($daftar_penghuni)): ?>
-                    <div class="empty-state-card" style="margin-top: 10px; background: #fff; padding: 20px; border-radius: 12px; text-align: center;">
-                        <i class="fa-solid fa-user-slash" style="font-size: 24px; color: #a0aec0; margin-bottom: 8px;"></i>
-                        <p style="margin: 0; font-size: 13.5px; font-weight: 600; color: #4a5568;">Tidak ada data penghuni</p>
+                    <div class="iuran-empty-penghuni-mobile">
+                        <i class="fa-solid fa-user-slash"></i>
+                        <p>Tidak ada data penghuni</p>
                     </div>
                     <?php else: ?>
                     <?php foreach ($daftar_penghuni as $p): ?>
@@ -145,15 +150,18 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                                 <h4 class="kelola-penghuni-name"><?= htmlspecialchars($p['nama']); ?></h4>
                                 <span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                             </div>
-                            <span class="kelola-penghuni-nominal">Rp. <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
+                            <span class="kelola-penghuni-nominal">Rp.
+                                <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="iuran-penghuni-actions">
                             <?php if (($p['status_verifikasi'] ?? '') === 'pending'): ?>
-                                <a href="/?page=verifikasi_bayar" class="iuran-btn-verif-pill" title="Konfirmasi Bukti Transfer">
-                                    <i class="fa-solid fa-clock-rotate-left"></i> Verifikasi
-                                </a>
+                            <a href="/?page=verifikasi_bayar" class="iuran-btn-verif-pill"
+                                title="Konfirmasi Bukti Transfer">
+                                <i class="fa-solid fa-clock-rotate-left"></i> Verifikasi
+                            </a>
                             <?php endif; ?>
-                            <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>?text=Halo%20<?= urlencode($p['nama']); ?>" target="_blank" class="btn-chat-wa">
+                            <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>?text=Halo%20<?= urlencode($p['nama']); ?>"
+                                target="_blank" class="btn-chat-wa">
                                 <i class="fa-brands fa-whatsapp"></i> Chat
                             </a>
                         </div>
@@ -186,23 +194,28 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                     <span class="desktop-kelola-stat-val"><?= $sudah_bayar . '/' . $total_penghuni; ?></span>
                 </div>
                 <div class="desktop-kelola-stat-card">
-                    <span class="desktop-kelola-stat-label"><?= htmlspecialchars($nama_iuran_saat_ini ?? 'Iuran Aktif'); ?></span>
-                    <span class="desktop-kelola-stat-val" style="color: #ffffff;">Rp. <?= number_format((float)$nominal_iuran_saat_ini, 0, ',', '.'); ?></span>
+                    <span
+                        class="desktop-kelola-stat-label"><?= htmlspecialchars($nama_iuran_saat_ini ?? 'Iuran Aktif'); ?></span>
+                    <span class="desktop-kelola-stat-val iuran-stat-val-white">Rp.
+                        <?= number_format((float)$nominal_iuran_saat_ini, 0, ',', '.'); ?></span>
                     <span class="desktop-kelola-stat-periode">
-                        Periode: <?= date('d/m/Y', strtotime($tgl_mulai_iuran)); ?> s/d <?= date('d/m/Y', strtotime($tgl_selesai_iuran)); ?>
+                        Periode: <?= date('d/m/Y', strtotime($tgl_mulai_iuran)); ?> s/d
+                        <?= date('d/m/Y', strtotime($tgl_selesai_iuran)); ?>
                     </span>
                 </div>
             </div>
 
             <!-- Baris Aksi Desktop Pengurus (Pemilik / PJ) -->
-            <div style="display: flex; align-items: center; gap: 10px; width: 100%; max-width: 824px; margin-bottom: 20px; flex-wrap: wrap;">
-                <a href="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran" class="iuran-btn-pill-action" style="white-space: nowrap;">
+            <div class="iuran-desktop-action-bar">
+                <a href="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran"
+                    class="iuran-btn-pill-action iuran-nowrap">
                     <i class="fa-solid fa-plus"></i> Tambah Pengeluaran
                 </a>
-                <a href="/?page=<?= urlencode($current_page); ?>&modal=set_nominal_iuran" class="btn-set-iuran" style="white-space: nowrap;">
+                <a href="/?page=<?= urlencode($current_page); ?>&modal=set_nominal_iuran"
+                    class="btn-set-iuran iuran-nowrap">
                     <i class="fa-solid fa-gear"></i> Set Nominal Iuran
                 </a>
-                <div class="iuran-box-pill-saldo" style="white-space: nowrap;">
+                <div class="iuran-box-pill-saldo iuran-nowrap">
                     <i class="fa-solid fa-wallet"></i> Rp. <?= number_format((float)$saldo_kas_iuran, 0, ',', '.'); ?>
                 </div>
 
@@ -211,16 +224,18 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                     <i class="fa-solid fa-file-pdf"></i> Cetak PDF
                 </button>
 
-                <form method="GET" action="" class="filter-range-form-desktop" style="margin: 0 0 0 auto; max-width: 240px; width: 100%;">
+                <form method="GET" action="" class="filter-range-form-desktop iuran-desktop-filter-form">
                     <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
                     <?php if ($filter_status !== 'semua'): ?>
                     <input type="hidden" name="filter" value="<?= htmlspecialchars($filter_status); ?>">
                     <?php endif; ?>
-                    <div class="flatpickr-box-wrapper" style="margin: 0; width: 100%;">
+                    <div class="flatpickr-box-wrapper iuran-flatpickr-full">
                         <i class="fa-regular fa-calendar date-icon"></i>
-                        <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>" placeholder="Rentang Tanggal..." class="flatpickr-range-input" readonly style="width: 100%;">
+                        <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
+                            placeholder="Rentang Tanggal..." class="flatpickr-range-input iuran-input-full" readonly>
                         <?php if ($is_filtered): ?>
-                        <a href="<?= urlIuran($current_page, ['filter' => $filter_status]); ?>" class="btn-reset-range" title="Reset Filter">
+                        <a href="<?= urlIuran($current_page, ['filter' => $filter_status]); ?>" class="btn-reset-range"
+                            title="Reset Filter">
                             <i class="fa-solid fa-rotate-left"></i>
                         </a>
                         <?php endif; ?>
@@ -244,7 +259,8 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                             <span><?= htmlspecialchars($tx['tanggal']); ?></span>
                         </div>
                     </div>
-                    <span class="<?= $tx['tipe'] === 'keluar' ? 'desktop-mutasi-badge-red' : 'desktop-mutasi-badge-green'; ?>">
+                    <span
+                        class="<?= $tx['tipe'] === 'keluar' ? 'desktop-mutasi-badge-red' : 'desktop-mutasi-badge-green'; ?>">
                         <?= htmlspecialchars($tx['nominal']); ?>
                     </span>
                 </div>
@@ -255,7 +271,8 @@ require_once __DIR__ . '/handler/iuran_handler.php';
             <!-- Tab Filter Penghuni Desktop -->
             <div class="iuran-desktop-filters">
                 <?php foreach ($filter_tabs as $key => $tab): ?>
-                <a href="<?= urlIuran($current_page, ['filter' => $key, 'date_range' => $date_range]); ?>" class="iuran-filter-pill <?= $filter_status === $key ? 'active' : 'inactive'; ?>">
+                <a href="<?= urlIuran($current_page, ['filter' => $key, 'date_range' => $date_range]); ?>"
+                    class="iuran-filter-pill <?= $filter_status === $key ? 'active' : 'inactive'; ?>">
                     <?= htmlspecialchars($tab['label']); ?> (<?= (int)$tab['jumlah']; ?>)
                 </a>
                 <?php endforeach; ?>
@@ -263,9 +280,9 @@ require_once __DIR__ . '/handler/iuran_handler.php';
 
             <div class="desktop-penghuni-list">
                 <?php if (empty($daftar_penghuni)): ?>
-                <div class="empty-state-card" style="margin-top: 10px; background: #fff; padding: 24px; border-radius: 12px; text-align: center; max-width: 824px;">
-                    <i class="fa-solid fa-user-slash" style="font-size: 28px; color: #a0aec0; margin-bottom: 8px;"></i>
-                    <p style="margin: 0; font-size: 14px; font-weight: 600; color: #4a5568;">Tidak ada data penghuni</p>
+                <div class="iuran-empty-penghuni-desktop">
+                    <i class="fa-solid fa-user-slash"></i>
+                    <p>Tidak ada data penghuni</p>
                 </div>
                 <?php else: ?>
                 <?php foreach ($daftar_penghuni as $p): ?>
@@ -275,15 +292,18 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                             <h4><?= htmlspecialchars($p['nama']); ?></h4>
                             <span class="iuran-kamar-pill">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                         </div>
-                        <span class="desktop-penghuni-nominal">Rp. <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
+                        <span class="desktop-penghuni-nominal">Rp.
+                            <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
+                    <div class="iuran-penghuni-actions">
                         <?php if (($p['status_verifikasi'] ?? '') === 'pending'): ?>
-                            <a href="/?page=verifikasi_bayar" class="iuran-btn-verif-pill" title="Konfirmasi Bukti Transfer">
-                                <i class="fa-solid fa-clock-rotate-left"></i> Verifikasi
-                            </a>
+                        <a href="/?page=verifikasi_bayar" class="iuran-btn-verif-pill"
+                            title="Konfirmasi Bukti Transfer">
+                            <i class="fa-solid fa-clock-rotate-left"></i> Verifikasi
+                        </a>
                         <?php endif; ?>
-                        <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>?text=Halo%20<?= urlencode($p['nama']); ?>" target="_blank" class="iuran-btn-chat-pill">
+                        <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>?text=Halo%20<?= urlencode($p['nama']); ?>"
+                            target="_blank" class="iuran-btn-chat-pill">
                             <i class="fa-brands fa-whatsapp"></i> Chat
                         </a>
                     </div>
@@ -294,25 +314,27 @@ require_once __DIR__ . '/handler/iuran_handler.php';
 
             <?php else: ?>
             <!-- Tampilan Penghuni Biasa Desktop -->
-            <div class="desktop-kelola-stat-card" style="max-width: 280px; margin-bottom: 24px;">
+            <div class="desktop-kelola-stat-card iuran-saldo-stat-desktop">
                 <span class="desktop-kelola-stat-label">Saldo Bersih</span>
-                <span class="desktop-kelola-stat-val">Rp. <?= number_format((float)$saldo_kas_iuran, 0, ',', '.'); ?></span>
+                <span class="desktop-kelola-stat-val">Rp.
+                    <?= number_format((float)$saldo_kas_iuran, 0, ',', '.'); ?></span>
             </div>
 
-            <div class="iuran-header-row" style="display: flex; align-items: center; gap: 8px; max-width: 824px; margin-bottom: 16px;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <h3 class="desktop-section-title" style="margin: 0;">Riwayat Transaksi Iuran</h3>
+            <div class="iuran-header-row iuran-header-penghuni-desktop">
+                <div class="iuran-header-left-group">
+                    <h3 class="desktop-section-title iuran-no-margin">Riwayat Transaksi Iuran</h3>
                     <!-- Tombol Cetak PDF Desktop Penghuni Biasa -->
                     <button type="button" onclick="bukaModalCetakIuran()" class="btn-cetak-pdf">
                         <i class="fa-solid fa-file-pdf"></i> Cetak Rekap Iuran
                     </button>
                 </div>
 
-                <form method="GET" action="" class="filter-range-form-desktop" style="margin: 0;">
+                <form method="GET" action="" class="filter-range-form-desktop iuran-no-margin">
                     <input type="hidden" name="page" value="<?= htmlspecialchars($current_page); ?>">
-                    <div class="flatpickr-box-wrapper" style="margin: 0;">
+                    <div class="flatpickr-box-wrapper iuran-no-margin">
                         <i class="fa-regular fa-calendar date-icon"></i>
-                        <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>" placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                        <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
+                            placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
                         <?php if ($is_filtered): ?>
                         <a href="<?= urlIuran($current_page); ?>" class="btn-reset-range" title="Reset Filter">
                             <i class="fa-solid fa-rotate-left"></i> Reset
@@ -338,7 +360,8 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                             <span><?= htmlspecialchars($tx['tanggal']); ?></span>
                         </div>
                     </div>
-                    <span class="<?= $tx['tipe'] === 'keluar' ? 'desktop-mutasi-badge-red' : 'desktop-mutasi-badge-green'; ?>">
+                    <span
+                        class="<?= $tx['tipe'] === 'keluar' ? 'desktop-mutasi-badge-red' : 'desktop-mutasi-badge-green'; ?>">
                         <?= htmlspecialchars($tx['nominal']); ?>
                     </span>
                 </div>
@@ -355,17 +378,20 @@ require_once __DIR__ . '/handler/iuran_handler.php';
         <div class="modal-card">
             <h3 class="modal-title">Tambah Pengeluaran</h3>
             <?php if (!empty($error_modal)): ?>
-            <p style="color: #b91c1c; font-size: 13px; font-weight: 700; margin-bottom: 10px;"><?= htmlspecialchars($error_modal); ?></p>
+            <p class="modal-error-text"><?= htmlspecialchars($error_modal); ?></p>
             <?php endif; ?>
-            <form action="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran" method="POST" class="modal-form">
+            <form action="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran" method="POST"
+                class="modal-form">
                 <input type="hidden" name="simpan_pengeluaran" value="1">
                 <div class="modal-field">
                     <label class="modal-label" for="keterangan">Keterangan</label>
-                    <input type="text" id="keterangan" name="keterangan" class="modal-input" placeholder="Contoh: Pembelian galon & alat kebersihan" required>
+                    <input type="text" id="keterangan" name="keterangan" class="modal-input"
+                        placeholder="Contoh: Pembelian galon & alat kebersihan" required>
                 </div>
                 <div class="modal-field">
                     <label class="modal-label" for="nominal">Nominal (Rp)</label>
-                    <input type="text" id="nominal" name="nominal" class="modal-input format-rupiah-input" placeholder="Contoh: 150.000" inputmode="numeric" required>
+                    <input type="text" id="nominal" name="nominal" class="modal-input format-rupiah-input"
+                        placeholder="Contoh: 150.000" inputmode="numeric" required>
                 </div>
                 <div class="modal-actions">
                     <a href="/?page=<?= urlencode($current_page); ?>" class="btn-modal-cancel">Batal</a>
@@ -381,27 +407,38 @@ require_once __DIR__ . '/handler/iuran_handler.php';
     <div class="modal-overlay active">
         <div class="modal-card">
             <h3 class="modal-title">Atur Nominal & Periode Iuran</h3>
-            <p style="font-size: 13px; color: #64748b; margin-bottom: 14px;">Tentukan nama iuran, besaran nominal, dan rentang tanggal berlakunya.</p>
+            <p class="modal-subtitle-text">Tentukan nama iuran, besaran nominal, dan rentang tanggal berlakunya.</p>
             <?php if (!empty($error_modal)): ?>
-            <p style="color: #b91c1c; font-size: 13px; font-weight: 700; margin-bottom: 10px;"><?= htmlspecialchars($error_modal); ?></p>
+            <p class="modal-error-text"><?= htmlspecialchars($error_modal); ?></p>
             <?php endif; ?>
-            <form action="/?page=<?= urlencode($current_page); ?>&modal=set_nominal_iuran" method="POST" class="modal-form">
+            <form action="/?page=<?= urlencode($current_page); ?>&modal=set_nominal_iuran" method="POST"
+                class="modal-form">
                 <input type="hidden" name="simpan_nominal_iuran" value="1">
                 <div class="modal-field">
                     <label class="modal-label" for="nama_iuran">Keterangan / Nama Iuran</label>
-                    <input type="text" id="nama_iuran" name="nama_iuran" class="modal-input" value="<?= htmlspecialchars($nama_iuran_saat_ini ?? 'Iuran Kebersihan & Keamanan'); ?>" placeholder="Contoh: Iuran Kebersihan & Keamanan" required>
+                    <input type="text" id="nama_iuran" name="nama_iuran" class="modal-input"
+                        value="<?= htmlspecialchars($nama_iuran_saat_ini ?? 'Iuran Kebersihan & Keamanan'); ?>"
+                        placeholder="Contoh: Iuran Kebersihan & Keamanan" required>
                 </div>
                 <div class="modal-field">
                     <label class="modal-label" for="nominal_iuran">Nominal Iuran (Rp)</label>
-                    <input type="text" id="nominal_iuran" name="nominal_iuran" class="modal-input format-rupiah-input" value="<?= number_format((float)$nominal_iuran_saat_ini, 0, ',', '.'); ?>" placeholder="Contoh: 50.000" inputmode="numeric" required>
+                    <input type="text" id="nominal_iuran" name="nominal_iuran" class="modal-input format-rupiah-input"
+                        value="<?= number_format((float)$nominal_iuran_saat_ini, 0, ',', '.'); ?>"
+                        placeholder="Contoh: 50.000" inputmode="numeric" required>
                 </div>
                 <div class="modal-field">
                     <label class="modal-label" for="periode_iuran_range">Rentang Tanggal Berlaku</label>
-                    <input type="text" id="periode_iuran_range" name="periode_iuran_range" class="modal-input flatpickr-range-input-modal" value="<?= htmlspecialchars($tgl_mulai_iuran . ' to ' . $tgl_selesai_iuran); ?>" placeholder="Pilih Tanggal Mulai s/d Selesai..." readonly required>
+                    <div class="modal-input-icon-wrapper">
+                        <i class="fa-regular fa-calendar modal-input-icon"></i>
+                        <input type="text" id="periode_iuran_range" name="periode_iuran_range"
+                            class="modal-input modal-input-with-icon flatpickr-range-input-modal"
+                            value="<?= htmlspecialchars($tgl_mulai_iuran . ' to ' . $tgl_selesai_iuran); ?>"
+                            placeholder="Pilih Tanggal Mulai s/d Selesai..." readonly required>
+                    </div>
                 </div>
                 <div class="modal-actions">
                     <a href="/?page=<?= urlencode($current_page); ?>" class="btn-modal-cancel">Batal</a>
-                    <button type="submit" class="btn-modal-submit" style="background-color: #2b6cb0;">Simpan Perubahan</button>
+                    <button type="submit" class="btn-modal-submit btn-submit-blue">Simpan Perubahan</button>
                 </div>
             </form>
         </div>
@@ -410,25 +447,27 @@ require_once __DIR__ . '/handler/iuran_handler.php';
 
     <!-- MODAL 3: PILIH PERIODE CETAK BUKU KAS IURAN (SEMUA ROLE) -->
     <div id="modalFilterCetakIuran" class="modal-overlay" onclick="tutupModalCetakIuran()">
-        <div class="modal-card" onclick="event.stopPropagation()" style="max-width: 440px;">
-            <h3 class="modal-title"><i class="fa-solid fa-file-pdf" style="color: #ef4444;"></i> Cetak Laporan Iuran</h3>
-            <p style="font-size: 12.5px; color: #64748b; margin: 4px 0 16px 0;">Pilih cakupan waktu laporan iuran kas bersama yang ingin dicetak.</p>
+        <div class="modal-card modal-cetak-kas-card" onclick="event.stopPropagation()">
+            <h3 class="modal-title"><i class="fa-solid fa-file-pdf icon-pdf-red"></i> Cetak Laporan Iuran</h3>
+            <p class="modal-cetak-kas-sub">Pilih cakupan waktu laporan iuran kas bersama yang ingin dicetak.</p>
 
             <form action="/" method="GET" target="_blank" onsubmit="tutupModalCetakIuran()">
                 <input type="hidden" name="page" value="cetak_iuran">
 
                 <div class="modal-field">
                     <label class="modal-label">Cakupan Periode</label>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
-                        <label class="alasan-option-label" style="padding: 8px; font-size: 11.5px; justify-content: center;">
-                            <input type="radio" name="periode" value="bulanan" checked onchange="toggleFormCetakIuran('bulanan')">
+                    <div class="periode-radio-grid">
+                        <label class="alasan-option-label periode-radio-option">
+                            <input type="radio" name="periode" value="bulanan" checked
+                                onchange="toggleFormCetakIuran('bulanan')">
                             <span>Bulanan</span>
                         </label>
-                        <label class="alasan-option-label" style="padding: 8px; font-size: 11.5px; justify-content: center;">
-                            <input type="radio" name="periode" value="tahunan" onchange="toggleFormCetakIuran('tahunan')">
+                        <label class="alasan-option-label periode-radio-option">
+                            <input type="radio" name="periode" value="tahunan"
+                                onchange="toggleFormCetakIuran('tahunan')">
                             <span>Tahunan</span>
                         </label>
-                        <label class="alasan-option-label" style="padding: 8px; font-size: 11.5px; justify-content: center;">
+                        <label class="alasan-option-label periode-radio-option">
                             <input type="radio" name="periode" value="semua" onchange="toggleFormCetakIuran('semua')">
                             <span>Semua</span>
                         </label>
@@ -446,7 +485,8 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                         ];
                         $current_m = (int)date('n');
                         foreach ($bulan_list as $num => $nm): ?>
-                            <option value="<?= $num; ?>" <?= ($num === $current_m) ? 'selected' : ''; ?>><?= $nm; ?></option>
+                        <option value="<?= $num; ?>" <?= ($num === $current_m) ? 'selected' : ''; ?>><?= $nm; ?>
+                        </option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -457,14 +497,14 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                         <?php
                         $tahun_skrg = (int)date('Y');
                         for ($y = $tahun_skrg; $y >= $tahun_skrg - 5; $y--): ?>
-                            <option value="<?= $y; ?>" <?= ($y === $tahun_skrg) ? 'selected' : ''; ?>><?= $y; ?></option>
+                        <option value="<?= $y; ?>" <?= ($y === $tahun_skrg) ? 'selected' : ''; ?>><?= $y; ?></option>
                         <?php endfor; ?>
                     </select>
                 </div>
 
-                <div class="modal-actions" style="margin-top: 20px;">
+                <div class="modal-actions modal-cetak-actions">
                     <button type="button" class="btn-modal-cancel" onclick="tutupModalCetakIuran()">Batal</button>
-                    <button type="submit" class="btn-modal-submit" style="background-color: #0f766e;">Buka & Cetak PDF</button>
+                    <button type="submit" class="btn-modal-submit btn-cetak-submit-teal">Buka & Cetak PDF</button>
                 </div>
             </form>
         </div>
@@ -491,7 +531,8 @@ require_once __DIR__ . '/handler/iuran_handler.php';
             mode: "range",
             dateFormat: "Y-m-d",
             altInput: true,
-            altFormat: "d/m/Y"
+            altFormat: "d/m/Y",
+            altInputClass: "modal-input modal-input-with-icon"
         });
     });
 

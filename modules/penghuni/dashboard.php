@@ -100,6 +100,7 @@ foreach ($daftar_tagihan as $t) {
 ?>
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -108,6 +109,7 @@ foreach ($daftar_tagihan as $t) {
     <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
 </head>
+
 <body class="dashboard-body">
 
     <!-- LAYOUT MOBILE -->
@@ -160,7 +162,7 @@ foreach ($daftar_tagihan as $t) {
             <div class="menu-card-container">
                 <h2 class="menu-heading">Silahkan pilih menu</h2>
                 <div class="menu-grid">
-                    
+
                     <a href="/?page=tagihan_riwayat" class="menu-item-box">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-receipt"></i></div>
                         <span class="menu-label">Tagihan &amp; Riwayat</span>
@@ -184,10 +186,10 @@ foreach ($daftar_tagihan as $t) {
                     </a>
 
                     <?php if ($is_pj): ?>
-                        <a href="/?page=verifikasi_bayar" class="menu-item-box">
-                            <div class="menu-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
-                            <span class="menu-label">Verifikasi<br>Pembayaran</span>
-                        </a>
+                    <a href="/?page=verifikasi_bayar" class="menu-item-box">
+                        <div class="menu-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
+                        <span class="menu-label">Verifikasi<br>Pembayaran</span>
+                    </a>
                     <?php endif; ?>
 
                 </div>
@@ -212,7 +214,8 @@ foreach ($daftar_tagihan as $t) {
                     <div class="tagihan-details">
                         <div class="tagihan-detail-row">
                             <span class="lbl">Status Pembayaran</span><span class="colon">:</span>
-                            <span style="<?= $ringkasan['sewa']['badge_style']; ?> padding: 2px 10px; border-radius: 999px; font-size: 11px;">
+                            <span
+                                style="<?= $ringkasan['sewa']['badge_style']; ?> padding: 2px 10px; border-radius: 999px; font-size: 11px;">
                                 <?= htmlspecialchars($ringkasan['sewa']['status_label']); ?>
                             </span>
                         </div>
@@ -222,13 +225,13 @@ foreach ($daftar_tagihan as $t) {
                         </div>
                     </div>
                     <?php if ($ringkasan['sewa']['is_actionable'] && $ringkasan['sewa']['id']): ?>
-                        <a href="/?page=tagihan_riwayat&bayar_id=<?= $ringkasan['sewa']['id']; ?>" class="btn-upload-bukti">
-                            <?= htmlspecialchars($ringkasan['sewa']['action_label']); ?>
-                        </a>
+                    <a href="/?page=tagihan_riwayat&bayar_id=<?= $ringkasan['sewa']['id']; ?>" class="btn-upload-bukti">
+                        <?= htmlspecialchars($ringkasan['sewa']['action_label']); ?>
+                    </a>
                     <?php else: ?>
-                        <a href="/?page=tagihan_riwayat" class="btn-upload-bukti" style="opacity: 0.85;">
-                            <?= htmlspecialchars($ringkasan['sewa']['action_label']); ?>
-                        </a>
+                    <a href="/?page=tagihan_riwayat" class="btn-upload-bukti" style="opacity: 0.85;">
+                        <?= htmlspecialchars($ringkasan['sewa']['action_label']); ?>
+                    </a>
                     <?php endif; ?>
                 </div>
 
@@ -238,7 +241,8 @@ foreach ($daftar_tagihan as $t) {
                     <div class="tagihan-details">
                         <div class="tagihan-detail-row">
                             <span class="lbl">Status Pembayaran</span><span class="colon">:</span>
-                            <span style="<?= $ringkasan['iuran']['badge_style']; ?> padding: 2px 10px; border-radius: 999px; font-size: 11px;">
+                            <span
+                                style="<?= $ringkasan['iuran']['badge_style']; ?> padding: 2px 10px; border-radius: 999px; font-size: 11px;">
                                 <?= htmlspecialchars($ringkasan['iuran']['status_label']); ?>
                             </span>
                         </div>
@@ -248,13 +252,14 @@ foreach ($daftar_tagihan as $t) {
                         </div>
                     </div>
                     <?php if ($ringkasan['iuran']['is_actionable'] && $ringkasan['iuran']['id']): ?>
-                        <a href="/?page=tagihan_riwayat&bayar_id=<?= $ringkasan['iuran']['id']; ?>" class="btn-upload-bukti">
-                            <?= htmlspecialchars($ringkasan['iuran']['action_label']); ?>
-                        </a>
+                    <a href="/?page=tagihan_riwayat&bayar_id=<?= $ringkasan['iuran']['id']; ?>"
+                        class="btn-upload-bukti">
+                        <?= htmlspecialchars($ringkasan['iuran']['action_label']); ?>
+                    </a>
                     <?php else: ?>
-                        <a href="/?page=tagihan_riwayat" class="btn-upload-bukti" style="opacity: 0.85;">
-                            <?= htmlspecialchars($ringkasan['iuran']['action_label']); ?>
-                        </a>
+                    <a href="/?page=tagihan_riwayat" class="btn-upload-bukti" style="opacity: 0.85;">
+                        <?= htmlspecialchars($ringkasan['iuran']['action_label']); ?>
+                    </a>
                     <?php endif; ?>
                 </div>
             </div>
@@ -265,12 +270,12 @@ foreach ($daftar_tagihan as $t) {
                     <div class="desktop-menu-icon"><i class="fa-solid fa-receipt"></i></div>
                     <span class="desktop-menu-label">Tagihan &amp;<br>Riwayat</span>
                 </a>
-                
+
                 <a href="/?page=peraturan_kost" class="desktop-menu-card">
                     <div class="desktop-menu-icon"><i class="fa-solid fa-book-open"></i></div>
                     <span class="desktop-menu-label">Peraturan<br>Kos</span>
                 </a>
-                
+
                 <a href="/?page=chat_penghuni" class="desktop-menu-card">
                     <div class="desktop-menu-icon"><i class="fa-solid fa-comment-dots"></i></div>
                     <span class="desktop-menu-label">Chat<br>Penghuni</span>
@@ -280,18 +285,20 @@ foreach ($daftar_tagihan as $t) {
                     <div class="desktop-menu-icon">
                         <i class="fa-solid <?= $is_pj ? 'fa-wallet' : 'fa-chart-pie'; ?>"></i>
                     </div>
-                    <span class="desktop-menu-label"><?= $is_pj ? 'Kelola &amp; Monitor<br>Iuran' : 'Monitoring &amp;<br>Tagihan Iuran'; ?></span>
+                    <span
+                        class="desktop-menu-label"><?= $is_pj ? 'Kelola <br>Iuran' : 'Monitoring &amp;<br>Tagihan Iuran'; ?></span>
                 </a>
 
                 <?php if ($is_pj): ?>
-                    <a href="/?page=verifikasi_bayar" class="desktop-menu-card">
-                        <div class="desktop-menu-icon"><i class="fa-solid fa-list-check"></i></div>
-                        <span class="desktop-menu-label">Verifikasi<br>Pembayaran</span>
-                    </a>
+                <a href="/?page=verifikasi_bayar" class="desktop-menu-card">
+                    <div class="desktop-menu-icon"><i class="fa-solid fa-list-check"></i></div>
+                    <span class="desktop-menu-label">Verifikasi<br>Pembayaran</span>
+                </a>
                 <?php endif; ?>
             </div>
         </main>
     </div>
 
 </body>
+
 </html>

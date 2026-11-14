@@ -129,12 +129,13 @@ try {
             pen.nama,
             pen.no_wa,
             COALESCE(k.no_kamar, '-') AS kamar,
-            COALESCE(t.total_tagihan, pk.harga_sewa, 0) AS nominal,
+            COALESCE(s.nominal, 0) AS nominal,
             COALESCE(t.status_tagihan, 'belum_bayar') AS status_tagihan,
             pem.status_verifikasi
         FROM penghuni_kamar pk
         JOIN penghuni pen ON pk.penghuni_id = pen.id
         JOIN kamar k ON pk.kamar_id = k.id AND k.status_kamar = 'terisi'
+        LEFT JOIN skema_sewa s ON pk.skema_id = s.id
         LEFT JOIN tagihan t ON pk.id = t.penghuni_kamar_id AND t.kategori_iuran_id IS NULL
         LEFT JOIN (
             SELECT tagihan_id, MAX(id) AS max_pem_id
@@ -151,7 +152,7 @@ try {
         $sqlPenghuni .= " AND LOWER(TRIM(pem.status_verifikasi)) = 'pending'";
     }
 
-    $sqlPenghuni .= " ORDER BY k.no_kamar ASC";
+    $sqlPenghuni .= " ORDER BY NULLIF(regexp_replace(k.no_kamar, '[^0-9]', '', 'g'), '')::INTEGER ASC NULLS LAST, k.no_kamar ASC";
     $stmtPenghuni = $pdo->query($sqlPenghuni);
     $daftar_penghuni = $stmtPenghuni->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {

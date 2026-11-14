@@ -20,8 +20,9 @@ if (file_exists(__DIR__ . '/handler/kamar_handlers.php')) {
 // 2. Ambil Data Skema Sewa
 $list_skema = $pdo->query("SELECT * FROM skema_sewa ORDER BY tipe_periode DESC, durasi_nilai ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-// 3. Ambil Data Kamar Realtime Sesuai Skema Baru
-$queryKamar = "
+// 3. Ambil Data Kamar Realtime dengan Pagination
+$total_kamar = (int) $pdo->query("SELECT COUNT(*) FROM kamar")->fetchColumn();
+$sqlBaseKamar = "
     SELECT 
         k.id AS kamar_id,
         k.no_kamar,
@@ -43,8 +44,38 @@ $queryKamar = "
         LIMIT 1
     ) t ON true
     ORDER BY k.no_kamar::INTEGER ASC
+    LIMIT :limit OFFSET :offset
 ";
-$daftar_kamar = $pdo->query($queryKamar)->fetchAll(PDO::FETCH_ASSOC);
+
+// --- A. Pagination Desktop (12 Kamar per Halaman) ---
+$limit_kamar   = 12;
+$halaman_aktif = isset($_GET['halaman']) ? max(1, (int)$_GET['halaman']) : 1;
+$total_halaman = max(1, (int) ceil($total_kamar / $limit_kamar));
+if ($halaman_aktif > $total_halaman) {
+    $halaman_aktif = $total_halaman;
+}
+$offset = ($halaman_aktif - 1) * $limit_kamar;
+
+$stmtKamar = $pdo->prepare($sqlBaseKamar);
+$stmtKamar->bindValue(':limit', $limit_kamar, PDO::PARAM_INT);
+$stmtKamar->bindValue(':offset', $offset, PDO::PARAM_INT);
+$stmtKamar->execute();
+$daftar_kamar = $stmtKamar->fetchAll(PDO::FETCH_ASSOC);
+
+// --- B. Pagination Mobile (8 Kamar per Halaman) ---
+$limit_kamar_mobile   = 8;
+$halaman_aktif_mobile = isset($_GET['halaman_m']) ? max(1, (int)$_GET['halaman_m']) : 1;
+$total_halaman_mobile = max(1, (int) ceil($total_kamar / $limit_kamar_mobile));
+if ($halaman_aktif_mobile > $total_halaman_mobile) {
+    $halaman_aktif_mobile = $total_halaman_mobile;
+}
+$offset_mobile = ($halaman_aktif_mobile - 1) * $limit_kamar_mobile;
+
+$stmtKamarMobile = $pdo->prepare($sqlBaseKamar);
+$stmtKamarMobile->bindValue(':limit', $limit_kamar_mobile, PDO::PARAM_INT);
+$stmtKamarMobile->bindValue(':offset', $offset_mobile, PDO::PARAM_INT);
+$stmtKamarMobile->execute();
+$daftar_kamar_mobile = $stmtKamarMobile->fetchAll(PDO::FETCH_ASSOC);
 
 // 4. Data Kamar Terpilih untuk Modal Detail
 $nomor_pilih = $_GET['nomor'] ?? '';
@@ -117,7 +148,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             </div>
 
             <?php if ($error_simpan !== ''): ?>
-                <div class="alert-error alert-error-kamar"><?= htmlspecialchars($error_simpan); ?></div>
+            <div class="alert-error alert-error-kamar"><?= htmlspecialchars($error_simpan); ?></div>
             <?php endif; ?>
 
             <div class="kamar-actions">
@@ -127,38 +158,70 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                 <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_penghuni" class="btn-add-outline">
                     <span class="plus-icon">+</span> Tambah Penghuni
                 </a>
-                <a href="/?page=<?= urlencode($current_page) ?>&modal=kelola_skema" class="btn-add-outline btn-skema-highlight">
+                <a href="/?page=<?= urlencode($current_page) ?>&modal=kelola_skema"
+                    class="btn-add-outline btn-skema-highlight">
                     <i class="fa-solid fa-sliders"></i> Skema Sewa
                 </a>
             </div>
 
             <div class="kamar-grid">
-                <?php if (empty($daftar_kamar)): ?>
-                    <p class="kamar-empty-state-mobile">Belum ada kamar di database.</p>
+                <?php if (empty($daftar_kamar_mobile)): ?>
+                <p class="kamar-empty-state-mobile">Belum ada kamar di database.</p>
                 <?php else: ?>
-                    <?php foreach ($daftar_kamar as $kamar): ?>
-                        <?php
+                <?php foreach ($daftar_kamar_mobile as $kamar): ?>
+                <?php
                         $nama_penghuni = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
                         $is_kosong = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
                         $status_bayar_lower = strtolower($kamar['status_bayar'] ?? 'lunas');
                         ?>
-                        <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
-                            class="kamar-card">
+                <a href="/?page=<?= urlencode($current_page) ?>&halaman_m=<?= $halaman_aktif_mobile; ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
+                    class="kamar-card">
 
-                            <?php if ($is_kosong): ?>
-                                <span class="badge-status badge-kosong">Kosong</span>
-                            <?php elseif ($status_bayar_lower === 'lunas'): ?>
-                                <span class="badge-status badge-lunas">Lunas</span>
-                            <?php else: ?>
-                                <span class="badge-status badge-belum">Belum</span>
-                            <?php endif; ?>
+                    <?php if ($is_kosong): ?>
+                    <span class="badge-status badge-kosong">Kosong</span>
+                    <?php elseif ($status_bayar_lower === 'lunas'): ?>
+                    <span class="badge-status badge-lunas">Lunas</span>
+                    <?php else: ?>
+                    <span class="badge-status badge-belum">Belum</span>
+                    <?php endif; ?>
 
-                            <div class="kamar-nomor"><?= htmlspecialchars(sprintf('%02d', intval($kamar['no_kamar']))) ?></div>
-                            <div class="kamar-nama"><?= htmlspecialchars($nama_penghuni) ?></div>
-                        </a>
-                    <?php endforeach; ?>
+                    <div class="kamar-nomor"><?= htmlspecialchars(sprintf('%02d', intval($kamar['no_kamar']))) ?></div>
+                    <div class="kamar-nama"><?= htmlspecialchars($nama_penghuni) ?></div>
+                </a>
+                <?php endforeach; ?>
                 <?php endif; ?>
             </div>
+
+            <!-- PAGINATION MOBILE (8 KOTAK PER HALAMAN) -->
+            <?php if ($total_halaman_mobile > 1): ?>
+            <div class="kamar-mobile-pagination">
+                <?php if ($halaman_aktif_mobile > 1): ?>
+                <a href="/?page=<?= urlencode($current_page); ?>&halaman_m=<?= $halaman_aktif_mobile - 1; ?>"
+                    class="kamar-mobile-page-btn" title="Halaman Sebelumnya">
+                    <i class="fa-solid fa-chevron-left"></i>
+                </a>
+                <?php else: ?>
+                <button type="button" class="kamar-mobile-page-btn" disabled>
+                    <i class="fa-solid fa-chevron-left"></i>
+                </button>
+                <?php endif; ?>
+
+                <span class="kamar-mobile-page-info">
+                    Halaman <?= $halaman_aktif_mobile; ?> / <?= $total_halaman_mobile; ?>
+                </span>
+
+                <?php if ($halaman_aktif_mobile < $total_halaman_mobile): ?>
+                <a href="/?page=<?= urlencode($current_page); ?>&halaman_m=<?= $halaman_aktif_mobile + 1; ?>"
+                    class="kamar-mobile-page-btn" title="Halaman Berikutnya">
+                    <i class="fa-solid fa-chevron-right"></i>
+                </a>
+                <?php else: ?>
+                <button type="button" class="kamar-mobile-page-btn" disabled>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </button>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         </div>
 
         <?php require_once __DIR__ . '/../components/footer.php'; ?>
@@ -173,7 +236,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             <p class="desktop-header-subtitle">Manajemen kamar dan penghuni secara realtime</p>
 
             <?php if ($error_simpan !== ''): ?>
-                <div class="alert-error alert-error-kamar-desktop"><?= htmlspecialchars($error_simpan); ?></div>
+            <div class="alert-error alert-error-kamar-desktop"><?= htmlspecialchars($error_simpan); ?></div>
             <?php endif; ?>
 
             <h3 class="desktop-kamar-section-label">Data terbaru</h3>
@@ -185,7 +248,8 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                 <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_penghuni" class="kamar-btn-pill-action">
                     <i class="fa-solid fa-plus"></i> Tambah Penghuni
                 </a>
-                <a href="/?page=<?= urlencode($current_page) ?>&modal=kelola_skema" class="kamar-btn-pill-action kamar-btn-skema-action">
+                <a href="/?page=<?= urlencode($current_page) ?>&modal=kelola_skema"
+                    class="kamar-btn-pill-action kamar-btn-skema-action">
                     <i class="fa-solid fa-sliders"></i> Skema Sewa
                 </a>
             </div>
@@ -193,35 +257,36 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             <div class="kamar-desktop-panel">
                 <div class="kamar-desktop-grid-white">
                     <?php if (empty($daftar_kamar)): ?>
-                        <p class="kamar-empty-state-desktop">Belum ada kamar tersimpan.</p>
+                    <p class="kamar-empty-state-desktop">Belum ada kamar tersimpan.</p>
                     <?php else: ?>
-                        <?php foreach ($daftar_kamar as $kamar): ?>
-                            <?php
+                    <?php foreach ($daftar_kamar as $kamar): ?>
+                    <?php
                             $nama_penghuni = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
                             $is_kosong = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
                             $status_bayar_lower = strtolower($kamar['status_bayar'] ?? 'lunas');
                             ?>
+                    <?php if ($is_kosong): ?>
+                    <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
+                        class="kamar-card-gray">
+                        <?php else: ?>
+                        <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
+                            class="kamar-card-white">
+                            <?php endif; ?>
+
                             <?php if ($is_kosong): ?>
-                                <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
-                                    class="kamar-card-gray">
+                            <span class="badge-kamar-status badge-kamar-kosong">Kosong</span>
+                            <?php elseif ($status_bayar_lower === 'lunas'): ?>
+                            <span class="badge-kamar-status badge-kamar-lunas">Lunas</span>
                             <?php else: ?>
-                                <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
-                                    class="kamar-card-white">
+                            <span class="badge-kamar-status badge-kamar-belum">Belum</span>
                             <?php endif; ?>
 
-                                    <?php if ($is_kosong): ?>
-                                        <span class="badge-kamar-status badge-kamar-kosong">Kosong</span>
-                                    <?php elseif ($status_bayar_lower === 'lunas'): ?>
-                                        <span class="badge-kamar-status badge-kamar-lunas">Lunas</span>
-                                    <?php else: ?>
-                                        <span class="badge-kamar-status badge-kamar-belum">Belum</span>
-                                    <?php endif; ?>
-
-                                    <div class="kamar-card-number"><?= htmlspecialchars(sprintf('%02d', intval($kamar['no_kamar']))) ?></div>
-                                    <div class="kamar-card-resident"><?= htmlspecialchars($nama_penghuni) ?></div>
-                                    </a>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
+                            <div class="kamar-card-number">
+                                <?= htmlspecialchars(sprintf('%02d', intval($kamar['no_kamar']))) ?></div>
+                            <div class="kamar-card-resident"><?= htmlspecialchars($nama_penghuni) ?></div>
+                        </a>
+                        <?php endforeach; ?>
+                        <?php endif; ?>
                 </div>
 
                 <div class="kamar-desktop-bottom-bar">
@@ -232,9 +297,31 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                     </div>
 
                     <div class="kamar-pagination-row">
-                        <button type="button" class="kamar-page-btn"><i class="fa-solid fa-chevron-left"></i></button>
-                        <span class="kamar-page-info">1/1</span>
-                        <button type="button" class="kamar-page-btn"><i class="fa-solid fa-chevron-right"></i></button>
+                        <?php if ($halaman_aktif > 1): ?>
+                        <a href="/?page=<?= urlencode($current_page); ?>&halaman=<?= $halaman_aktif - 1; ?>"
+                            class="kamar-page-btn" title="Halaman Sebelumnya">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </a>
+                        <?php else: ?>
+                        <button type="button" class="kamar-page-btn" disabled
+                            style="opacity: 0.45; cursor: not-allowed;">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <?php endif; ?>
+
+                        <span class="kamar-page-info"><?= $halaman_aktif; ?>/<?= $total_halaman; ?></span>
+
+                        <?php if ($halaman_aktif < $total_halaman): ?>
+                        <a href="/?page=<?= urlencode($current_page); ?>&halaman=<?= $halaman_aktif + 1; ?>"
+                            class="kamar-page-btn" title="Halaman Berikutnya">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </a>
+                        <?php else: ?>
+                        <button type="button" class="kamar-page-btn" disabled
+                            style="opacity: 0.45; cursor: not-allowed;">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>

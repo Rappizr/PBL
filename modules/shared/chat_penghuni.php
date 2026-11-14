@@ -87,25 +87,34 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
 
                 <div class="chat-list" id="chatListMobile">
                     <?php if (empty($penghuniKos)): ?>
-                        <div class="empty-state-card" style="width: 100%; text-align: center; padding: 20px; background: #fff; border-radius: 12px; margin-top: 10px;">
-                            <i class="fa-solid fa-folder-open" style="font-size: 24px; color: #4ca5b0; margin-bottom: 8px;"></i>
-                            <p style="margin: 0; font-size: 13px; font-weight: 600; color: #4a5568;">Tidak ada data penghuni</p>
-                        </div>
+                    <div class="empty-state-card"
+                        style="width: 100%; text-align: center; padding: 20px; background: #fff; border-radius: 12px; margin-top: 10px;">
+                        <i class="fa-solid fa-folder-open"
+                            style="font-size: 24px; color: #4ca5b0; margin-bottom: 8px;"></i>
+                        <p style="margin: 0; font-size: 13px; font-weight: 600; color: #4a5568;">Tidak ada data penghuni
+                        </p>
+                    </div>
                     <?php else: ?>
-                        <?php foreach ($penghuniKos as $p): ?>
-                            <div class="chat-card" data-nama="<?= strtolower(htmlspecialchars($p['nama'])); ?>" data-kamar="<?= strtolower(htmlspecialchars($p['kamar'])); ?>">
-                                <div class="chat-info">
-                                    <div class="chat-header-row">
-                                        <span class="chat-nama"><?= htmlspecialchars($p['nama']); ?></span>
-                                        <span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
-                                    </div>
-                                    <span class="chat-wa"><?= htmlspecialchars($p['no_wa']); ?></span>
-                                </div>
-                                <a href="https://wa.me/<?= preg_replace('/^0/', '62', preg_replace('/[^0-9]/', '', $p['no_wa'])); ?>" target="_blank" class="btn-chat-wa">
-                                    <i class="fa-brands fa-whatsapp"></i> Chat
-                                </a>
+                    <?php foreach ($penghuniKos as $p): ?>
+                    <div class="chat-card" data-nama="<?= strtolower(htmlspecialchars($p['nama'])); ?>"
+                        data-kamar="<?= strtolower(htmlspecialchars($p['kamar'])); ?>">
+                        <div class="chat-info">
+                            <div class="chat-header-row">
+                                <span class="chat-nama"><?= htmlspecialchars($p['nama']); ?></span>
+                                <span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                             </div>
-                        <?php endforeach; ?>
+                            <span class="chat-wa"><?= htmlspecialchars($p['no_wa']); ?></span>
+                        </div>
+                        <a href="https://wa.me/<?= preg_replace('/^0/', '62', preg_replace('/[^0-9]/', '', $p['no_wa'])); ?>"
+                            target="_blank" class="btn-chat-wa">
+                            <i class="fa-brands fa-whatsapp"></i> Chat
+                        </a>
+                    </div>
+                    <?php endforeach; ?>
+                    <div id="emptySearchMobile" class="empty-state-card empty-search-mobile">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <p>Penghuni atau kamar tidak ditemukan</p>
+                    </div>
                     <?php endif; ?>
                 </div>
             </main>
@@ -139,25 +148,33 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
 
             <div class="desktop-chat-list" id="chatListDesktop">
                 <?php if (empty($penghuniKos)): ?>
-                    <div class="empty-state-card" style="width: 100%; text-align: center; padding: 30px; background: #fff; border-radius: 16px; margin-top: 10px; max-width: 820px;">
-                        <i class="fa-solid fa-folder-open" style="font-size: 28px; color: #4ca5b0; margin-bottom: 10px;"></i>
-                        <p style="margin: 0; font-size: 14px; font-weight: 700; color: #4a5568;">Tidak ada data penghuni</p>
-                    </div>
+                <div class="empty-state-card"
+                    style="width: 100%; text-align: center; padding: 30px; background: #fff; border-radius: 16px; margin-top: 10px; max-width: 820px;">
+                    <i class="fa-solid fa-folder-open"
+                        style="font-size: 28px; color: #4ca5b0; margin-bottom: 10px;"></i>
+                    <p style="margin: 0; font-size: 14px; font-weight: 700; color: #4a5568;">Tidak ada data penghuni</p>
+                </div>
                 <?php else: ?>
-                    <?php foreach ($penghuniKos as $p): ?>
-                        <article class="desktop-chat-card" data-nama="<?= strtolower(htmlspecialchars($p['nama'])); ?>" data-kamar="<?= strtolower(htmlspecialchars($p['kamar'])); ?>">
-                            <div class="desktop-chat-info">
-                                <div class="desktop-chat-header-row">
-                                    <span class="desktop-chat-nama"><?= htmlspecialchars($p['nama']); ?></span>
-                                    <span class="desktop-badge-kamar">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
-                                </div>
-                                <span class="desktop-chat-telp"><?= htmlspecialchars($p['no_wa']); ?></span>
-                            </div>
-                            <a href="https://wa.me/<?= preg_replace('/^0/', '62', preg_replace('/[^0-9]/', '', $p['no_wa'])); ?>" target="_blank" class="btn-chat-wa">
-                                <i class="fa-brands fa-whatsapp"></i> Chat
-                            </a>
-                        </article>
-                    <?php endforeach; ?>
+                <?php foreach ($penghuniKos as $p): ?>
+                <article class="desktop-chat-card" data-nama="<?= strtolower(htmlspecialchars($p['nama'])); ?>"
+                    data-kamar="<?= strtolower(htmlspecialchars($p['kamar'])); ?>">
+                    <div class="desktop-chat-info">
+                        <div class="desktop-chat-header-row">
+                            <span class="desktop-chat-nama"><?= htmlspecialchars($p['nama']); ?></span>
+                            <span class="desktop-badge-kamar">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
+                        </div>
+                        <span class="desktop-chat-telp"><?= htmlspecialchars($p['no_wa']); ?></span>
+                    </div>
+                    <a href="https://wa.me/<?= preg_replace('/^0/', '62', preg_replace('/[^0-9]/', '', $p['no_wa'])); ?>"
+                        target="_blank" class="btn-chat-wa">
+                        <i class="fa-brands fa-whatsapp"></i> Chat
+                    </a>
+                </article>
+                <?php endforeach; ?>
+                <div id="emptySearchDesktop" class="empty-state-card empty-search-desktop">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <p>Penghuni atau kamar tidak ditemukan</p>
+                </div>
                 <?php endif; ?>
             </div>
         </main>
@@ -165,23 +182,42 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
 
     <!-- Script Filter Live Search -->
     <script>
-        function setupFilter(inputId, listId) {
-            const input = document.getElementById(inputId);
-            if (!input) return;
-            input.addEventListener('input', function() {
-                const query = this.value.toLowerCase().trim();
-                const container = document.getElementById(listId);
-                if (!container) return;
-                const cards = container.querySelectorAll('.chat-card, .desktop-chat-card');
-                cards.forEach(card => {
-                    const nama = card.getAttribute('data-nama') || '';
-                    const kamar = card.getAttribute('data-kamar') || '';
-                    card.style.display = (query === '' || nama.includes(query) || kamar.includes(query)) ? 'flex' : 'none';
-                });
-            });
+    function cariPenghuni(idInput, idList, idPesanKosong, namaClassKartu) {
+        var kotakCari = document.getElementById(idInput);
+        var wadahList = document.getElementById(idList);
+        var pesanKosong = document.getElementById(idPesanKosong);
+        if (kotakCari === null || wadahList === null) {
+            return;
         }
-        setupFilter('searchInputMobile', 'chatListMobile');
-        setupFilter('searchInputDesktop', 'chatListDesktop');
+
+        kotakCari.addEventListener('input', function() {
+            var kataKunci = kotakCari.value.toLowerCase().trim();
+            var semuaKartu = wadahList.getElementsByClassName(namaClassKartu);
+            var jumlahTampil = 0;
+            for (var i = 0; i < semuaKartu.length; i++) {
+                var kartu = semuaKartu[i];
+                var nama = kartu.getAttribute('data-nama');
+                var kamar = kartu.getAttribute('data-kamar');
+
+                if (nama.includes(kataKunci) || kamar.includes(kataKunci)) {
+                    kartu.style.display = 'flex';
+                    jumlahTampil = jumlahTampil + 1;
+                } else {
+                    kartu.style.display = 'none';
+                }
+            }
+
+            if (pesanKosong !== null) {
+                if (semuaKartu.length > 0 && jumlahTampil === 0) {
+                    pesanKosong.style.display = 'block';
+                } else {
+                    pesanKosong.style.display = 'none';
+                }
+            }
+        });
+    }
+    cariPenghuni('searchInputMobile', 'chatListMobile', 'emptySearchMobile', 'chat-card');
+    cariPenghuni('searchInputDesktop', 'chatListDesktop', 'emptySearchDesktop', 'desktop-chat-card');
     </script>
 </body>
 

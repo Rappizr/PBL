@@ -165,7 +165,7 @@ if (isset($pdo) && $pdo instanceof PDO) {
 
                 <a href="/?page=edit_tatib" class="pemilik-menu-row-card">
                     <div class="pemilik-menu-icon-box">
-                        <i class="fa-solid fa-clipboard-list"></i>
+                        <i class="fa-solid fa-book-open"></i>
                     </div>
                     <div class="pemilik-menu-text">
                         <h4>Manajemen Peraturan Kos</h4>
@@ -209,4 +209,5 @@ if (isset($pdo) && $pdo instanceof PDO) {
     </div>
 
 </body>
+
 </html>
