@@ -18,9 +18,8 @@ $link_kembali      = $link_kembali ?? ($is_pemilik ? '/?page=dashboard_pemilik' 
 $date_range        = $date_range ?? trim($_GET['date_range'] ?? '');
 $is_filtered       = $is_filtered ?? (!empty($date_range));
 $daftar_verifikasi = $daftar_verifikasi ?? [];
-$pesan_sukses      = $pesan_sukses ?? ($_SESSION['pesan_sukses'] ?? '');
+$pesan_sukses      = $pesan_sukses ?? '';
 $error_verif       = $error_verif ?? '';
-unset($_SESSION['pesan_sukses']);
 
 $total_verif = count($daftar_verifikasi);
 
@@ -51,7 +50,7 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
 
 <body class="dashboard-body">
 
-    <!-- FLOATING TOAST NOTIFIKASI BERHASIL / GAGAL -->
+    <!-- FLOATING TOAST NOTIFIKASI BERHASIL / GAGAL (UNTUK AKSI TERIMA / ERROR) -->
     <div class="toast-floating-container">
         <?php if (!empty($pesan_sukses)): ?>
         <div class="toast-alert toast-success" id="toastAlertBox">
@@ -128,8 +127,9 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
 
                     <?php foreach ($daftar_verifikasi as $idx => $item): ?>
                     <?php
-                        $is_tunai = (strtolower($item['metode_bayar']) === 'tunai' || empty($item['foto']));
-                        $page_m   = (int)floor($idx / $limit_mobile) + 1;
+                        $metode_raw = strtolower($item['metode_bayar'] ?? 'transfer');
+                        $is_tunai   = ($metode_raw === 'tunai' || empty($item['foto']));
+                        $page_m     = (int)floor($idx / $limit_mobile) + 1;
                     ?>
                     <div class="verifikasi-card verif-item-mobile"
                          data-page-m="<?= $page_m; ?>"
@@ -168,11 +168,11 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                                 <i class="fa-brands fa-whatsapp"></i> Chat
                             </a>
                             <button type="button" class="btn-action btn-decline btn-action-full"
-                                onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'tolak', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= $item['tipe_tagihan']; ?>')">
+                                onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'tolak', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= $item['tipe_tagihan']; ?>', '<?= $is_tunai ? 'tunai' : 'transfer'; ?>')">
                                 <i class="fa-solid fa-circle-xmark"></i> Tolak
                             </button>
                             <button type="button" class="btn-action btn-approve btn-action-full"
-                                onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'terima', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= $item['tipe_tagihan']; ?>')">
+                                onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'terima', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= $item['tipe_tagihan']; ?>', '<?= $is_tunai ? 'tunai' : 'transfer'; ?>')">
                                 <i class="fa-solid fa-circle-check"></i> Terima
                             </button>
                         </div>
@@ -239,8 +239,9 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                 <?php else: ?>
                 <?php foreach ($daftar_verifikasi as $idx => $item): ?>
                 <?php
-                    $is_tunai = (strtolower($item['metode_bayar']) === 'tunai' || empty($item['foto']));
-                    $page_d   = (int)floor($idx / $limit_desktop) + 1;
+                    $metode_raw = strtolower($item['metode_bayar'] ?? 'transfer');
+                    $is_tunai   = ($metode_raw === 'tunai' || empty($item['foto']));
+                    $page_d     = (int)floor($idx / $limit_desktop) + 1;
                 ?>
                 <div class="verifikasi-card verif-item-desktop"
                      data-page-d="<?= $page_d; ?>"
@@ -280,11 +281,11 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                             <i class="fa-brands fa-whatsapp"></i> Chat
                         </a>
                         <button type="button" class="btn-action btn-decline btn-action-full"
-                            onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'tolak', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= $item['tipe_tagihan']; ?>')">
+                            onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'tolak', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= $item['tipe_tagihan']; ?>', '<?= $is_tunai ? 'tunai' : 'transfer'; ?>')">
                             <i class="fa-solid fa-circle-xmark"></i> Tolak
                         </button>
                         <button type="button" class="btn-action btn-approve btn-action-full"
-                            onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'terima', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= $item['tipe_tagihan']; ?>')">
+                            onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'terima', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= $item['tipe_tagihan']; ?>', '<?= $is_tunai ? 'tunai' : 'transfer'; ?>')">
                             <i class="fa-solid fa-circle-check"></i> Terima
                         </button>
                     </div>
@@ -333,27 +334,9 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                 <input type="hidden" name="pembayaran_id" id="modalInputPemId" value="">
                 <input type="hidden" name="aksi_verifikasi" id="modalInputAksi" value="">
 
-                <!-- LIST ALASAN PENOLAKAN -->
+                <!-- LIST ALASAN PENOLAKAN (DINAMIS SESUAI TRANSFER / TUNAI) -->
                 <div id="boxAlasanTolak" class="alasan-tolak-container" style="display: none;">
-                    <label class="alasan-option-label">
-                        <input type="radio" name="alasan_penolakan" value="Foto / Bukti transfer buram & tidak terbaca"
-                            checked onchange="toggleAlasanLain(false)">
-                        <span>Foto bukti buram / tidak terbaca</span>
-                    </label>
-                    <label class="alasan-option-label">
-                        <input type="radio" name="alasan_penolakan" value="Nominal transfer kurang dari total tagihan"
-                            onchange="toggleAlasanLain(false)">
-                        <span>Nominal transfer kurang</span>
-                    </label>
-                    <label class="alasan-option-label">
-                        <input type="radio" name="alasan_penolakan" value="Dana belum masuk ke rekening mutasi"
-                            onchange="toggleAlasanLain(false)">
-                        <span>Dana belum masuk ke mutasi rekening</span>
-                    </label>
-                    <label class="alasan-option-label">
-                        <input type="radio" name="alasan_penolakan" value="Lainnya" onchange="toggleAlasanLain(true)">
-                        <span>Alasan lainnya</span>
-                    </label>
+                    <div id="listOpsiAlasan" style="display: flex; flex-direction: column; gap: 8px;"></div>
 
                     <input type="text" name="alasan_lainnya" id="inputAlasanLainnya" class="input-alasan-lainnya"
                         placeholder="Tuliskan alasan spesifik..." style="display: none;">
@@ -472,7 +455,7 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
         window.history.replaceState({}, '', url);
     }
 
-    function konfirmasiAksi(id, aksi, nama, nominal, tipe) {
+    function konfirmasiAksi(id, aksi, nama, nominal, tipe, metode = 'transfer') {
         const modal = document.getElementById('modalKonfirmasiVerif');
         const inputId = document.getElementById('modalInputPemId');
         const inputAksi = document.getElementById('modalInputAksi');
@@ -483,6 +466,7 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
         const btnSubmit = document.getElementById('btnKonfirSubmit');
         const btnText = document.getElementById('btnSubmitText');
         const boxAlasan = document.getElementById('boxAlasanTolak');
+        const listOpsi = document.getElementById('listOpsiAlasan');
         const inputLain = document.getElementById('inputAlasanLainnya');
 
         btnSubmit.classList.remove('btn-submit-loading');
@@ -503,17 +487,37 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
             boxAlasan.style.display = 'flex';
             inputLain.style.display = 'none';
             inputLain.value = '';
+            inputLain.required = false;
 
-            const firstRadio = boxAlasan.querySelector('input[type="radio"]');
-            if (firstRadio) firstRadio.checked = true;
+            const opsiAlasan = (metode === 'tunai')
+                ? [
+                    { val: 'Uang tunai belum diterima secara langsung', label: 'Uang tunai belum diserahkan' },
+                    { val: 'Nominal uang tunai kurang dari total tagihan', label: 'Nominal uang tunai kurang' },
+                    { val: 'Konfirmasi pembayaran tunai belum sesuai', label: 'Konfirmasi pembayaran belum sesuai' },
+                    { val: 'Lainnya', label: 'Alasan lainnya' }
+                  ]
+                : [
+                    { val: 'Foto / Bukti transfer buram & tidak terbaca', label: 'Foto bukti buram / tidak terbaca' },
+                    { val: 'Nominal transfer kurang dari total tagihan', label: 'Nominal transfer kurang' },
+                    { val: 'Dana belum masuk ke rekening mutasi', label: 'Dana belum masuk ke mutasi rekening' },
+                    { val: 'Lainnya', label: 'Alasan lainnya' }
+                  ];
+
+            listOpsi.innerHTML = opsiAlasan.map((opt, idx) => `
+                <label class="alasan-option-label">
+                    <input type="radio" name="alasan_penolakan" value="${opt.val}"
+                        ${idx === 0 ? 'checked' : ''} onchange="toggleAlasanLain(${opt.val === 'Lainnya'})">
+                    <span>${opt.label}</span>
+                </label>
+            `).join('');
 
             iconBox.className = 'konfirmasi-verif-icon icon-tolak';
             icon.className = 'fa-solid fa-circle-xmark';
             title.innerText = 'Tolak Pembayaran?';
-            desc.innerHTML = 'Pilih alasan penolakan bukti pembayaran <strong>' + tipe + '</strong> dari <strong>' +
+            desc.innerHTML = 'Pilih alasan penolakan pembayaran <strong>' + tipe + '</strong> dari <strong>' +
                 nama + '</strong>:';
             btnSubmit.className = 'btn-konfir-submit btn-tolak';
-            btnText.innerText = 'Kirim Penolakan';
+            btnText.innerText = 'Tolak & Kirim WA';
         }
 
         modal.classList.add('active');

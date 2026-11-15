@@ -1,0 +1,222 @@
+<?php
+/**
+ * HELPER PENGINGAT JATUH TEMPO SEWA, MASA TENGGANG (7 HARI), & AUTO-FREEZE AKUN
+ * Lokasi: modules/shared/handler/sewa_reminder_helper.php
+ */
+
+if (!function_exists('evaluasiStatusSewaSemuaKamar')) {
+    /**
+     * Mengevaluasi seluruh tagihan sewa kamar yang belum lunas,
+     * melakukan auto-freeze jika melewati H+7 (atau melewati tanggal_janji_bayar),
+     * dan mengembalikan daftar penghuni yang masuk kategori pengingat / tenggang / freeze.
+     */
+    function evaluasiStatusSewaSemuaKamar(PDO $pdo): array
+    {
+        date_default_timezone_set('Asia/Jakarta');
+        $today = new DateTimeImmutable('today');
+
+        // Ambil semua kamar terisi beserta penghuni aktif/freeze dan ringkasan tagihan sewa belum lunas
+        $sql = "
+            SELECT
+                k.id AS kamar_id,
+                k.no_kamar,
+                pk.id AS penghuni_kamar_id,
+                p.id AS penghuni_id,
+                p.nama AS nama_penghuni,
+                COALESCE(p.no_wa, '') AS no_wa,
+                LOWER(TRIM(COALESCE(p.status_akun, 'aktif'))) AS status_akun,
+                p.tanggal_janji_bayar,
+                p.catatan_tunggakan,
+                COUNT(t.id) AS jumlah_bulan_nunggak,
+                COALESCE(SUM(COALESCE(s.nominal, 0)), 0) AS total_tunggakan,
+                MIN(t.tanggal_jatuh_tempo) AS jatuh_tempo_tertua
+            FROM kamar k
+            INNER JOIN penghuni_kamar pk ON pk.kamar_id = k.id
+            INNER JOIN penghuni p ON p.id = pk.penghuni_id
+            LEFT JOIN skema_sewa s ON pk.skema_id = s.id
+            LEFT JOIN tagihan t ON t.penghuni_kamar_id = pk.id
+                AND t.kategori_iuran_id IS NULL
+                AND LOWER(TRIM(t.status_tagihan)) != 'lunas'
+            WHERE LOWER(TRIM(k.status_kamar)) = 'terisi'
+              AND LOWER(TRIM(COALESCE(p.status_akun, 'aktif'))) IN ('aktif', 'freeze')
+            GROUP BY
+                k.id, k.no_kamar, pk.id, p.id, p.nama, p.no_wa,
+                p.status_akun, p.tanggal_janji_bayar, p.catatan_tunggakan
+            ORDER BY NULLIF(regexp_replace(k.no_kamar, '\D', '', 'g'), '')::INTEGER ASC NULLS LAST
+        ";
+
+        try {
+            $rows = $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            return [];
+        }
+
+        $hasil = [];
+        $stmtFreeze = $pdo->prepare("UPDATE penghuni SET status_akun = 'freeze' WHERE id = :pid");
+        $stmtClearJanji = $pdo->prepare("UPDATE penghuni SET tanggal_janji_bayar = NULL, catatan_tunggakan = NULL WHERE id = :pid");
+
+        foreach ($rows as $row) {
+            $penghuniId   = (int)$row['penghuni_id'];
+            $jmlNunggak   = (int)$row['jumlah_bulan_nunggak'];
+            $statusAkun   = $row['status_akun'];
+            $jatuhTempo   = $row['jatuh_tempo_tertua'];
+            $janjiBayar   = $row['tanggal_janji_bayar'];
+
+            // Jika semua tagihan sewa sudah lunas, bersihkan tanggal janji bayar jika masih tersisa
+            if ($jmlNunggak <= 0 || empty($jatuhTempo)) {
+                if (!empty($janjiBayar)) {
+                    $stmtClearJanji->execute([':pid' => $penghuniId]);
+                }
+                continue;
+            }
+
+            $dtJatuhTempo = new DateTimeImmutable($jatuhTempo);
+            // Tentukan batas akhir sebelum freeze:
+            // Default = jatuh_tempo + 7 hari. Jika pemilik memberi janji bayar lebih jauh, gunakan tanggal_janji_bayar.
+            $dtBatasFreeze = $dtJatuhTempo->modify('+7 days');
+            if (!empty($janjiBayar)) {
+                $dtJanji = new DateTimeImmutable($janjiBayar);
+                if ($dtJanji > $dtBatasFreeze) {
+                    $dtBatasFreeze = $dtJanji;
+                }
+            }
+
+            // Selisih hari dari hari ini ke jatuh tempo (+ artinya belum jatuh tempo, - artinya sudah lewat)
+            $diffJatuhTempo = (int)$today->diff($dtJatuhTempo)->format('%r%a');
+            // Selisih hari dari hari ini ke batas freeze
+            $sisaHariFreeze = (int)$today->diff($dtBatasFreeze)->format('%r%a');
+
+            $fase = null; // 'pengingat' | 'tenggang' | 'freeze'
+            $labelStatus = '';
+            $pesanRingkas = '';
+
+            if ($sisaHariFreeze < 0 || $statusAkun === 'freeze') {
+                // Sudah melewati 7 hari masa tenggang (atau sudah melewati tanggal janji bayar) -> Auto Freeze
+                if ($statusAkun !== 'freeze') {
+                    $stmtFreeze->execute([':pid' => $penghuniId]);
+                    $statusAkun = 'freeze';
+                }
+                $fase = 'freeze';
+                $labelStatus = 'Akun Dibekukan (Freeze)';
+                $pesanRingkas = "Menunggak {$jmlNunggak} bulan sewa (melewati batas tenggang).";
+            } elseif ($diffJatuhTempo < 0) {
+                // Sudah lewat jatuh tempo, masih dalam masa tenggang 1 minggu (H+1 s.d. H+7)
+                $hariTelat = abs($diffJatuhTempo);
+                $fase = 'tenggang';
+                $labelStatus = "Terlambat {$hariTelat} Hari (Sisa {$sisaHariFreeze} hari sebelum freeze)";
+                $pesanRingkas = "Masa tenggang sewa berjalan. Akun akan dibekukan pada " . $dtBatasFreeze->format('d/m/Y') . ".";
+            } elseif ($diffJatuhTempo === 0) {
+                $fase = 'pengingat';
+                $labelStatus = 'Hari H Jatuh Tempo';
+                $pesanRingkas = 'Jatuh tempo pembayaran sewa hari ini (' . $dtJatuhTempo->format('d/m/Y') . ').';
+            } elseif ($diffJatuhTempo <= 2) {
+                $fase = 'pengingat';
+                $labelStatus = "H-{$diffJatuhTempo} Jatuh Tempo";
+                $pesanRingkas = "Jatuh tempo sewa {$diffJatuhTempo} hari lagi (" . $dtJatuhTempo->format('d/m/Y') . ').';
+            }
+
+            if ($fase !== null) {
+                $row['status_akun']       = $statusAkun;
+                $row['fase']              = $fase;
+                $row['label_status']      = $labelStatus;
+                $row['pesan_ringkas']     = $pesanRingkas;
+                $row['diff_jatuh_tempo']  = $diffJatuhTempo;
+                $row['sisa_hari_freeze']  = $sisaHariFreeze;
+                $row['batas_freeze_fmt']  = $dtBatasFreeze->format('d/m/Y');
+                $row['jatuh_tempo_fmt']   = $dtJatuhTempo->format('d/m/Y');
+                $row['wa_pengingat_url']  = buatLinkWaPengingatSewa($row);
+                $hasil[] = $row;
+            }
+        }
+
+        return $hasil;
+    }
+}
+
+if (!function_exists('evaluasiStatusSewaPenghuni')) {
+    /**
+     * Mengevaluasi status sewa untuk 1 penghuni spesifik (dipakai saat login & dashboard penghuni).
+     */
+    function evaluasiStatusSewaPenghuni(PDO $pdo, int $penghuniId): ?array
+    {
+        if ($penghuniId <= 0) return null;
+
+        $semua = evaluasiStatusSewaSemuaKamar($pdo);
+        foreach ($semua as $item) {
+            if ((int)$item['penghuni_id'] === $penghuniId) {
+                return $item;
+            }
+        }
+        return null;
+    }
+}
+
+if (!function_exists('buatLinkWaPengingatSewa')) {
+    /**
+     * Membuat link WhatsApp untuk Pemilik mengirim pengingat tagihan / pemberitahuan freeze ke Penghuni.
+     */
+    function buatLinkWaPengingatSewa(array $data): string
+    {
+        $nomor = preg_replace('/\D/', '', (string)($data['no_wa'] ?? ''));
+        if ($nomor === '') return '#';
+        if (str_starts_with($nomor, '0')) {
+            $nomor = '62' . substr($nomor, 1);
+        }
+
+        $nama       = $data['nama_penghuni'] ?? 'Penghuni';
+        $kamar      = $data['no_kamar'] ?? '-';
+        $jmlBulan   = (int)($data['jumlah_bulan_nunggak'] ?? 1);
+        $nominalFmt = 'Rp ' . number_format((float)($data['total_tunggakan'] ?? 0), 0, ',', '.');
+        $batasFmt   = $data['batas_freeze_fmt'] ?? '-';
+        $fase       = $data['fase'] ?? 'pengingat';
+
+        if ($fase === 'freeze') {
+            $pesan = "Halo *{$nama}* (Kamar {$kamar}),\n\n"
+                   . "Akun SITEMAN - KOS Anda saat ini *dibekukan (Freeze)* karena tunggakan sewa selama *{$jmlBulan} bulan* (Total: *{$nominalFmt}*) telah melewati batas masa tenggang.\n\n"
+                   . "Silakan balas pesan ini untuk mengonfirmasi rencana pelunasan (tanggal bayar) agar akun dapat kami aktifkan kembali. Terima kasih. 🙏\n\n"
+                   . "_Pemilik SITEMAN - KOS_";
+        } else {
+            $pesan = "Halo *{$nama}* (Kamar {$kamar}),\n\n"
+                   . "Mengingatkan tagihan sewa kos Anda (*{$data['label_status']}*) sebesar *{$nominalFmt}* ({$jmlBulan} bulan).\n"
+                   . "Mohon segera melakukan pembayaran sebelum *{$batasFmt}* agar akun SITEMAN - KOS Anda tetap aktif. Terima kasih. 🙏\n\n"
+                   . "_Pemilik SITEMAN - KOS_";
+        }
+
+        return "https://wa.me/{$nomor}?text=" . rawurlencode($pesan);
+    }
+}
+
+if (!function_exists('buatLinkWaPermohonanUnfreeze')) {
+    /**
+     * Membuat link WhatsApp untuk Penghuni yang akunnya ter-freeze agar bisa menghubungi Pemilik
+     * lengkap dengan format pengakuan jumlah bulan nunggak dan tanggal janji bayar.
+     */
+    function buatLinkWaPermohonanUnfreeze(PDO $pdo, array $dataPenghuni, string $tanggalJanjiInput = ''): string
+    {
+        $noWaPemilik = '';
+        try {
+            $stmt = $pdo->query("SELECT no_wa FROM pemilik ORDER BY id ASC LIMIT 1");
+            $noWaPemilik = preg_replace('/\D/', '', (string)$stmt->fetchColumn());
+        } catch (Throwable $e) {
+            $noWaPemilik = '';
+        }
+
+        if ($noWaPemilik === '') return '#';
+        if (str_starts_with($noWaPemilik, '0')) {
+            $noWaPemilik = '62' . substr($noWaPemilik, 1);
+        }
+
+        $nama       = $dataPenghuni['nama_penghuni'] ?? 'Penghuni';
+        $kamar      = $dataPenghuni['no_kamar'] ?? '-';
+        $jmlBulan   = (int)($dataPenghuni['jumlah_bulan_nunggak'] ?? 1);
+        $nominalFmt = 'Rp ' . number_format((float)($dataPenghuni['total_tunggakan'] ?? 0), 0, ',', '.');
+        $tglJanji   = $tanggalJanjiInput !== '' ? date('d/m/Y', strtotime($tanggalJanjiInput)) : '[Isi Tanggal Bayar]';
+
+        $pesan = "Halo Bapak/Ibu Pemilik Kos,\n\n"
+               . "Saya *{$nama}* penghuni *Kamar {$kamar}*. Akun SITEMAN - KOS saya saat ini ter-freeze karena menunggak sewa selama *{$jmlBulan} bulan* dengan total *{$nominalFmt}*.\n\n"
+               . "Saya memohon kebijaksanaannya untuk membuka akses akun saya sementara, dan saya berjanji akan melunasi tunggakan tersebut pada tanggal *{$tglJanji}*.\n\n"
+               . "Terima kasih banyak atas pengertiannya. 🙏";
+
+        return "https://wa.me/{$noWaPemilik}?text=" . rawurlencode($pesan);
+    }
+}

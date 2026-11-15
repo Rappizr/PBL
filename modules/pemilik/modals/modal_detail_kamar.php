@@ -23,16 +23,77 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
 ?>
 
 <?php if ($modal_aktif === 'detail_kamar' && $kamar_terpilih): ?>
-    <?php $is_kosong = ($kamar_terpilih['status_kamar'] === 'kosong' || empty($kamar_terpilih['nama'])); ?>
+    <?php
+        $is_kosong  = ($kamar_terpilih['status_kamar'] === 'kosong' || empty($kamar_terpilih['nama']));
+        $statusAkun = strtolower(trim($kamar_terpilih['status_akun'] ?? 'aktif'));
+        $is_freeze  = (!$is_kosong && $statusAkun === 'freeze');
+        $infoSewa   = $kamar_terpilih['info_sewa'] ?? null;
+    ?>
     <div id="modalDetailKamar" class="modal-overlay active" onclick="tutupSemuaModalInstan(event)">
         <div class="modal-card-detail-kamar" onclick="event.stopPropagation()">
             
             <div class="detail-kamar-header">
                 <h3 class="detail-kamar-title">Detail Kamar <?= htmlspecialchars($kamar_terpilih['nomor']); ?></h3>
-                <span class="badge-detail-kamar <?= $is_kosong ? 'badge-kosong-detail' : 'badge-terisi'; ?>">
-                    <?= $is_kosong ? 'Kosong' : 'Terisi'; ?>
-                </span>
+                <?php if ($is_kosong): ?>
+                    <span class="badge-detail-kamar badge-kosong-detail">Kosong</span>
+                <?php elseif ($is_freeze): ?>
+                    <span class="badge-detail-kamar" style="background-color: #fee2e2; color: #dc2626;">Akun Freeze</span>
+                <?php else: ?>
+                    <span class="badge-detail-kamar badge-terisi">Terisi</span>
+                <?php endif; ?>
             </div>
+
+            <?php if (!$is_kosong && ($is_freeze || !empty($infoSewa))): ?>
+                <div style="background-color: <?= $is_freeze ? '#fee2e2' : '#fef3c7'; ?>; border: 1.5px solid <?= $is_freeze ? '#ef4444' : '#f59e0b'; ?>; border-radius: 16px; padding: 12px 14px; margin-bottom: 14px; color: <?= $is_freeze ? '#991b1b' : '#92400e'; ?>;">
+                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; margin-bottom: 4px;">
+                        <i class="fa-solid <?= $is_freeze ? 'fa-lock' : 'fa-clock'; ?>"></i>
+                        <span><?= htmlspecialchars($infoSewa['label_status'] ?? 'Status Akun Dibekukan (Freeze)'); ?></span>
+                    </div>
+                    <?php if (!empty($infoSewa)): ?>
+                        <p style="margin: 0 0 8px 0; font-size: 12px; line-height: 1.4;">
+                            Tunggakan: <strong><?= (int)$infoSewa['jumlah_bulan_nunggak']; ?> bulan</strong>
+                            (Total <strong>Rp <?= number_format((float)$infoSewa['total_tunggakan'], 0, ',', '.'); ?></strong>) &bull;
+                            Batas akhir: <strong><?= htmlspecialchars($infoSewa['batas_freeze_fmt']); ?></strong>
+                        </p>
+                    <?php endif; ?>
+
+                    <?php if (!empty($kamar_terpilih['tanggal_janji_bayar'])): ?>
+                        <p style="margin: 0 0 8px 0; font-size: 11.5px; background: rgba(255,255,255,0.7); padding: 5px 8px; border-radius: 8px;">
+                            <i class="fa-solid fa-handshake"></i> <strong>Janji Bayar:</strong> <?= date('d/m/Y', strtotime($kamar_terpilih['tanggal_janji_bayar'])); ?>
+                            <?= !empty($kamar_terpilih['catatan_tunggakan']) ? ' — ' . htmlspecialchars($kamar_terpilih['catatan_tunggakan']) : ''; ?>
+                        </p>
+                    <?php endif; ?>
+
+                    <!-- Form Perpanjangan Janji Bayar / Buka Freeze -->
+                    <form action="?page=<?= htmlspecialchars($current_page); ?>" method="POST" style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px; padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.15);">
+                        <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($kamar_terpilih['nomor']); ?>">
+                        <input type="hidden" name="penghuni_id" value="<?= (int)($kamar_terpilih['penghuni_id'] ?? 0); ?>">
+
+                        <div class="row-input-dual">
+                            <div class="detail-form-group flex-1">
+                                <label style="font-size: 11px; font-weight: 800;">Tanggal Janji Bayar</label>
+                                <input type="date" name="tanggal_janji_bayar"
+                                       min="<?= date('Y-m-d'); ?>"
+                                       value="<?= htmlspecialchars($kamar_terpilih['tanggal_janji_bayar'] ?? date('Y-m-d', strtotime('+3 days'))); ?>"
+                                       style="width: 100%; border: 1px solid #cbd5e1; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 700;" required>
+                            </div>
+                            <div class="detail-form-group flex-1">
+                                <label style="font-size: 11px; font-weight: 800;">Keterangan Tunggakan</label>
+                                <input type="text" name="catatan_tunggakan"
+                                       value="<?= htmlspecialchars($kamar_terpilih['catatan_tunggakan'] ?? ''); ?>"
+                                       placeholder="Misal: Nunggak 1 bln"
+                                       style="width: 100%; border: 1px solid #cbd5e1; border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                            </div>
+                        </div>
+
+                        <button type="submit" name="buka_freeze_penghuni"
+                                style="background-color: #059669; color: #ffffff; border: none; border-radius: 999px; padding: 8px 14px; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                            <i class="fa-solid fa-lock-open"></i>
+                            <?= $is_freeze ? 'Aktifkan Kembali Akun (Unfreeze)' : 'Simpan Perpanjangan Janji Bayar'; ?>
+                        </button>
+                    </form>
+                </div>
+            <?php endif; ?>
 
             <form action="?page=<?= htmlspecialchars($current_page); ?>" method="POST" class="detail-kamar-form" id="formDetailPenghuni">
                 <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($kamar_terpilih['nomor']); ?>">

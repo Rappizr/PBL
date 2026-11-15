@@ -17,14 +17,50 @@ if (empty($_SESSION['user']) && !in_array($page, ['login', 'reset'], true)) {
     exit;
 }
 
-// 3. Identifikasi Role Pengguna
-$userRole         = $_SESSION['user']['role'] ?? 'penghuni';
-$is_pj            = !empty($_SESSION['user']['is_pj']) || !empty($_SESSION['user']['is_ketua_kos']) || $userRole === 'pj';
-$defaultDashboard = ($userRole === 'pemilik') ? '/?page=dashboard_pemilik' : '/?page=dashboard_penghuni';
+// 3. Identifikasi Role & Status Akun Pengguna
+$userRole   = $_SESSION['user']['role'] ?? 'penghuni';
+$is_pj      = !empty($_SESSION['user']['is_pj']) || !empty($_SESSION['user']['is_ketua_kos']) || $userRole === 'pj';
+$statusAkun = strtolower(trim((string)($_SESSION['user']['status_akun'] ?? 'aktif')));
 
-// 4. Jika sudah login tapi membuka halaman login/reset, arahkan ke dashboard masing-masing
+// Sinkronisasi realtime status_akun penghuni jika sedang login
+if (!empty($_SESSION['user']) && $userRole !== 'pemilik') {
+    require_once __DIR__ . '/../config/database.php';
+    require_once __DIR__ . '/../modules/shared/handler/sewa_reminder_helper.php';
+
+    $penghuniId = (int)($_SESSION['user']['id'] ?? 0);
+    if ($penghuniId > 0 && isset($pdo)) {
+        $eval = evaluasiStatusSewaPenghuni($pdo, $penghuniId);
+        if ($eval && isset($eval['status_akun'])) {
+            $statusAkun = $eval['status_akun'];
+        } else {
+            $stmtSt = $pdo->prepare("SELECT LOWER(TRIM(COALESCE(status_akun, 'aktif'))) FROM penghuni WHERE id = :id LIMIT 1");
+            $stmtSt->execute([':id' => $penghuniId]);
+            $dbSt = $stmtSt->fetchColumn();
+            if ($dbSt) $statusAkun = $dbSt;
+        }
+        $_SESSION['user']['status_akun'] = $statusAkun;
+    }
+}
+
+$defaultDashboard = ($userRole === 'pemilik')
+    ? '/?page=dashboard_pemilik'
+    : (($statusAkun === 'freeze') ? '/?page=akun_freeze' : '/?page=dashboard_penghuni');
+
+// 4. Jika sudah login tapi membuka halaman login/reset, arahkan ke dashboard/halaman aktifnya
 if (!empty($_SESSION['user']) && in_array($page, ['login', 'reset'], true)) {
     header('Location: ' . $defaultDashboard);
+    exit;
+}
+
+// 4B. Gatekeeper Freeze: Penghuni berstatus freeze dikunci hanya di halaman akun_freeze
+if (!empty($_SESSION['user']) && $userRole !== 'pemilik' && $statusAkun === 'freeze' && $page !== 'akun_freeze') {
+    header('Location: /?page=akun_freeze');
+    exit;
+}
+
+// 4C. Jika akun sudah aktif (di-unfreeze pemilik), jangan biarkan terjebak di akun_freeze
+if (!empty($_SESSION['user']) && $userRole !== 'pemilik' && $statusAkun !== 'freeze' && $page === 'akun_freeze') {
+    header('Location: /?page=dashboard_penghuni');
     exit;
 }
 
@@ -39,7 +75,7 @@ if (isset($routeAliases[$page])) {
     $page = $routeAliases[$page];
 }
 
-// 6. KONFIGURASI ROUTING & RBAC TUNGGAL (1 NAMA SOLID PER HALAMAN)
+// 6. KONFIGURASI ROUTING & RBAC TUNGGAL
 $routes = [
     // Auth
     'login'              => ['file' => '/../modules/auth/login.php',                'roles' => ['*']],
@@ -57,6 +93,7 @@ $routes = [
     'tagihan_riwayat'    => ['file' => '/../modules/penghuni/tagihan_riwayat.php',  'roles' => ['penghuni', 'pj']],
     'peraturan_kost'     => ['file' => '/../modules/penghuni/peraturan_kost.php',   'roles' => ['penghuni', 'pj']],
     'cetak_invoice'      => ['file' => '/../modules/penghuni/cetak_invoice.php',    'roles' => ['penghuni', 'pj']],
+    'akun_freeze'        => ['file' => '/../modules/penghuni/akun_freeze.php',      'roles' => ['penghuni', 'pj']],
 
     // Shared (Pemilik, PJ, Penghuni)
     'verifikasi_bayar'   => ['file' => '/../modules/shared/verifikasi_bayar.php',   'roles' => ['pemilik', 'pj']],

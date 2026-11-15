@@ -44,16 +44,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 SELECT 
                     p.id,
                     p.jumlah_bayar,
+                    p.metode_bayar,
                     p.status_verifikasi,
                     t.id AS tagihan_id,
                     t.penghuni_kamar_id,
                     t.kategori_iuran_id,
                     pk.penghuni_id,
-                    pen.nama AS nama_penghuni
+                    pen.nama AS nama_penghuni,
+                    pen.no_wa AS no_wa_penghuni,
+                    k.no_kamar
                 FROM pembayaran p
                 JOIN tagihan t ON p.tagihan_id = t.id
                 LEFT JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
                 LEFT JOIN penghuni pen ON pk.penghuni_id = pen.id
+                LEFT JOIN kamar k ON pk.kamar_id = k.id
                 WHERE p.id = :id AND LOWER(TRIM(p.status_verifikasi)) = 'pending'
             ");
             $stmtCek->execute([':id' => $pembayaran_id]);
@@ -68,6 +72,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
             $jumlah_bayar = (float)$bayar['jumlah_bayar'];
             $penghuni_id  = (int)($bayar['penghuni_id'] ?? 0);
             $nama_pen     = $bayar['nama_penghuni'] ?? 'Penghuni';
+            $no_wa_pen    = preg_replace('/[^0-9]/', '', (string)($bayar['no_wa_penghuni'] ?? ''));
+            $kamar_pen    = $bayar['no_kamar'] ?? '-';
+            $tipe_label   = $is_sewa ? 'Sewa Kamar' : 'Iuran Kos';
 
             // Proteksi Hak Akses: Ketua kos dilarang memverifikasi sewa kamar
             if (!$is_pemilik && $is_sewa) {
@@ -92,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 ");
                 $stmtUpdTagihan->execute([':tagihan_id' => $tagihan_id]);
 
-                // 3. Catat ke buku_kas HANYA JIKA IURAN BERSAMA (Uang sewa TIDAK masuk buku_kas bersama)
+                // 3. Catat ke buku_kas HANYA JIKA IURAN BERSAMA
                 if (!$is_sewa) {
                     $stmtCekKas = $pdo->prepare("SELECT id FROM buku_kas WHERE pembayaran_id = :pid LIMIT 1");
                     $stmtCekKas->execute([':pid' => $pembayaran_id]);
@@ -112,9 +119,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                     }
                 }
 
+                $pdo->commit();
                 $_SESSION['pesan_sukses'] = $is_sewa 
                     ? "Pembayaran sewa berhasil diterima (tercatat di Analisis Kas)." 
                     : "Pembayaran iuran berhasil diterima dan dicatat ke kas bersama.";
+                header("Location: /?page=verifikasi_bayar");
+                exit;
+
             } elseif ($aksi === 'tolak') {
                 $alasan_pilihan = trim($_POST['alasan_penolakan'] ?? 'Foto / Bukti transfer buram & tidak terbaca');
                 $alasan_custom  = trim($_POST['alasan_lainnya'] ?? '');
@@ -140,14 +151,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 ");
                 $stmtUpdTagihan->execute([':tagihan_id' => $tagihan_id]);
 
-                $_SESSION['pesan_sukses'] = "Bukti pembayaran berhasil ditolak.";
-            }
+                $pdo->commit();
 
-            $pdo->commit();
-            header("Location: /?page=verifikasi_bayar");
-            exit;
+                // 3. Langsung redirect ke WhatsApp dengan format alasan penolakan
+                if ($no_wa_pen !== '') {
+                    if (str_starts_with($no_wa_pen, '0')) {
+                        $no_wa_pen = '62' . substr($no_wa_pen, 1);
+                    }
+                    $nominal_fmt   = number_format($jumlah_bayar, 0, ',', '.');
+                    $pengirim_role = $is_pemilik ? 'Pemilik SITEMAN - KOS' : 'Pengurus SITEMAN - KOS';
+
+                    $pesan_wa = "Halo *{$nama_pen}* (Kamar {$kamar_pen}),\n\n"
+                              . "Mohon maaf, konfirmasi pembayaran *{$tipe_label}* sebesar *Rp {$nominal_fmt}* belum dapat kami verifikasi (Ditolak).\n\n"
+                              . "*Alasan:* {$alasan_final}\n\n"
+                              . "Silakan lakukan pengecekan dan ajukan ulang pembayaran melalui aplikasi SITEMAN - KOS ya. Terima kasih. 🙏\n\n"
+                              . "_{$pengirim_role}_";
+
+                    header("Location: https://wa.me/{$no_wa_pen}?text=" . rawurlencode($pesan_wa));
+                    exit;
+                }
+
+                header("Location: /?page=verifikasi_bayar");
+                exit;
+            }
         } catch (Exception $e) {
-            $pdo->rollBack();
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
             $error_verif = $e->getMessage();
         }
     }

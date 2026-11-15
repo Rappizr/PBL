@@ -368,6 +368,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
                 ':status_bayar' => $status_simpan,
                 ':pk_id'        => $data['penghuni_kamar_id']
             ]);
+
+            // Jika diubah menjadi lunas, pastikan akun aktif kembali & janji bayar dibersihkan
+            if ($status_simpan === 'lunas') {
+                $pdo->prepare("UPDATE penghuni SET status_akun = 'aktif', tanggal_janji_bayar = NULL, catatan_tunggakan = NULL WHERE id = :id")
+                    ->execute([':id' => $penghuni_id]);
+            }
         }
 
         $pdo->commit();
@@ -377,6 +383,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
     } catch (Exception $e) {
         $pdo->rollBack();
         $error_simpan = "Gagal memperbarui data: " . $e->getMessage();
+    }
+}
+
+// 5B. HANDLER: BUKA FREEZE & SIMPAN TANGGAL JANJI BAYAR PENGHUNI
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buka_freeze_penghuni'])) {
+    $nomor_kamar        = trim($_POST['nomor_kamar'] ?? '');
+    $penghuni_id        = (int)($_POST['penghuni_id'] ?? 0);
+    $tanggal_janji      = trim($_POST['tanggal_janji_bayar'] ?? '');
+    $catatan_tunggakan  = trim($_POST['catatan_tunggakan'] ?? '');
+
+    if ($penghuni_id > 0 && $tanggal_janji !== '') {
+        try {
+            $stmtUnfreeze = $pdo->prepare("
+                UPDATE penghuni 
+                SET status_akun = 'aktif',
+                    tanggal_janji_bayar = :tgl_janji,
+                    catatan_tunggakan = :catatan
+                WHERE id = :id
+            ");
+            $stmtUnfreeze->execute([
+                ':tgl_janji' => $tanggal_janji,
+                ':catatan'   => ($catatan_tunggakan !== '') ? $catatan_tunggakan : null,
+                ':id'        => $penghuni_id
+            ]);
+
+            $_SESSION['pesan_sukses'] = "Akun penghuni Kamar {$nomor_kamar} diaktifkan kembali hingga janji bayar " . date('d/m/Y', strtotime($tanggal_janji)) . ".";
+            header("Location: /?page=" . urlencode($current_page));
+            exit;
+        } catch (PDOException $e) {
+            $error_simpan = "Gagal membuka freeze akun: " . $e->getMessage();
+        }
+    } else {
+        $error_simpan = "Tanggal janji bayar wajib diisi untuk membuka freeze akun.";
     }
 }
 

@@ -4,11 +4,13 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../shared/handler/sewa_reminder_helper.php';
 
 $current_page = $_GET['page'] ?? 'manajemen_kamar';
 $modal_aktif  = $_GET['modal'] ?? '';
 $error_simpan = $_SESSION['error_simpan'] ?? '';
-unset($_SESSION['error_simpan']);
+$pesan_sukses = $_SESSION['pesan_sukses'] ?? '';
+unset($_SESSION['error_simpan'], $_SESSION['pesan_sukses']);
 
 // 1. Include Proses Backend POST
 if (file_exists(__DIR__ . '/handler/kamar_handlers.php')) {
@@ -17,17 +19,26 @@ if (file_exists(__DIR__ . '/handler/kamar_handlers.php')) {
     require_once __DIR__ . '/handlers/kamar_handlers.php';
 }
 
-// 2. Ambil Data Skema Sewa
+// 2. Evaluasi Status Jatuh Tempo Sewa & Auto-Freeze Akun yang Melewati Masa Tenggang 7 Hari
+$daftar_notif_sewa = evaluasiStatusSewaSemuaKamar($pdo);
+$map_notif_kamar   = [];
+foreach ($daftar_notif_sewa as $itemNotif) {
+    $map_notif_kamar[(string)$itemNotif['no_kamar']] = $itemNotif;
+}
+
+// 3. Ambil Data Skema Sewa
 $list_skema = $pdo->query("SELECT * FROM skema_sewa ORDER BY tipe_periode DESC, durasi_nilai ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-// 3. Ambil Data Kamar Realtime (Sekali query untuk semua kamar -> Pagination & Modal instan!)
+// 4. Ambil Data Kamar Realtime
 $semua_kamar = $pdo->query("
     SELECT 
         k.id AS kamar_id,
         k.no_kamar,
         k.status_kamar,
+        p.id AS penghuni_id,
         COALESCE(p.nama, '') AS nama_penghuni,
         COALESCE(p.no_wa, '') AS no_wa,
+        LOWER(TRIM(COALESCE(p.status_akun, 'aktif'))) AS status_akun,
         COALESCE(s.nominal, 0) AS harga_sewa,
         pk.tanggal_masuk,
         COALESCE(t.status_tagihan, 'lunas') AS status_bayar
@@ -39,6 +50,7 @@ $semua_kamar = $pdo->query("
         SELECT status_tagihan 
         FROM tagihan 
         WHERE penghuni_kamar_id = pk.id 
+          AND kategori_iuran_id IS NULL
         ORDER BY tanggal_jatuh_tempo DESC 
         LIMIT 1
     ) t ON true
@@ -49,7 +61,6 @@ $total_kamar         = count($semua_kamar);
 $daftar_kamar        = $semua_kamar;
 $daftar_kamar_mobile = $semua_kamar;
 
-// Ambil kamar kosong & ketua kost aktif dari query ringan untuk modal
 $daftar_kamar_kosong = array_values(array_filter($semua_kamar, function ($kmr) {
     return ($kmr['status_kamar'] === 'kosong' || empty($kmr['nama_penghuni']));
 }));
@@ -69,7 +80,7 @@ $halaman_aktif_mobile = isset($_GET['halaman_m']) ? max(1, (int)$_GET['halaman_m
 $total_halaman_mobile = max(1, (int) ceil($total_kamar / $limit_kamar_mobile));
 if ($halaman_aktif_mobile > $total_halaman_mobile) $halaman_aktif_mobile = $total_halaman_mobile;
 
-// 4. Data Kamar Terpilih untuk Modal Detail
+// 5. Data Kamar Terpilih untuk Modal Detail
 $nomor_pilih    = $_GET['nomor'] ?? '';
 $kamar_terpilih = null;
 
@@ -87,6 +98,9 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             COALESCE(p.foto_ktp, '') AS foto_ktp,
             COALESCE(p.is_ketua_kos, false) AS is_ketua_kos,
             COALESCE(p.pin, '123456') AS pin,
+            COALESCE(p.status_akun, 'aktif') AS status_akun,
+            p.tanggal_janji_bayar,
+            p.catatan_tunggakan,
             COALESCE(pk.skema_id, s.id) AS skema_id,
             COALESCE(s.nama_skema, 'Bulanan') AS durasi_sewa,
             COALESCE(pk.tanggal_masuk, CURRENT_DATE) AS tgl_mulai,
@@ -100,6 +114,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             SELECT status_tagihan 
             FROM tagihan 
             WHERE penghuni_kamar_id = pk.id 
+              AND kategori_iuran_id IS NULL
             ORDER BY tanggal_jatuh_tempo DESC 
             LIMIT 1
         ) t ON true
@@ -111,6 +126,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
 
     if ($kamar_terpilih) {
         $kamar_terpilih['tgl_selesai_format'] = date('d / m / Y', strtotime($kamar_terpilih['tgl_selesai']));
+        $kamar_terpilih['info_sewa']          = $map_notif_kamar[(string)$kamar_terpilih['nomor']] ?? null;
     }
 }
 ?>
@@ -128,6 +144,20 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
 
 <body class="dashboard-body">
 
+    <!-- FLOATING TOAST NOTIFIKASI -->
+    <div class="toast-floating-container">
+        <?php if (!empty($pesan_sukses)): ?>
+        <div class="toast-alert toast-success" id="toastAlertBox">
+            <div class="toast-icon"><i class="fa-solid fa-check"></i></div>
+            <div class="toast-content">
+                <h5 class="toast-title">Berhasil</h5>
+                <p class="toast-message"><?= htmlspecialchars($pesan_sukses); ?></p>
+            </div>
+            <button type="button" class="toast-close" onclick="closeToast()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <?php endif; ?>
+    </div>
+
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
         <div>
@@ -142,6 +172,39 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
 
             <?php if ($error_simpan !== ''): ?>
             <div class="alert-error alert-error-kamar"><?= htmlspecialchars($error_simpan); ?></div>
+            <?php endif; ?>
+
+            <!-- NOTIFIKASI PENGINGAT SEWA & FREEZE (MOBILE) -->
+            <?php if (!empty($daftar_notif_sewa)): ?>
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;">
+                <?php foreach ($daftar_notif_sewa as $notif): ?>
+                <?php $isFrz = ($notif['fase'] === 'freeze'); ?>
+                <div style="background-color: <?= $isFrz ? '#fee2e2' : '#fef3c7'; ?>; border: 1.5px solid <?= $isFrz ? '#ef4444' : '#f59e0b'; ?>; color: <?= $isFrz ? '#991b1b' : '#92400e'; ?>; border-radius: 16px; padding: 12px 14px; box-shadow: 3px 4px 0px #c8924b;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px;">
+                        <strong style="font-size: 13px;">
+                            <i class="fa-solid <?= $isFrz ? 'fa-lock' : 'fa-bell'; ?>"></i>
+                            Kamar <?= htmlspecialchars(sprintf('%02d', (int)$notif['no_kamar'])); ?> &bull; <?= htmlspecialchars($notif['nama_penghuni']); ?>
+                        </strong>
+                        <span style="font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; background: #ffffff; color: <?= $isFrz ? '#dc2626' : '#b45309'; ?>;">
+                            <?= htmlspecialchars($notif['label_status']); ?>
+                        </span>
+                    </div>
+                    <p style="margin: 0 0 8px 0; font-size: 11.5px; line-height: 1.4;">
+                        <?= htmlspecialchars($notif['pesan_ringkas']); ?> (Total: <strong>Rp <?= number_format((float)$notif['total_tunggakan'], 0, ',', '.'); ?></strong>)
+                    </p>
+                    <div style="display: flex; gap: 8px;">
+                        <a href="<?= htmlspecialchars($notif['wa_pengingat_url']); ?>" target="_blank"
+                           style="flex: 1; text-align: center; background: #25D366; color: #ffffff; font-size: 11.5px; font-weight: 800; padding: 6px 10px; border-radius: 999px; text-decoration: none;">
+                            <i class="fa-brands fa-whatsapp"></i> Ingatkan WA
+                        </a>
+                        <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($notif['no_kamar']) ?>"
+                           style="flex: 1; text-align: center; background: #ffffff; color: #1a4d55; font-size: 11.5px; font-weight: 800; padding: 6px 10px; border-radius: 999px; text-decoration: none;">
+                            <i class="fa-solid fa-sliders"></i> Kelola
+                        </a>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
             <?php endif; ?>
 
             <div class="kamar-actions">
@@ -162,10 +225,11 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                 <?php else: ?>
                 <?php foreach ($daftar_kamar_mobile as $idx => $kamar): ?>
                 <?php
-                    $nama_penghuni = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
-                    $is_kosong = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
+                    $nama_penghuni      = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
+                    $is_kosong          = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
                     $status_bayar_lower = strtolower($kamar['status_bayar'] ?? 'lunas');
-                    $page_m = (int) floor($idx / $limit_kamar_mobile) + 1;
+                    $is_freeze_card     = (!$is_kosong && ($kamar['status_akun'] ?? 'aktif') === 'freeze');
+                    $page_m             = (int) floor($idx / $limit_kamar_mobile) + 1;
                 ?>
                 <a href="/?page=<?= urlencode($current_page) ?>&halaman_m=<?= $page_m; ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
                     class="kamar-card kamar-item-mobile"
@@ -174,6 +238,8 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
 
                     <?php if ($is_kosong): ?>
                     <span class="badge-status badge-kosong">Kosong</span>
+                    <?php elseif ($is_freeze_card): ?>
+                    <span class="badge-status" style="background-color: #fee2e2; color: #dc2626;">Freeze</span>
                     <?php elseif ($status_bayar_lower === 'lunas'): ?>
                     <span class="badge-status badge-lunas">Lunas</span>
                     <?php else: ?>
@@ -187,7 +253,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                 <?php endif; ?>
             </div>
 
-            <!-- PAGINATION MOBILE (INSTAN TANPA RELOAD) -->
+            <!-- PAGINATION MOBILE -->
             <?php if ($total_halaman_mobile > 1): ?>
             <div class="kamar-mobile-pagination">
                 <button type="button" class="kamar-mobile-page-btn" id="btnPrevMobile" onclick="gantiHalamanMobile(-1)" title="Halaman Sebelumnya" <?= $halaman_aktif_mobile <= 1 ? 'disabled' : ''; ?>>
@@ -220,6 +286,41 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             <div class="alert-error alert-error-kamar-desktop"><?= htmlspecialchars($error_simpan); ?></div>
             <?php endif; ?>
 
+            <!-- NOTIFIKASI PENGINGAT SEWA & FREEZE (DESKTOP) -->
+            <?php if (!empty($daftar_notif_sewa)): ?>
+            <div style="display: flex; flex-direction: column; gap: 10px; max-width: 820px; margin-bottom: 20px;">
+                <?php foreach ($daftar_notif_sewa as $notif): ?>
+                <?php $isFrz = ($notif['fase'] === 'freeze'); ?>
+                <div style="background-color: <?= $isFrz ? '#fee2e2' : '#fef3c7'; ?>; border: 1.5px solid <?= $isFrz ? '#ef4444' : '#f59e0b'; ?>; color: <?= $isFrz ? '#991b1b' : '#92400e'; ?>; border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; box-shadow: 3px 4px 0px #c8924b;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-solid <?= $isFrz ? 'fa-lock' : 'fa-bell'; ?>" style="font-size: 20px;"></i>
+                        <div>
+                            <strong style="display: block; font-size: 13.5px; margin-bottom: 2px;">
+                                Kamar <?= htmlspecialchars(sprintf('%02d', (int)$notif['no_kamar'])); ?> atas nama <?= htmlspecialchars($notif['nama_penghuni']); ?> &mdash; <?= htmlspecialchars($notif['label_status']); ?>
+                            </strong>
+                            <span style="font-size: 12px;">
+                                <?= htmlspecialchars($notif['pesan_ringkas']); ?> Total tagihan: <strong>Rp <?= number_format((float)$notif['total_tunggakan'], 0, ',', '.'); ?></strong>
+                                <?php if (!empty($notif['tanggal_janji_bayar'])): ?>
+                                    &bull; Janji bayar: <strong><?= date('d/m/Y', strtotime($notif['tanggal_janji_bayar'])); ?></strong>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                        <a href="<?= htmlspecialchars($notif['wa_pengingat_url']); ?>" target="_blank"
+                           style="background: #25D366; color: #ffffff; font-size: 12px; font-weight: 800; padding: 7px 14px; border-radius: 999px; text-decoration: none; white-space: nowrap;">
+                            <i class="fa-brands fa-whatsapp"></i> Ingatkan WA
+                        </a>
+                        <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($notif['no_kamar']) ?>"
+                           style="background: #ffffff; color: #1a4d55; font-size: 12px; font-weight: 800; padding: 7px 14px; border-radius: 999px; text-decoration: none; white-space: nowrap;">
+                            <i class="fa-solid fa-sliders"></i> Kelola
+                        </a>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
+
             <h3 class="desktop-kamar-section-label">Data terbaru</h3>
 
             <div class="desktop-kamar-top-actions">
@@ -241,10 +342,11 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                     <?php else: ?>
                     <?php foreach ($daftar_kamar as $idx => $kamar): ?>
                     <?php
-                        $nama_penghuni = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
-                        $is_kosong = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
+                        $nama_penghuni      = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
+                        $is_kosong          = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
                         $status_bayar_lower = strtolower($kamar['status_bayar'] ?? 'lunas');
-                        $page_d = (int) floor($idx / $limit_kamar) + 1;
+                        $is_freeze_card     = (!$is_kosong && ($kamar['status_akun'] ?? 'aktif') === 'freeze');
+                        $page_d             = (int) floor($idx / $limit_kamar) + 1;
                     ?>
                     <a href="/?page=<?= urlencode($current_page) ?>&halaman=<?= $page_d; ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
                         class="<?= $is_kosong ? 'kamar-card-gray' : 'kamar-card-white'; ?> kamar-item-desktop"
@@ -253,6 +355,8 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
 
                         <?php if ($is_kosong): ?>
                         <span class="badge-kamar-status badge-kamar-kosong">Kosong</span>
+                        <?php elseif ($is_freeze_card): ?>
+                        <span class="badge-kamar-status" style="background-color: #fee2e2; color: #dc2626;">Freeze</span>
                         <?php elseif ($status_bayar_lower === 'lunas'): ?>
                         <span class="badge-kamar-status badge-kamar-lunas">Lunas</span>
                         <?php else: ?>
@@ -270,10 +374,11 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                     <div class="kamar-legend-row">
                         <span class="legend-item"><span class="legend-color-box color-lunas"></span> Lunas</span>
                         <span class="legend-item"><span class="legend-color-box color-belum"></span> Belum bayar</span>
+                        <span class="legend-item"><span class="legend-color-box" style="background-color: #fee2e2;"></span> Freeze</span>
                         <span class="legend-item"><span class="legend-color-box color-kosong"></span> Kosong</span>
                     </div>
 
-                    <!-- PAGINATION DESKTOP (INSTAN TANPA RELOAD) -->
+                    <!-- PAGINATION DESKTOP -->
                     <div class="kamar-pagination-row">
                         <button type="button" class="kamar-page-btn" id="btnPrevDesktop" onclick="gantiHalamanDesktop(-1)" title="Halaman Sebelumnya" <?= $halaman_aktif <= 1 ? 'disabled style="opacity: 0.45; cursor: not-allowed;"' : ''; ?>>
                             <i class="fa-solid fa-chevron-left"></i>
@@ -299,7 +404,20 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
     ?>
 
     <script>
-        // 1. Buka & Tutup Modal Secara Instan (0 ms tanpa reload halaman)
+        function closeToast() {
+            const toast = document.getElementById('toastAlertBox');
+            if (toast) {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-15px) scale(0.95)';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const toast = document.getElementById('toastAlertBox');
+            if (toast) setTimeout(closeToast, 5000);
+        });
+
         function bukaModalInstan(e, modalId, modalParam) {
             if (e) e.preventDefault();
             const modal = document.getElementById(modalId);
@@ -327,14 +445,12 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             window.history.replaceState({}, '', url);
         }
 
-        // Tutup modal dengan tombol ESC
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') {
                 tutupSemuaModalInstan();
             }
         });
 
-        // 2. Pagination Desktop Instan (12 Kamar per halaman)
         let currentPageDesktop = <?= (int)$halaman_aktif; ?>;
         const totalPageDesktop = <?= (int)$total_halaman; ?>;
 
@@ -369,7 +485,6 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             window.history.replaceState({}, '', url);
         }
 
-        // 3. Pagination Mobile Instan (8 Kamar per halaman)
         let currentPageMobile = <?= (int)$halaman_aktif_mobile; ?>;
         const totalPageMobile = <?= (int)$total_halaman_mobile; ?>;
 

@@ -4,6 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../modules/shared/handler/sewa_reminder_helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /?page=login');
@@ -101,26 +102,39 @@ if ($selected_role === 'pemilik') {
 
             if (!$penghuni) {
                 $_SESSION['login_error'] = 'Nomor Kamar atau PIN tidak sesuai!';
-            } elseif (isset($penghuni['status_akun']) && strtolower(trim($penghuni['status_akun'])) !== 'aktif') {
-                $_SESSION['login_error'] = 'Akun penghuni sedang tidak aktif!';
             } else {
-                session_regenerate_id(true);
+                $penghuniId = (int)$penghuni['penghuni_id'];
+                // Evaluasi status jatuh tempo sewa terbaru sebelum menentukan akses
+                $evalSewa   = evaluasiStatusSewaPenghuni($pdo, $penghuniId);
+                $statusAkun = $evalSewa['status_akun'] ?? strtolower(trim((string)($penghuni['status_akun'] ?? 'aktif')));
 
-                $is_ketua = !empty($penghuni['is_ketua_kos']);
+                if (!in_array($statusAkun, ['aktif', 'freeze'], true)) {
+                    $_SESSION['login_error'] = 'Akun penghuni sedang tidak aktif!';
+                } else {
+                    session_regenerate_id(true);
 
-                $_SESSION['user'] = [
-                    'id'                => (int)$penghuni['penghuni_id'],
-                    'nama'              => $penghuni['nama'],
-                    'role'              => 'penghuni',
-                    'is_pj'             => $is_ketua,
-                    'is_ketua_kos'      => $is_ketua,
-                    'kamar'             => $penghuni['no_kamar'],
-                    'no_kamar'          => $penghuni['no_kamar'],
-                    'kamar_id'          => (int)$penghuni['kamar_id'],
-                    'penghuni_kamar_id' => (int)$penghuni['penghuni_kamar_id'],
-                ];
-                header('Location: /?page=dashboard_penghuni');
-                exit;
+                    $is_ketua = !empty($penghuni['is_ketua_kos']);
+
+                    $_SESSION['user'] = [
+                        'id'                => $penghuniId,
+                        'nama'              => $penghuni['nama'],
+                        'role'              => 'penghuni',
+                        'status_akun'       => $statusAkun,
+                        'is_pj'             => $is_ketua,
+                        'is_ketua_kos'      => $is_ketua,
+                        'kamar'             => $penghuni['no_kamar'],
+                        'no_kamar'          => $penghuni['no_kamar'],
+                        'kamar_id'          => (int)$penghuni['kamar_id'],
+                        'penghuni_kamar_id' => (int)$penghuni['penghuni_kamar_id'],
+                    ];
+
+                    if ($statusAkun === 'freeze') {
+                        header('Location: /?page=akun_freeze');
+                    } else {
+                        header('Location: /?page=dashboard_penghuni');
+                    }
+                    exit;
+                }
             }
         } catch (PDOException $e) {
             error_log('[auth_penghuni] ' . $e->getMessage());

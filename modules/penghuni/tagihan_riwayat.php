@@ -20,7 +20,7 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
     }
 }
 
-// 2. Load File Handler
+// 2. Load File Handler & Helper Pengingat Sewa
 $handler_paths = [
     __DIR__ . '/handler/tagihan_handler.php',
     __DIR__ . '/handler/tagihan_riwayat_handlers.php',
@@ -33,10 +33,14 @@ foreach ($handler_paths as $hp) {
         break;
     }
 }
+require_once __DIR__ . '/../shared/handler/sewa_reminder_helper.php';
 
 // 3. Eksekusi Fungsi Handler
 $nama_penghuni = $_SESSION['user']['nama'] ?? ($_SESSION['nama'] ?? 'Penghuni');
+$penghuniId    = (int)($_SESSION['user']['id'] ?? 0);
 $pk_id         = function_exists('resolvePenghuniKamarId') ? resolvePenghuniKamarId($pdo, $_SESSION['user'] ?? []) : (int)($_SESSION['user']['penghuni_kamar_id'] ?? 0);
+
+$peringatanSewa = ($penghuniId > 0 && isset($pdo)) ? evaluasiStatusSewaPenghuni($pdo, $penghuniId) : null;
 
 $post_res      = function_exists('handleUploadBuktiBayar') ? handleUploadBuktiBayar($pdo) : ['sukses' => '', 'error' => ''];
 $sukses_pesan  = $post_res['sukses'] ?? ($sukses_pesan ?? ($_SESSION['pesan_sukses'] ?? ''));
@@ -164,6 +168,19 @@ if (isset($_GET['invoice_id'])) {
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
                 </div>
+
+                <?php if (!empty($peringatanSewa)): ?>
+                <?php $isTenggang = ($peringatanSewa['fase'] === 'tenggang'); ?>
+                <div class="iuran-notif-banner <?= $isTenggang ? 'notif-danger' : 'notif-warning'; ?>">
+                    <div class="iuran-notif-icon">
+                        <i class="fa-solid <?= $isTenggang ? 'fa-triangle-exclamation' : 'fa-bell'; ?>"></i>
+                    </div>
+                    <div class="iuran-notif-body">
+                        <strong><?= htmlspecialchars($peringatanSewa['label_status']); ?></strong>
+                        <p><?= htmlspecialchars($peringatanSewa['pesan_ringkas']); ?></p>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <h3 class="section-title-white">Tagihan Saya</h3>
                 <div class="section-group">
@@ -317,6 +334,19 @@ if (isset($_GET['invoice_id'])) {
         <main class="desktop-content">
             <h2 class="desktop-header-title">Tagihan &amp; Riwayat</h2>
             <p class="tagihan-desktop-subtitle">Ringkasan tagihan dan riwayat pembayaran</p>
+
+            <?php if (!empty($peringatanSewa)): ?>
+            <?php $isTenggang = ($peringatanSewa['fase'] === 'tenggang'); ?>
+            <div class="iuran-notif-banner <?= $isTenggang ? 'notif-danger' : 'notif-warning'; ?>" style="max-width: 784px;">
+                <div class="iuran-notif-icon">
+                    <i class="fa-solid <?= $isTenggang ? 'fa-triangle-exclamation' : 'fa-bell'; ?>"></i>
+                </div>
+                <div class="iuran-notif-body">
+                    <strong>Pengingat Sewa Kamar: <?= htmlspecialchars($peringatanSewa['label_status']); ?></strong>
+                    <p><?= htmlspecialchars($peringatanSewa['pesan_ringkas']); ?> Total tagihan: <strong>Rp <?= number_format((float)$peringatanSewa['total_tunggakan'], 0, ',', '.'); ?></strong></p>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <h3 class="tagihan-section-title">Tagihan Saya</h3>
             <div class="desktop-tagihan-grid">
@@ -639,7 +669,6 @@ if (isset($_GET['invoice_id'])) {
         }
     });
 
-    // Buka Modal Bayar Secara Instan (0 ms)
     function bukaModalBayarInstan(e, id, jenis, nominalFmt, batas) {
         if (e) e.preventDefault();
 
@@ -667,7 +696,6 @@ if (isset($_GET['invoice_id'])) {
         window.history.replaceState({}, '', url);
     }
 
-    // Buka Modal Invoice Secara Instan (0 ms)
     function bukaModalInvoiceInstan(e, data) {
         if (e) e.preventDefault();
 
@@ -692,7 +720,6 @@ if (isset($_GET['invoice_id'])) {
         window.history.replaceState({}, '', url);
     }
 
-    // Tutup Modal Bayar / Invoice Secara Instan (0 ms)
     function tutupModalTagihanInstan(e) {
         if (e) e.preventDefault();
         document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
@@ -707,7 +734,6 @@ if (isset($_GET['invoice_id'])) {
         if (e.key === 'Escape') tutupModalTagihanInstan();
     });
 
-    // Pagination Riwayat Desktop Instan
     let currentHalRiwayatDesk = <?= (int)$page_desktop; ?>;
     const totalHalRiwayatDesk = <?= (int)$total_hal_desk; ?>;
 
@@ -734,7 +760,6 @@ if (isset($_GET['invoice_id'])) {
         window.history.replaceState({}, '', url);
     }
 
-    // Pagination Riwayat Mobile Instan
     let currentHalRiwayatMob = <?= (int)$page_mobile; ?>;
     const totalHalRiwayatMob = <?= (int)$total_hal_mob; ?>;
 
@@ -761,7 +786,6 @@ if (isset($_GET['invoice_id'])) {
         window.history.replaceState({}, '', url);
     }
 
-    // Toggle Tampilan Antara Transfer dan Tunai
     function toggleMetodeBayar(metode) {
         const blokTransfer = document.getElementById('blokMetodeTransfer');
         const blokTunai = document.getElementById('blokMetodeTunai');

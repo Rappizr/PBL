@@ -20,15 +20,25 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
     }
 }
 
-// 2. Load Handler Tagihan Penghuni
+// 2. Load Handler Tagihan & Helper Pengingat Sewa
 $handler_path = __DIR__ . '/handler/tagihan_handler.php';
 if (file_exists($handler_path)) {
     require_once $handler_path;
 }
+require_once __DIR__ . '/../shared/handler/sewa_reminder_helper.php';
 
 // 3. Identifikasi Akun & Resolusi ID Kamar via Handler Resmi
 $currentUser = $_SESSION['user'] ?? [];
 $is_pj       = !empty($currentUser['is_pj']) || !empty($currentUser['is_ketua_kos']) || ($currentUser['role'] ?? '') === 'pj';
+$penghuniId  = (int)($currentUser['id'] ?? 0);
+
+// Evaluasi status jatuh tempo sewa (H-2, H-1, Hari H, Masa Tenggang 7 Hari)
+$peringatanSewa = ($penghuniId > 0 && isset($pdo)) ? evaluasiStatusSewaPenghuni($pdo, $penghuniId) : null;
+if ($peringatanSewa && ($peringatanSewa['status_akun'] ?? '') === 'freeze') {
+    $_SESSION['user']['status_akun'] = 'freeze';
+    header('Location: /?page=akun_freeze');
+    exit;
+}
 
 $pk_id = function_exists('resolvePenghuniKamarId') 
     ? resolvePenghuniKamarId($pdo, $currentUser) 
@@ -117,6 +127,23 @@ foreach ($daftar_tagihan as $t) {
         <div>
             <?php require_once __DIR__ . '/../components/header.php'; ?>
 
+            <!-- BANNER PENGINGAT SEWA (H-2, H-1, HARI H, MASA TENGGANG 7 HARI) -->
+            <?php if (!empty($peringatanSewa)): ?>
+            <?php $isTenggang = ($peringatanSewa['fase'] === 'tenggang'); ?>
+            <div class="iuran-notif-banner <?= $isTenggang ? 'notif-danger' : 'notif-warning'; ?>">
+                <div class="iuran-notif-icon">
+                    <i class="fa-solid <?= $isTenggang ? 'fa-triangle-exclamation' : 'fa-bell'; ?>"></i>
+                </div>
+                <div class="iuran-notif-body">
+                    <strong>Pengingat Sewa: <?= htmlspecialchars($peringatanSewa['label_status']); ?></strong>
+                    <p><?= htmlspecialchars($peringatanSewa['pesan_ringkas']); ?></p>
+                </div>
+                <a href="/?page=tagihan_riwayat<?= $ringkasan['sewa']['id'] ? '&bayar_id=' . $ringkasan['sewa']['id'] : ''; ?>" class="iuran-notif-btn">
+                    Bayar Sewa
+                </a>
+            </div>
+            <?php endif; ?>
+
             <!-- Ringkasan Tagihan Penghuni / PJ Dinamis -->
             <div class="penghuni-mobile-summary">
                 <!-- Pembayaran Sewa -->
@@ -168,7 +195,7 @@ foreach ($daftar_tagihan as $t) {
                         <span class="menu-label">Tagihan &amp; Riwayat</span>
                     </a>
 
-                    <a href="/?page=<?= $is_pj ? 'kelola_iuran' : 'monitoring_iuran'; ?>" class="menu-item-box quick-nav-link">
+                    <a href="/?page=iuran" class="menu-item-box quick-nav-link">
                         <div class="menu-icon-wrapper">
                             <i class="fa-solid <?= $is_pj ? 'fa-wallet' : 'fa-chart-pie'; ?>"></i>
                         </div>
@@ -206,6 +233,23 @@ foreach ($daftar_tagihan as $t) {
         <main class="desktop-content">
             <h2 class="desktop-header-title">Dashboard</h2>
             <p class="desktop-header-subtitle">Ringkasan tagihan dan akses cepat untukmu</p>
+
+            <!-- BANNER PENGINGAT SEWA DESKTOP -->
+            <?php if (!empty($peringatanSewa)): ?>
+            <?php $isTenggang = ($peringatanSewa['fase'] === 'tenggang'); ?>
+            <div class="iuran-notif-banner <?= $isTenggang ? 'notif-danger' : 'notif-warning'; ?>" style="max-width: 900px;">
+                <div class="iuran-notif-icon">
+                    <i class="fa-solid <?= $isTenggang ? 'fa-triangle-exclamation' : 'fa-bell'; ?>"></i>
+                </div>
+                <div class="iuran-notif-body">
+                    <strong>Pengingat Sewa Kamar: <?= htmlspecialchars($peringatanSewa['label_status']); ?></strong>
+                    <p><?= htmlspecialchars($peringatanSewa['pesan_ringkas']); ?> Total tagihan: <strong>Rp <?= number_format((float)$peringatanSewa['total_tunggakan'], 0, ',', '.'); ?></strong></p>
+                </div>
+                <a href="/?page=tagihan_riwayat<?= $ringkasan['sewa']['id'] ? '&bayar_id=' . $ringkasan['sewa']['id'] : ''; ?>" class="iuran-notif-btn">
+                    Bayar Sewa Sekarang
+                </a>
+            </div>
+            <?php endif; ?>
 
             <div class="desktop-tagihan-row">
                 <!-- Card Sewa Desktop -->
@@ -278,7 +322,7 @@ foreach ($daftar_tagihan as $t) {
                     <span class="desktop-menu-label">Chat<br>Penghuni</span>
                 </a>
 
-                <a href="/?page=<?= $is_pj ? 'kelola_iuran' : 'monitoring_iuran'; ?>" class="desktop-menu-card quick-nav-link">
+                <a href="/?page=iuran" class="desktop-menu-card quick-nav-link">
                     <div class="desktop-menu-icon">
                         <i class="fa-solid <?= $is_pj ? 'fa-wallet' : 'fa-chart-pie'; ?>"></i>
                     </div>
