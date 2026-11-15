@@ -60,30 +60,28 @@ if ($date_range !== '') {
     $tgl_selesai = trim($parts[1] ?? $tgl_mulai);
 }
 
-$daftar_riwayat = array_filter($semua_riwayat, function ($r) use ($tgl_mulai, $tgl_selesai) {
+$daftar_riwayat = array_values(array_filter($semua_riwayat, function ($r) use ($tgl_mulai, $tgl_selesai) {
     if ($tgl_mulai === '') return true;
     return ($r['tanggal_filter'] >= $tgl_mulai && $r['tanggal_filter'] <= $tgl_selesai);
-});
+}));
 $is_filtered = ($date_range !== '');
 
-// Pagination Riwayat Transaksi (Desktop: 10, Mobile: 5)
+// Pagination Riwayat Transaksi (Desktop: 10 per halaman, Mobile: 5 per halaman)
 $total_riwayat = count($daftar_riwayat);
 
-$limit_desktop  = 1;
+$limit_desktop  = 10;
 $page_desktop   = isset($_GET['hal']) ? max(1, (int)$_GET['hal']) : 1;
 $total_hal_desk = max(1, (int)ceil($total_riwayat / $limit_desktop));
 if ($page_desktop > $total_hal_desk) $page_desktop = $total_hal_desk;
-$riwayat_desktop = array_slice($daftar_riwayat, ($page_desktop - 1) * $limit_desktop, $limit_desktop);
 
-$limit_mobile   = 1;
+$limit_mobile   = 5;
 $page_mobile    = isset($_GET['hal_m']) ? max(1, (int)$_GET['hal_m']) : 1;
 $total_hal_mob  = max(1, (int)ceil($total_riwayat / $limit_mobile));
 if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
-$riwayat_mobile  = array_slice($daftar_riwayat, ($page_mobile - 1) * $limit_mobile, $limit_mobile);
 
 $query_tanggal = $is_filtered ? '&date_range=' . urlencode($date_range) : '';
 
-// 5. Handling Modal Data
+// 5. Handling Initial Modal Data (Jika dibuka langsung via URL)
 $tagihan_dipilih = null;
 if (isset($_GET['bayar_id'])) {
     $bid = (int)$_GET['bayar_id'];
@@ -115,8 +113,8 @@ if (isset($_GET['invoice_id'])) {
     <title>SITEMAN - KOS | Tagihan &amp; Riwayat</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 
 <body class="dashboard-body">
@@ -177,10 +175,11 @@ if (isset($_GET['invoice_id'])) {
                     <?php else: ?>
                     <?php foreach ($daftar_tagihan_saya as $t): ?>
                     <?php
-                            $is_lunas   = ($t['status_tagihan'] === 'lunas');
-                            $is_pending = (($t['status_verif'] ?? '') === 'pending' || $t['status_tagihan'] === 'sebagian');
-                            $is_ditolak = (($t['status_verif'] ?? '') === 'ditolak');
-                            ?>
+                        $is_lunas   = ($t['status_tagihan'] === 'lunas');
+                        $is_pending = (($t['status_verif'] ?? '') === 'pending' || $t['status_tagihan'] === 'sebagian');
+                        $is_ditolak = (($t['status_verif'] ?? '') === 'ditolak');
+                        $nominalFmt = number_format($t['nominal'], 0, ',', '.');
+                    ?>
                     <div class="item-tagihan-card <?= $is_ditolak ? 'tagihan-ditolak' : ''; ?>">
                         <div class="item-tagihan-header">
                             <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']); ?></h4>
@@ -200,8 +199,7 @@ if (isset($_GET['invoice_id'])) {
                                 <span>Batas bayar</span>
                             </div>
                             <div class="item-tagihan-right">
-                                <span class="nominal-highlight">Rp
-                                    <?= number_format($t['nominal'], 0, ',', '.'); ?></span>
+                                <span class="nominal-highlight">Rp <?= $nominalFmt; ?></span>
                                 <span><?= htmlspecialchars($t['jatuh_tempo']); ?></span>
                             </div>
                         </div>
@@ -219,11 +217,13 @@ if (isset($_GET['invoice_id'])) {
                         <div class="btn-card-action btn-card-pending"><i class="fa-solid fa-clock"></i> Diproses</div>
                         <?php elseif ($is_ditolak): ?>
                         <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>"
+                            onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>)"
                             class="btn-card-action btn-card-upload-ulang">
                             <i class="fa-solid fa-cloud-arrow-up"></i> Upload Ulang Bukti
                         </a>
                         <?php else: ?>
                         <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>"
+                            onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>)"
                             class="btn-card-action">Bayar</a>
                         <?php endif; ?>
                     </div>
@@ -239,8 +239,7 @@ if (isset($_GET['invoice_id'])) {
                         <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
                             placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
                         <?php if ($is_filtered): ?>
-                        <a href="/?page=tagihan_riwayat" class="btn-reset-range"><i class="fa-solid fa-rotate-left"></i>
-                            Reset</a>
+                        <a href="/?page=tagihan_riwayat" class="btn-reset-range"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                         <?php endif; ?>
                     </div>
                 </form>
@@ -252,13 +251,31 @@ if (isset($_GET['invoice_id'])) {
                         <span>Belum ada riwayat transaksi yang disetujui.</span>
                     </div>
                     <?php else: ?>
-                    <?php foreach ($riwayat_mobile as $r): ?>
-                    <div class="item-tagihan-card">
+                    <?php foreach ($daftar_riwayat as $idx => $r): ?>
+                    <?php
+                        $page_m     = (int)floor($idx / $limit_mobile) + 1;
+                        $nominalFmt = 'Rp ' . number_format($r['nominal'], 0, ',', '.');
+                        $invJson    = htmlspecialchars(json_encode([
+                            'id'             => (int)$r['id'],
+                            'judul'          => $r['judul'],
+                            'nomor_invoice'  => $r['nomor_invoice'],
+                            'no_kamar'       => $r['no_kamar'],
+                            'tanggal_terbit' => $r['tanggal_terbit'],
+                            'jatuh_tempo'    => $r['jatuh_tempo'],
+                            'periode_sewa'   => $r['periode_sewa'],
+                            'tanggal_bayar'  => $r['tanggal_bayar'],
+                            'nominal_fmt'    => $nominalFmt
+                        ]), ENT_QUOTES, 'UTF-8');
+                    ?>
+                    <div class="item-tagihan-card riwayat-item-mobile"
+                         data-page-m="<?= $page_m; ?>"
+                         style="<?= $page_m !== $page_mobile ? 'display: none;' : ''; ?>">
                         <div class="item-tagihan-header">
                             <h4 class="item-tagihan-name"><?= htmlspecialchars($r['judul']); ?></h4>
                             <div class="riwayat-status-actions">
                                 <span class="badge-status-lunas">Lunas</span>
-                                <a href="/?page=tagihan_riwayat&hal_m=<?= $page_mobile; ?><?= $query_tanggal; ?>&invoice_id=<?= $r['id']; ?>"
+                                <a href="/?page=tagihan_riwayat&hal_m=<?= $page_m; ?><?= $query_tanggal; ?>&invoice_id=<?= $r['id']; ?>"
+                                    onclick="bukaModalInvoiceInstan(event, <?= $invJson; ?>)"
                                     class="btn-invoice-pill">
                                     <i class="fa-solid fa-file-invoice"></i> Invoice
                                 </a>
@@ -266,35 +283,23 @@ if (isset($_GET['invoice_id'])) {
                         </div>
                         <div class="item-tagihan-body">
                             <div class="item-tagihan-left"><span><?= htmlspecialchars($r['tanggal']); ?></span></div>
-                            <div class="item-tagihan-right"><span class="nominal-highlight">Rp
-                                    <?= number_format($r['nominal'], 0, ',', '.'); ?></span></div>
+                            <div class="item-tagihan-right"><span class="nominal-highlight"><?= $nominalFmt; ?></span></div>
                         </div>
                     </div>
                     <?php endforeach; ?>
+
                     <?php if ($total_hal_mob > 1): ?>
                     <div class="verif-pagination-wrapper verif-pagination-mobile">
                         <div class="verif-page-controls">
-                            <?php if ($page_mobile > 1): ?>
-                            <a href="/?page=tagihan_riwayat&hal_m=<?= $page_mobile - 1; ?><?= $query_tanggal; ?>"
-                                class="verif-page-btn" title="Sebelumnya">
+                            <button type="button" class="verif-page-btn" id="btnPrevRiwayatMob" onclick="gantiHalRiwayatMobile(-1)" title="Sebelumnya" <?= $page_mobile <= 1 ? 'disabled' : ''; ?>>
                                 <i class="fa-solid fa-chevron-left"></i>
-                            </a>
-                            <?php else: ?>
-                            <button type="button" class="verif-page-btn" disabled><i
-                                    class="fa-solid fa-chevron-left"></i></button>
-                            <?php endif; ?>
+                            </button>
 
-                            <span class="verif-page-badge"> <?= $page_mobile; ?> / <?= $total_hal_mob; ?></span>
+                            <span class="verif-page-badge" id="badgeRiwayatMob"><?= $page_mobile; ?> / <?= $total_hal_mob; ?></span>
 
-                            <?php if ($page_mobile < $total_hal_mob): ?>
-                            <a href="/?page=tagihan_riwayat&hal_m=<?= $page_mobile + 1; ?><?= $query_tanggal; ?>"
-                                class="verif-page-btn" title="Berikutnya">
+                            <button type="button" class="verif-page-btn" id="btnNextRiwayatMob" onclick="gantiHalRiwayatMobile(1)" title="Berikutnya" <?= $page_mobile >= $total_hal_mob ? 'disabled' : ''; ?>>
                                 <i class="fa-solid fa-chevron-right"></i>
-                            </a>
-                            <?php else: ?>
-                            <button type="button" class="verif-page-btn" disabled><i
-                                    class="fa-solid fa-chevron-right"></i></button>
-                            <?php endif; ?>
+                            </button>
                         </div>
                     </div>
                     <?php endif; ?>
@@ -323,10 +328,11 @@ if (isset($_GET['invoice_id'])) {
                 <?php else: ?>
                 <?php foreach ($daftar_tagihan_saya as $t): ?>
                 <?php
-                        $is_lunas   = ($t['status_tagihan'] === 'lunas');
-                        $is_pending = (($t['status_verif'] ?? '') === 'pending' || $t['status_tagihan'] === 'sebagian');
-                        $is_ditolak = (($t['status_verif'] ?? '') === 'ditolak');
-                        ?>
+                    $is_lunas   = ($t['status_tagihan'] === 'lunas');
+                    $is_pending = (($t['status_verif'] ?? '') === 'pending' || $t['status_tagihan'] === 'sebagian');
+                    $is_ditolak = (($t['status_verif'] ?? '') === 'ditolak');
+                    $nominalFmt = number_format($t['nominal'], 0, ',', '.');
+                ?>
                 <div class="item-tagihan-card <?= $is_ditolak ? 'tagihan-ditolak' : ''; ?>">
                     <div class="item-tagihan-header">
                         <h4 class="item-tagihan-name"><?= htmlspecialchars($t['jenis']); ?></h4>
@@ -346,7 +352,7 @@ if (isset($_GET['invoice_id'])) {
                             <span>Batas bayar</span>
                         </div>
                         <div class="item-tagihan-right">
-                            <span class="nominal-highlight">Rp <?= number_format($t['nominal'], 0, ',', '.'); ?></span>
+                            <span class="nominal-highlight">Rp <?= $nominalFmt; ?></span>
                             <span><?= htmlspecialchars($t['jatuh_tempo']); ?></span>
                         </div>
                     </div>
@@ -364,11 +370,14 @@ if (isset($_GET['invoice_id'])) {
                     <div class="btn-card-action btn-card-pending"><i class="fa-solid fa-clock"></i> Diproses</div>
                     <?php elseif ($is_ditolak): ?>
                     <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>"
+                        onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>)"
                         class="btn-card-action btn-card-upload-ulang">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Upload Ulang Bukti
                     </a>
                     <?php else: ?>
-                    <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>" class="btn-card-action">Bayar</a>
+                    <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>"
+                        onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>)"
+                        class="btn-card-action">Bayar</a>
                     <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
@@ -384,8 +393,7 @@ if (isset($_GET['invoice_id'])) {
                         <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
                             placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
                         <?php if ($is_filtered): ?>
-                        <a href="/?page=tagihan_riwayat" class="btn-reset-range"><i class="fa-solid fa-rotate-left"></i>
-                            Reset</a>
+                        <a href="/?page=tagihan_riwayat" class="btn-reset-range"><i class="fa-solid fa-rotate-left"></i> Reset</a>
                         <?php endif; ?>
                     </div>
                 </form>
@@ -398,8 +406,25 @@ if (isset($_GET['invoice_id'])) {
                     <span>Belum ada riwayat transaksi yang disetujui.</span>
                 </div>
                 <?php else: ?>
-                <?php foreach ($riwayat_desktop as $r): ?>
-                <div class="desktop-riwayat-card">
+                <?php foreach ($daftar_riwayat as $idx => $r): ?>
+                <?php
+                    $page_d     = (int)floor($idx / $limit_desktop) + 1;
+                    $nominalFmt = 'Rp ' . number_format($r['nominal'], 0, ',', '.');
+                    $invJson    = htmlspecialchars(json_encode([
+                        'id'             => (int)$r['id'],
+                        'judul'          => $r['judul'],
+                        'nomor_invoice'  => $r['nomor_invoice'],
+                        'no_kamar'       => $r['no_kamar'],
+                        'tanggal_terbit' => $r['tanggal_terbit'],
+                        'jatuh_tempo'    => $r['jatuh_tempo'],
+                        'periode_sewa'   => $r['periode_sewa'],
+                        'tanggal_bayar'  => $r['tanggal_bayar'],
+                        'nominal_fmt'    => $nominalFmt
+                    ]), ENT_QUOTES, 'UTF-8');
+                ?>
+                <div class="desktop-riwayat-card riwayat-item-desktop"
+                     data-page-d="<?= $page_d; ?>"
+                     style="<?= $page_d !== $page_desktop ? 'display: none;' : ''; ?>">
                     <div class="desktop-riwayat-info">
                         <h4 class="desktop-riwayat-title"><?= htmlspecialchars($r['judul']); ?></h4>
                         <span class="desktop-riwayat-date"><?= htmlspecialchars($r['tanggal']); ?></span>
@@ -407,68 +432,57 @@ if (isset($_GET['invoice_id'])) {
                     <div class="desktop-riwayat-right">
                         <div class="riwayat-status-actions">
                             <span class="badge-lunas-pill">Lunas</span>
-                            <a href="/?page=tagihan_riwayat&hal=<?= $page_desktop; ?><?= $query_tanggal; ?>&invoice_id=<?= $r['id']; ?>"
+                            <a href="/?page=tagihan_riwayat&hal=<?= $page_d; ?><?= $query_tanggal; ?>&invoice_id=<?= $r['id']; ?>"
+                                onclick="bukaModalInvoiceInstan(event, <?= $invJson; ?>)"
                                 class="btn-invoice-pill">
                                 <i class="fa-solid fa-file-invoice"></i> Invoice
                             </a>
                         </div>
-                        <span class="desktop-riwayat-nominal">Rp
-                            <?= number_format($r['nominal'], 0, ',', '.'); ?></span>
+                        <span class="desktop-riwayat-nominal"><?= $nominalFmt; ?></span>
                     </div>
                 </div>
                 <?php endforeach; ?>
                 <?php endif; ?>
             </div>
+
             <?php if ($total_hal_desk > 1): ?>
             <div class="verif-pagination-wrapper" style="max-width: 784px;">
                 <div class="verif-page-controls">
-                    <?php if ($page_desktop > 1): ?>
-                    <a href="/?page=tagihan_riwayat&hal=<?= $page_desktop - 1; ?><?= $query_tanggal; ?>"
-                        class="verif-page-btn" title="Sebelumnya">
+                    <button type="button" class="verif-page-btn" id="btnPrevRiwayatDesk" onclick="gantiHalRiwayatDesktop(currentHalRiwayatDesk - 1)" title="Sebelumnya" <?= $page_desktop <= 1 ? 'disabled' : ''; ?>>
                         <i class="fa-solid fa-chevron-left"></i>
-                    </a>
-                    <?php else: ?>
-                    <button type="button" class="verif-page-btn" disabled><i
-                            class="fa-solid fa-chevron-left"></i></button>
-                    <?php endif; ?>
+                    </button>
 
                     <?php for ($i = 1; $i <= $total_hal_desk; $i++): ?>
-                    <a href="/?page=tagihan_riwayat&hal=<?= $i; ?><?= $query_tanggal; ?>"
+                    <button type="button"
+                        data-riwayat-page-btn="<?= $i; ?>"
+                        onclick="gantiHalRiwayatDesktop(<?= $i; ?>)"
                         class="verif-page-num <?= ($i === $page_desktop) ? 'active' : ''; ?>">
                         <?= $i; ?>
-                    </a>
+                    </button>
                     <?php endfor; ?>
 
-                    <?php if ($page_desktop < $total_hal_desk): ?>
-                    <a href="/?page=tagihan_riwayat&hal=<?= $page_desktop + 1; ?><?= $query_tanggal; ?>"
-                        class="verif-page-btn" title="Berikutnya">
+                    <button type="button" class="verif-page-btn" id="btnNextRiwayatDesk" onclick="gantiHalRiwayatDesktop(currentHalRiwayatDesk + 1)" title="Berikutnya" <?= $page_desktop >= $total_hal_desk ? 'disabled' : ''; ?>>
                         <i class="fa-solid fa-chevron-right"></i>
-                    </a>
-                    <?php else: ?>
-                    <button type="button" class="verif-page-btn" disabled><i
-                            class="fa-solid fa-chevron-right"></i></button>
-                    <?php endif; ?>
+                    </button>
                 </div>
             </div>
             <?php endif; ?>
         </main>
     </div>
 
-    <!-- MODAL INVOICE -->
-    <?php if ($invoice_dipilih): ?>
-    <div class="modal-overlay active">
-        <div class="invoice-wrapper">
+    <!-- MODAL INVOICE (INSTAN TANPA RELOAD) -->
+    <?php $is_sewa_init = $invoice_dipilih ? (stripos($invoice_dipilih['judul'], 'sewa') !== false) : true; ?>
+    <div id="modalInvoicePenghuni" class="modal-overlay <?= $invoice_dipilih ? 'active' : ''; ?>" onclick="tutupModalTagihanInstan(event)">
+        <div class="invoice-wrapper" onclick="event.stopPropagation()">
             <header class="invoice-header-row">
                 <div>
                     <h1 class="invoice-brand-title">SITEMAN - KOS</h1>
                     <p class="invoice-brand-sub">Sistem Manajemen Operasional Kos</p>
                 </div>
                 <div class="invoice-tag-box">
-                    <?php $is_sewa = (stripos($invoice_dipilih['judul'], 'sewa') !== false); ?>
-                    <h2 class="invoice-main-title"><?= $is_sewa ? 'INVOICE SEWA' : 'INVOICE IURAN'; ?></h2>
-                    <p class="invoice-number"><?= htmlspecialchars($invoice_dipilih['nomor_invoice']); ?></p>
-                    <span class="badge-invoice-status badge-status-paid"><i class="fa-solid fa-circle-check"></i>
-                        Lunas</span>
+                    <h2 class="invoice-main-title" id="invModalTitle"><?= $is_sewa_init ? 'INVOICE SEWA' : 'INVOICE IURAN'; ?></h2>
+                    <p class="invoice-number" id="invModalNomor"><?= htmlspecialchars($invoice_dipilih['nomor_invoice'] ?? ''); ?></p>
+                    <span class="badge-invoice-status badge-status-paid"><i class="fa-solid fa-circle-check"></i> Lunas</span>
                 </div>
             </header>
 
@@ -476,19 +490,14 @@ if (isset($_GET['invoice_id'])) {
                 <div>
                     <div class="meta-col-title">Ditagihkan Kepada</div>
                     <h3 class="meta-text-strong"><?= htmlspecialchars($nama_penghuni); ?></h3>
-                    <p class="meta-text-muted"><i class="fa-solid fa-door-open"></i> Kamar
-                        <?= htmlspecialchars($invoice_dipilih['no_kamar']); ?></p>
+                    <p class="meta-text-muted"><i class="fa-solid fa-door-open"></i> Kamar <span id="invModalKamar"><?= htmlspecialchars($invoice_dipilih['no_kamar'] ?? '-'); ?></span></p>
                 </div>
                 <div class="text-right">
                     <div class="meta-col-title">Detail Waktu</div>
-                    <p class="meta-text-muted"><strong>Tgl Terbit:</strong>
-                        <?= htmlspecialchars($invoice_dipilih['tanggal_terbit']); ?></p>
-                    <p class="meta-text-muted"><strong>Jatuh Tempo:</strong>
-                        <?= htmlspecialchars($invoice_dipilih['jatuh_tempo']); ?></p>
-                    <p class="meta-text-muted"><strong>Periode:</strong>
-                        <?= htmlspecialchars($invoice_dipilih['periode_sewa']); ?></p>
-                    <p class="meta-text-muted"><strong>Dibayar:</strong>
-                        <?= htmlspecialchars($invoice_dipilih['tanggal_bayar']); ?></p>
+                    <p class="meta-text-muted"><strong>Tgl Terbit:</strong> <span id="invModalTglTerbit"><?= htmlspecialchars($invoice_dipilih['tanggal_terbit'] ?? ''); ?></span></p>
+                    <p class="meta-text-muted"><strong>Jatuh Tempo:</strong> <span id="invModalJatuhTempo"><?= htmlspecialchars($invoice_dipilih['jatuh_tempo'] ?? ''); ?></span></p>
+                    <p class="meta-text-muted"><strong>Periode:</strong> <span id="invModalPeriode"><?= htmlspecialchars($invoice_dipilih['periode_sewa'] ?? ''); ?></span></p>
+                    <p class="meta-text-muted"><strong>Dibayar:</strong> <span id="invModalTglBayar"><?= htmlspecialchars($invoice_dipilih['tanggal_bayar'] ?? ''); ?></span></p>
                 </div>
             </section>
 
@@ -502,10 +511,10 @@ if (isset($_GET['invoice_id'])) {
                 <tbody>
                     <tr>
                         <td>
-                            <p class="item-name"><?= htmlspecialchars($invoice_dipilih['judul']); ?></p>
-                            <p class="item-desc"><?= htmlspecialchars($invoice_dipilih['periode_sewa']); ?></p>
+                            <p class="item-name" id="invModalItemName"><?= htmlspecialchars($invoice_dipilih['judul'] ?? ''); ?></p>
+                            <p class="item-desc" id="invModalItemDesc"><?= htmlspecialchars($invoice_dipilih['periode_sewa'] ?? ''); ?></p>
                         </td>
-                        <td>Rp <?= number_format($invoice_dipilih['nominal'], 0, ',', '.'); ?></td>
+                        <td id="invModalItemNominal"><?= $invoice_dipilih ? 'Rp ' . number_format($invoice_dipilih['nominal'], 0, ',', '.') : 'Rp 0'; ?></td>
                     </tr>
                 </tbody>
             </table>
@@ -513,51 +522,44 @@ if (isset($_GET['invoice_id'])) {
             <div class="invoice-summary-row">
                 <div class="invoice-summary-box">
                     <span class="summary-total-label">Total Tagihan</span>
-                    <span class="summary-total-value">Rp
-                        <?= number_format($invoice_dipilih['nominal'], 0, ',', '.'); ?></span>
+                    <span class="summary-total-value" id="invModalTotal"><?= $invoice_dipilih ? 'Rp ' . number_format($invoice_dipilih['nominal'], 0, ',', '.') : 'Rp 0'; ?></span>
                 </div>
             </div>
 
             <div class="invoice-actions">
-                <a href="/?page=tagihan_riwayat&hal=<?= $page_desktop; ?>&hal_m=<?= $page_mobile; ?><?= $query_tanggal; ?>"
-                    class="btn-invoice-back"><i class="fa-solid fa-xmark"></i> Tutup</a>
-                <button type="button" onclick="window.print()" class="btn-invoice-print"><i
-                        class="fa-solid fa-print"></i> Cetak / Simpan PDF</button>
+                <button type="button" onclick="tutupModalTagihanInstan(event)" class="btn-invoice-back"><i class="fa-solid fa-xmark"></i> Tutup</button>
+                <button type="button" onclick="window.print()" class="btn-invoice-print"><i class="fa-solid fa-print"></i> Cetak / Simpan PDF</button>
             </div>
         </div>
     </div>
-    <?php endif; ?>
 
-    <!-- MODAL BAYAR (PILIHAN METODE TRANSFER ATAU TUNAI) -->
-    <?php if ($tagihan_dipilih): ?>
-    <div class="modal-overlay active">
-        <div class="modal-bayar-card">
+    <!-- MODAL BAYAR (INSTAN TANPA RELOAD) -->
+    <div id="modalBayarTagihan" class="modal-overlay <?= $tagihan_dipilih ? 'active' : ''; ?>" onclick="tutupModalTagihanInstan(event)">
+        <div class="modal-bayar-card" onclick="event.stopPropagation()">
             <h3 class="modal-bayar-title">Bayar Tagihan</h3>
             <div class="modal-ringkasan-box">
                 <div class="modal-ringkasan-top">
-                    <span class="modal-ringkasan-jenis"><?= htmlspecialchars($tagihan_dipilih['jenis']); ?></span>
-                    <span class="modal-ringkasan-nominal">Rp
-                        <?= number_format($tagihan_dipilih['nominal'], 0, ',', '.'); ?></span>
+                    <span class="modal-ringkasan-jenis" id="bayarModalJenis"><?= htmlspecialchars($tagihan_dipilih['jenis'] ?? ''); ?></span>
+                    <span class="modal-ringkasan-nominal" id="bayarModalNominal"><?= $tagihan_dipilih ? 'Rp ' . number_format($tagihan_dipilih['nominal'], 0, ',', '.') : 'Rp 0'; ?></span>
                 </div>
-                <span class="modal-ringkasan-batas">Batas bayar
-                    <?= htmlspecialchars($tagihan_dipilih['jatuh_tempo']); ?></span>
+                <span class="modal-ringkasan-batas">Batas bayar <span id="bayarModalBatas"><?= htmlspecialchars($tagihan_dipilih['jatuh_tempo'] ?? ''); ?></span></span>
             </div>
 
             <form action="/?page=tagihan_riwayat" method="POST" enctype="multipart/form-data"
                 class="modal-form-upload-tagihan" onsubmit="handleKirimBuktiSubmit(event)">
-                <input type="hidden" name="tagihan_id" value="<?= $tagihan_dipilih['id']; ?>">
+                <input type="hidden" name="tagihan_id" id="bayarModalTagihanId" value="<?= (int)($tagihan_dipilih['id'] ?? 0); ?>">
 
                 <!-- PILIHAN METODE PEMBAYARAN -->
                 <div class="metode-bayar-group">
                     <label class="modal-rekening-label">Metode Pembayaran</label>
                     <div class="metode-bayar-grid">
                         <label class="metode-bayar-option">
-                            <input type="radio" name="metode_bayar" value="transfer" checked
+                            <input type="radio" name="metode_bayar" id="radioMetodeTransfer" value="transfer" checked
                                 onchange="toggleMetodeBayar('transfer')" class="metode-radio-input">
                             <span><i class="fa-solid fa-building-columns"></i> Transfer</span>
                         </label>
                         <label class="metode-bayar-option">
-                            <input type="radio" name="metode_bayar" value="tunai" onchange="toggleMetodeBayar('tunai')"
+                            <input type="radio" name="metode_bayar" id="radioMetodeTunai" value="tunai" onchange="toggleMetodeBayar('tunai')"
                                 class="metode-radio-input">
                             <span><i class="fa-solid fa-money-bill-wave"></i> Tunai (Cash)</span>
                         </label>
@@ -599,8 +601,7 @@ if (isset($_GET['invoice_id'])) {
                         <div>
                             <h4 class="tunai-info-title">Pembayaran Tunai Langsung</h4>
                             <p class="tunai-info-desc">
-                                Silakan serahkan uang tunai sebesar <strong>Rp
-                                    <?= number_format($tagihan_dipilih['nominal'], 0, ',', '.'); ?></strong> ke Pemilik
+                                Silakan serahkan uang tunai sebesar <strong id="bayarModalTunaiNominal"><?= $tagihan_dipilih ? 'Rp ' . number_format($tagihan_dipilih['nominal'], 0, ',', '.') : 'Rp 0'; ?></strong> ke Pemilik
                                 / Pengurus Kos. Setelah uang diterima, status tagihan Anda akan diverifikasi.
                             </p>
                         </div>
@@ -608,7 +609,7 @@ if (isset($_GET['invoice_id'])) {
                 </div>
 
                 <div class="modal-bayar-actions">
-                    <a href="/?page=tagihan_riwayat" class="btn-bayar-batal">Batal</a>
+                    <button type="button" onclick="tutupModalTagihanInstan(event)" class="btn-bayar-batal">Batal</button>
                     <button type="submit" id="btnSubmitBukti" class="btn-bayar-kirim">
                         <span class="btn-text-content" id="btnSubmitText">Kirim Bukti</span>
                     </button>
@@ -616,7 +617,6 @@ if (isset($_GET['invoice_id'])) {
             </form>
         </div>
     </div>
-    <?php endif; ?>
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
@@ -638,6 +638,128 @@ if (isset($_GET['invoice_id'])) {
             setTimeout(closeToast, 5000);
         }
     });
+
+    // Buka Modal Bayar Secara Instan (0 ms)
+    function bukaModalBayarInstan(e, id, jenis, nominalFmt, batas) {
+        if (e) e.preventDefault();
+
+        document.getElementById('bayarModalTagihanId').value = id;
+        document.getElementById('bayarModalJenis').textContent = jenis;
+        document.getElementById('bayarModalNominal').textContent = nominalFmt;
+        document.getElementById('bayarModalBatas').textContent = batas;
+        document.getElementById('bayarModalTunaiNominal').textContent = nominalFmt;
+
+        const radioTransfer = document.getElementById('radioMetodeTransfer');
+        if (radioTransfer) radioTransfer.checked = true;
+        toggleMetodeBayar('transfer');
+
+        const fileInput = document.getElementById('inputBuktiTransfer');
+        if (fileInput) {
+            fileInput.value = '';
+            previewFotoBukti(fileInput);
+        }
+
+        document.getElementById('modalBayarTagihan').classList.add('active');
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('bayar_id', id);
+        url.searchParams.delete('invoice_id');
+        window.history.replaceState({}, '', url);
+    }
+
+    // Buka Modal Invoice Secara Instan (0 ms)
+    function bukaModalInvoiceInstan(e, data) {
+        if (e) e.preventDefault();
+
+        const isSewa = (data.judul || '').toLowerCase().includes('sewa');
+        document.getElementById('invModalTitle').textContent = isSewa ? 'INVOICE SEWA' : 'INVOICE IURAN';
+        document.getElementById('invModalNomor').textContent = data.nomor_invoice || '';
+        document.getElementById('invModalKamar').textContent = data.no_kamar || '-';
+        document.getElementById('invModalTglTerbit').textContent = data.tanggal_terbit || '';
+        document.getElementById('invModalJatuhTempo').textContent = data.jatuh_tempo || '';
+        document.getElementById('invModalPeriode').textContent = data.periode_sewa || '';
+        document.getElementById('invModalTglBayar').textContent = data.tanggal_bayar || '';
+        document.getElementById('invModalItemName').textContent = data.judul || '';
+        document.getElementById('invModalItemDesc').textContent = data.periode_sewa || '';
+        document.getElementById('invModalItemNominal').textContent = data.nominal_fmt || 'Rp 0';
+        document.getElementById('invModalTotal').textContent = data.nominal_fmt || 'Rp 0';
+
+        document.getElementById('modalInvoicePenghuni').classList.add('active');
+
+        const url = new URL(window.location.href);
+        url.searchParams.set('invoice_id', data.id);
+        url.searchParams.delete('bayar_id');
+        window.history.replaceState({}, '', url);
+    }
+
+    // Tutup Modal Bayar / Invoice Secara Instan (0 ms)
+    function tutupModalTagihanInstan(e) {
+        if (e) e.preventDefault();
+        document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+
+        const url = new URL(window.location.href);
+        url.searchParams.delete('bayar_id');
+        url.searchParams.delete('invoice_id');
+        window.history.replaceState({}, '', url);
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') tutupModalTagihanInstan();
+    });
+
+    // Pagination Riwayat Desktop Instan
+    let currentHalRiwayatDesk = <?= (int)$page_desktop; ?>;
+    const totalHalRiwayatDesk = <?= (int)$total_hal_desk; ?>;
+
+    function gantiHalRiwayatDesktop(target) {
+        if (target < 1 || target > totalHalRiwayatDesk) return;
+        currentHalRiwayatDesk = target;
+
+        document.querySelectorAll('.riwayat-item-desktop').forEach(card => {
+            card.style.display = (parseInt(card.getAttribute('data-page-d')) === currentHalRiwayatDesk) ? '' : 'none';
+        });
+
+        document.querySelectorAll('[data-riwayat-page-btn]').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.getAttribute('data-riwayat-page-btn')) === currentHalRiwayatDesk);
+        });
+
+        const btnPrev = document.getElementById('btnPrevRiwayatDesk');
+        const btnNext = document.getElementById('btnNextRiwayatDesk');
+        if (btnPrev) btnPrev.disabled = currentHalRiwayatDesk <= 1;
+        if (btnNext) btnNext.disabled = currentHalRiwayatDesk >= totalHalRiwayatDesk;
+
+        const url = new URL(window.location.href);
+        if (currentHalRiwayatDesk === 1) url.searchParams.delete('hal');
+        else url.searchParams.set('hal', currentHalRiwayatDesk);
+        window.history.replaceState({}, '', url);
+    }
+
+    // Pagination Riwayat Mobile Instan
+    let currentHalRiwayatMob = <?= (int)$page_mobile; ?>;
+    const totalHalRiwayatMob = <?= (int)$total_hal_mob; ?>;
+
+    function gantiHalRiwayatMobile(delta) {
+        const target = currentHalRiwayatMob + delta;
+        if (target < 1 || target > totalHalRiwayatMob) return;
+        currentHalRiwayatMob = target;
+
+        document.querySelectorAll('.riwayat-item-mobile').forEach(card => {
+            card.style.display = (parseInt(card.getAttribute('data-page-m')) === currentHalRiwayatMob) ? '' : 'none';
+        });
+
+        const badge = document.getElementById('badgeRiwayatMob');
+        if (badge) badge.textContent = ` ${currentHalRiwayatMob} / ${totalHalRiwayatMob}`;
+
+        const btnPrev = document.getElementById('btnPrevRiwayatMob');
+        const btnNext = document.getElementById('btnNextRiwayatMob');
+        if (btnPrev) btnPrev.disabled = currentHalRiwayatMob <= 1;
+        if (btnNext) btnNext.disabled = currentHalRiwayatMob >= totalHalRiwayatMob;
+
+        const url = new URL(window.location.href);
+        if (currentHalRiwayatMob === 1) url.searchParams.delete('hal_m');
+        else url.searchParams.set('hal_m', currentHalRiwayatMob);
+        window.history.replaceState({}, '', url);
+    }
 
     // Toggle Tampilan Antara Transfer dan Tunai
     function toggleMetodeBayar(metode) {

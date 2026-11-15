@@ -18,7 +18,6 @@ function resolvePenghuniKamarId(PDO $pdo, array $sessionUser): int {
     $nama_penghuni   = trim($sessionUser['nama'] ?? '');
     $username        = trim($sessionUser['username'] ?? '');
 
-    // 1. Cari via ID Penghuni
     if ($session_user_id > 0) {
         try {
             $stmtPK = $pdo->prepare("SELECT id FROM penghuni_kamar WHERE penghuni_id = :p_id ORDER BY id DESC LIMIT 1");
@@ -28,7 +27,6 @@ function resolvePenghuniKamarId(PDO $pdo, array $sessionUser): int {
         } catch (Exception $e) {}
     }
 
-    // 2. Cari via Nama Lengkap
     if (!empty($nama_penghuni)) {
         try {
             $stmtNama = $pdo->prepare("
@@ -44,7 +42,6 @@ function resolvePenghuniKamarId(PDO $pdo, array $sessionUser): int {
         } catch (Exception $e) {}
     }
 
-    // 3. Cari via Username
     if (!empty($username)) {
         try {
             $stmtUser = $pdo->prepare("
@@ -196,7 +193,6 @@ function handleUploadBuktiBayar(PDO $pdo): array {
         $tagData = $stmtTag->fetch(PDO::FETCH_ASSOC);
         $jumlah_bayar = (float)($tagData['jumlah_bayar'] ?? 5500000);
 
-        // Cek baris pembayaran pending / ditolak yang sudah ada
         $stmtCek = $pdo->prepare("
             SELECT id 
             FROM pembayaran 
@@ -208,7 +204,6 @@ function handleUploadBuktiBayar(PDO $pdo): array {
         $existingId = $stmtCek->fetchColumn();
 
         if ($existingId) {
-            // Jika tunai, kolom bukti_pembayaran dikosongkan (NULL)
             $stmtUpd = $pdo->prepare("
                 UPDATE pembayaran 
                 SET bukti_pembayaran = :foto,

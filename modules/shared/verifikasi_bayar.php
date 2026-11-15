@@ -1,5 +1,4 @@
 <?php
-
 /**
  * VIEW VERIFIKASI PEMBAYARAN
  * Lokasi: modules/shared/verifikasi_bayar.php
@@ -8,10 +7,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Panggil Handler langsung dari folder handler di subfolder yang sama
 require_once __DIR__ . '/handler/verifikasi_handler.php';
 
-// Proteksi Variabel Default untuk Intelephense
 $currentUser       = $_SESSION['user'] ?? [];
 $is_pemilik        = ($currentUser['role'] ?? '') === 'pemilik';
 $is_ketua          = !empty($currentUser['is_pj']) || !empty($currentUser['is_ketua_kos']) || ($currentUser['role'] ?? '') === 'pj';
@@ -28,22 +25,16 @@ unset($_SESSION['pesan_sukses']);
 $total_verif = count($daftar_verifikasi);
 
 // 1. Pagination Desktop (4 per halaman)
-$limit_desktop   = 4;
-$page_desktop    = isset($_GET['hal']) ? max(1, (int)$_GET['hal']) : 1;
-$total_hal_desk  = max(1, (int)ceil($total_verif / $limit_desktop));
+$limit_desktop  = 4;
+$page_desktop   = isset($_GET['hal']) ? max(1, (int)$_GET['hal']) : 1;
+$total_hal_desk = max(1, (int)ceil($total_verif / $limit_desktop));
 if ($page_desktop > $total_hal_desk) $page_desktop = $total_hal_desk;
-$offset_desktop  = ($page_desktop - 1) * $limit_desktop;
-$verif_desktop   = array_slice($daftar_verifikasi, $offset_desktop, $limit_desktop);
 
 // 2. Pagination Mobile (3 per halaman)
-$limit_mobile    = 3;
-$page_mobile     = isset($_GET['hal_m']) ? max(1, (int)$_GET['hal_m']) : 1;
-$total_hal_mob   = max(1, (int)ceil($total_verif / $limit_mobile));
+$limit_mobile   = 3;
+$page_mobile    = isset($_GET['hal_m']) ? max(1, (int)$_GET['hal_m']) : 1;
+$total_hal_mob  = max(1, (int)ceil($total_verif / $limit_mobile));
 if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
-$offset_mobile   = ($page_mobile - 1) * $limit_mobile;
-$verif_mobile    = array_slice($daftar_verifikasi, $offset_mobile, $limit_mobile);
-
-$query_tanggal = !empty($date_range) ? '&date_range=' . urlencode($date_range) : '';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -54,8 +45,8 @@ $query_tanggal = !empty($date_range) ? '&date_range=' . urlencode($date_range) :
     <title>SITEMAN - KOS | Verifikasi Pembayaran</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="/css/global.css?i=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?i=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 
 <body class="dashboard-body">
@@ -135,20 +126,24 @@ $query_tanggal = !empty($date_range) ? '&date_range=' . urlencode($date_range) :
                     </div>
                     <?php else: ?>
 
-                    <?php foreach ($verif_mobile as $item): ?>
-                    <?php $is_tunai = (strtolower($item['metode_bayar']) === 'tunai' || empty($item['foto'])); ?>
-                    <div class="verifikasi-card">
+                    <?php foreach ($daftar_verifikasi as $idx => $item): ?>
+                    <?php
+                        $is_tunai = (strtolower($item['metode_bayar']) === 'tunai' || empty($item['foto']));
+                        $page_m   = (int)floor($idx / $limit_mobile) + 1;
+                    ?>
+                    <div class="verifikasi-card verif-item-mobile"
+                         data-page-m="<?= $page_m; ?>"
+                         style="<?= $page_m !== $page_mobile ? 'display: none;' : ''; ?>">
                         <div class="verifikasi-card-body">
                             <?php if ($is_tunai): ?>
                             <div class="bukti-wrapper"
                                 style="background-color: #e0f2fe; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: default; box-shadow: none; border: 1.5px solid #bae6fd;">
                                 <i class="fa-solid fa-hand-holding-dollar" style="font-size: 26px; color: #0284c7;"></i>
-                                <span
-                                    style="font-size: 10px; font-weight: 800; color: #0369a1; text-transform: uppercase;">Tunai</span>
+                                <span style="font-size: 10px; font-weight: 800; color: #0369a1; text-transform: uppercase;">Tunai</span>
                             </div>
                             <?php else: ?>
                             <div class="bukti-wrapper">
-                                <img src="<?= $item['src_foto']; ?>" alt="Bukti Transfer" class="bukti-img"
+                                <img src="<?= $item['src_foto']; ?>" alt="Bukti Transfer" class="bukti-img" loading="lazy"
                                     onclick="bukaPopupBukti('<?= $item['src_foto']; ?>', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= htmlspecialchars(addslashes($item['kamar'])); ?>')">
                                 <button type="button" class="btn-zoom" title="Perbesar Bukti"
                                     onclick="bukaPopupBukti('<?= $item['src_foto']; ?>', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= htmlspecialchars(addslashes($item['kamar'])); ?>')">
@@ -160,11 +155,9 @@ $query_tanggal = !empty($date_range) ? '&date_range=' . urlencode($date_range) :
                                 <div class="user-info-row">
                                     <span class="nama-penghuni"><?= htmlspecialchars($item['nama']); ?></span>
                                     <span class="badge-kamar">Kamar <?= htmlspecialchars($item['kamar']); ?></span>
-                                    <span class="badge-tagihan-tipe">
-                                        <?= htmlspecialchars($item['tipe_tagihan']); ?></span>
+                                    <span class="badge-tagihan-tipe"><?= htmlspecialchars($item['tipe_tagihan']); ?></span>
                                 </div>
-                                <div class="nominal-text">Rp. <?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>
-                                </div>
+                                <div class="nominal-text">Rp. <?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?></div>
                                 <div class="metode-tanggal"><?= ucfirst($item['metode_bayar']); ?> ~
                                     <?= htmlspecialchars(date('d-m-Y H:i', strtotime($item['tanggal_bayar']))); ?></div>
                             </div>
@@ -185,31 +178,19 @@ $query_tanggal = !empty($date_range) ? '&date_range=' . urlencode($date_range) :
                         </div>
                     </div>
                     <?php endforeach; ?>
+
                     <?php if ($total_hal_mob > 1): ?>
                     <div class="verif-pagination-wrapper verif-pagination-mobile">
                         <div class="verif-page-controls">
-                            <?php if ($page_mobile > 1): ?>
-                            <a href="/?page=verifikasi_bayar&hal_m=<?= $page_mobile - 1; ?><?= $query_tanggal; ?>"
-                                class="verif-page-btn" title="Sebelumnya">
+                            <button type="button" class="verif-page-btn" id="btnPrevVerifMob" onclick="gantiHalVerifMobile(-1)" title="Sebelumnya" <?= $page_mobile <= 1 ? 'disabled' : ''; ?>>
                                 <i class="fa-solid fa-chevron-left"></i>
-                            </a>
-                            <?php else: ?>
-                            <button type="button" class="verif-page-btn" disabled><i
-                                    class="fa-solid fa-chevron-left"></i></button>
-                            <?php endif; ?>
+                            </button>
 
-                            <span class="verif-page-badge"> <?= $page_mobile; ?> /
-                                <?= $total_hal_mob; ?></span>
+                            <span class="verif-page-badge" id="badgeVerifMob"> <?= $page_mobile; ?> / <?= $total_hal_mob; ?></span>
 
-                            <?php if ($page_mobile < $total_hal_mob): ?>
-                            <a href="/?page=verifikasi_bayar&hal_m=<?= $page_mobile + 1; ?><?= $query_tanggal; ?>"
-                                class="verif-page-btn" title="Berikutnya">
+                            <button type="button" class="verif-page-btn" id="btnNextVerifMob" onclick="gantiHalVerifMobile(1)" title="Berikutnya" <?= $page_mobile >= $total_hal_mob ? 'disabled' : ''; ?>>
                                 <i class="fa-solid fa-chevron-right"></i>
-                            </a>
-                            <?php else: ?>
-                            <button type="button" class="verif-page-btn" disabled><i
-                                    class="fa-solid fa-chevron-right"></i></button>
-                            <?php endif; ?>
+                            </button>
                         </div>
                     </div>
                     <?php endif; ?>
@@ -256,20 +237,24 @@ $query_tanggal = !empty($date_range) ? '&date_range=' . urlencode($date_range) :
                     <span>Tidak ada data verifikasi pembayaran yang pending</span>
                 </div>
                 <?php else: ?>
-                <?php foreach ($verif_desktop as $item): ?>
-                <?php $is_tunai = (strtolower($item['metode_bayar']) === 'tunai' || empty($item['foto'])); ?>
-                <div class="verifikasi-card">
+                <?php foreach ($daftar_verifikasi as $idx => $item): ?>
+                <?php
+                    $is_tunai = (strtolower($item['metode_bayar']) === 'tunai' || empty($item['foto']));
+                    $page_d   = (int)floor($idx / $limit_desktop) + 1;
+                ?>
+                <div class="verifikasi-card verif-item-desktop"
+                     data-page-d="<?= $page_d; ?>"
+                     style="<?= $page_d !== $page_desktop ? 'display: none;' : ''; ?>">
                     <div class="verifikasi-card-body">
                         <?php if ($is_tunai): ?>
                         <div class="bukti-wrapper"
                             style="background-color: #e0f2fe; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: default; box-shadow: none; border: 1.5px solid #bae6fd;">
                             <i class="fa-solid fa-hand-holding-dollar" style="font-size: 28px; color: #0284c7;"></i>
-                            <span
-                                style="font-size: 10px; font-weight: 800; color: #0369a1; text-transform: uppercase;">Tunai</span>
+                            <span style="font-size: 10px; font-weight: 800; color: #0369a1; text-transform: uppercase;">Tunai</span>
                         </div>
                         <?php else: ?>
                         <div class="bukti-wrapper">
-                            <img src="<?= $item['src_foto']; ?>" alt="Bukti Transfer" class="bukti-img"
+                            <img src="<?= $item['src_foto']; ?>" alt="Bukti Transfer" class="bukti-img" loading="lazy"
                                 onclick="bukaPopupBukti('<?= $item['src_foto']; ?>', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= htmlspecialchars(addslashes($item['kamar'])); ?>')">
                             <button type="button" class="btn-zoom" title="Perbesar Bukti"
                                 onclick="bukaPopupBukti('<?= $item['src_foto']; ?>', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= htmlspecialchars(addslashes($item['kamar'])); ?>')">
@@ -284,8 +269,7 @@ $query_tanggal = !empty($date_range) ? '&date_range=' . urlencode($date_range) :
                                 <span class="badge-kamar">Kamar <?= htmlspecialchars($item['kamar']); ?></span>
                                 <span class="badge-tagihan-tipe"><?= htmlspecialchars($item['tipe_tagihan']); ?></span>
                             </div>
-                            <div class="nominal-text">Rp. <?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>
-                            </div>
+                            <div class="nominal-text">Rp. <?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?></div>
                             <div class="metode-tanggal"><?= ucfirst($item['metode_bayar']); ?> ~
                                 <?= htmlspecialchars(date('d-m-Y H:i', strtotime($item['tanggal_bayar']))); ?></div>
                         </div>
@@ -307,35 +291,26 @@ $query_tanggal = !empty($date_range) ? '&date_range=' . urlencode($date_range) :
                 </div>
                 <?php endforeach; ?>
             </div>
+
             <?php if ($total_hal_desk > 1): ?>
             <div class="verif-pagination-wrapper verif-pagination-desktop">
                 <div class="verif-page-controls">
-                    <?php if ($page_desktop > 1): ?>
-                    <a href="/?page=verifikasi_bayar&hal=<?= $page_desktop - 1; ?><?= $query_tanggal; ?>"
-                        class="verif-page-btn" title="Sebelumnya">
+                    <button type="button" class="verif-page-btn" id="btnPrevVerifDesk" onclick="gantiHalVerifDesktop(currentHalVerifDesk - 1)" title="Sebelumnya" <?= $page_desktop <= 1 ? 'disabled' : ''; ?>>
                         <i class="fa-solid fa-chevron-left"></i>
-                    </a>
-                    <?php else: ?>
-                    <button type="button" class="verif-page-btn" disabled><i
-                            class="fa-solid fa-chevron-left"></i></button>
-                    <?php endif; ?>
+                    </button>
 
                     <?php for ($i = 1; $i <= $total_hal_desk; $i++): ?>
-                    <a href="/?page=verifikasi_bayar&hal=<?= $i; ?><?= $query_tanggal; ?>"
+                    <button type="button"
+                        data-verif-page-btn="<?= $i; ?>"
+                        onclick="gantiHalVerifDesktop(<?= $i; ?>)"
                         class="verif-page-num <?= ($i === $page_desktop) ? 'active' : ''; ?>">
                         <?= $i; ?>
-                    </a>
+                    </button>
                     <?php endfor; ?>
 
-                    <?php if ($page_desktop < $total_hal_desk): ?>
-                    <a href="/?page=verifikasi_bayar&hal=<?= $page_desktop + 1; ?><?= $query_tanggal; ?>"
-                        class="verif-page-btn" title="Berikutnya">
+                    <button type="button" class="verif-page-btn" id="btnNextVerifDesk" onclick="gantiHalVerifDesktop(currentHalVerifDesk + 1)" title="Berikutnya" <?= $page_desktop >= $total_hal_desk ? 'disabled' : ''; ?>>
                         <i class="fa-solid fa-chevron-right"></i>
-                    </a>
-                    <?php else: ?>
-                    <button type="button" class="verif-page-btn" disabled><i
-                            class="fa-solid fa-chevron-right"></i></button>
-                    <?php endif; ?>
+                    </button>
                 </div>
             </div>
             <?php endif; ?>
@@ -443,6 +418,60 @@ $query_tanggal = !empty($date_range) ? '&date_range=' . urlencode($date_range) :
         }
     });
 
+    // Pagination Verifikasi Desktop Instan (0 ms)
+    let currentHalVerifDesk = <?= (int)$page_desktop; ?>;
+    const totalHalVerifDesk = <?= (int)$total_hal_desk; ?>;
+
+    function gantiHalVerifDesktop(target) {
+        if (target < 1 || target > totalHalVerifDesk) return;
+        currentHalVerifDesk = target;
+
+        document.querySelectorAll('.verif-item-desktop').forEach(card => {
+            card.style.display = (parseInt(card.getAttribute('data-page-d')) === currentHalVerifDesk) ? '' : 'none';
+        });
+
+        document.querySelectorAll('[data-verif-page-btn]').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.getAttribute('data-verif-page-btn')) === currentHalVerifDesk);
+        });
+
+        const btnPrev = document.getElementById('btnPrevVerifDesk');
+        const btnNext = document.getElementById('btnNextVerifDesk');
+        if (btnPrev) btnPrev.disabled = currentHalVerifDesk <= 1;
+        if (btnNext) btnNext.disabled = currentHalVerifDesk >= totalHalVerifDesk;
+
+        const url = new URL(window.location.href);
+        if (currentHalVerifDesk === 1) url.searchParams.delete('hal');
+        else url.searchParams.set('hal', currentHalVerifDesk);
+        window.history.replaceState({}, '', url);
+    }
+
+    // Pagination Verifikasi Mobile Instan (0 ms)
+    let currentHalVerifMob = <?= (int)$page_mobile; ?>;
+    const totalHalVerifMob = <?= (int)$total_hal_mob; ?>;
+
+    function gantiHalVerifMobile(delta) {
+        const target = currentHalVerifMob + delta;
+        if (target < 1 || target > totalHalVerifMob) return;
+        currentHalVerifMob = target;
+
+        document.querySelectorAll('.verif-item-mobile').forEach(card => {
+            card.style.display = (parseInt(card.getAttribute('data-page-m')) === currentHalVerifMob) ? '' : 'none';
+        });
+
+        const badge = document.getElementById('badgeVerifMob');
+        if (badge) badge.textContent = ` ${currentHalVerifMob} / ${totalHalVerifMob}`;
+
+        const btnPrev = document.getElementById('btnPrevVerifMob');
+        const btnNext = document.getElementById('btnNextVerifMob');
+        if (btnPrev) btnPrev.disabled = currentHalVerifMob <= 1;
+        if (btnNext) btnNext.disabled = currentHalVerifMob >= totalHalVerifMob;
+
+        const url = new URL(window.location.href);
+        if (currentHalVerifMob === 1) url.searchParams.delete('hal_m');
+        else url.searchParams.set('hal_m', currentHalVerifMob);
+        window.history.replaceState({}, '', url);
+    }
+
     function konfirmasiAksi(id, aksi, nama, nominal, tipe) {
         const modal = document.getElementById('modalKonfirmasiVerif');
         const inputId = document.getElementById('modalInputPemId');
@@ -533,8 +562,7 @@ $query_tanggal = !empty($date_range) ? '&date_range=' . urlencode($date_range) :
         if (modal && img) {
             img.src = src;
             if (title && nama) {
-                title.innerHTML = '<i class="fa-solid fa-receipt"></i> Bukti Transfer - ' + nama + ' (Kamar ' + kamar +
-                    ')';
+                title.innerHTML = '<i class="fa-solid fa-receipt"></i> Bukti Transfer - ' + nama + ' (Kamar ' + kamar + ')';
             }
             modal.classList.add('active');
         }
@@ -542,9 +570,7 @@ $query_tanggal = !empty($date_range) ? '&date_range=' . urlencode($date_range) :
 
     function tutupPopupBukti() {
         const modal = document.getElementById('modalLightboxBukti');
-        if (modal) {
-            modal.classList.remove('active');
-        }
+        if (modal) modal.classList.remove('active');
     }
 
     document.addEventListener('keydown', function(e) {

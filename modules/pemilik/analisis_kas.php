@@ -14,8 +14,8 @@ require_once __DIR__ . '/handler/kas_handlers.php';
     <title>SITEMAN - KOS | Analisis Kas</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 
 <body class="dashboard-body">
@@ -37,6 +37,23 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                     <span class="kas-total-label">Total Pemasukan</span>
                     <span class="kas-total-value">Rp. <?= number_format($total_pemasukan, 0, ',', '.'); ?></span>
                 </div>
+
+                <!-- BANNER NOTIFIKASI SEWA (MOBILE) -->
+                <?php if (!empty($banner_notif_sewa)): ?>
+                <div class="iuran-notif-banner <?= $banner_notif_sewa['tipe'] === 'danger' ? 'notif-danger' : 'notif-warning'; ?>">
+                    <div class="iuran-notif-icon">
+                        <i class="fa-solid <?= $banner_notif_sewa['tipe'] === 'danger' ? 'fa-bell' : 'fa-triangle-exclamation'; ?>"></i>
+                    </div>
+                    <div class="iuran-notif-body">
+                        <strong><?= htmlspecialchars($banner_notif_sewa['judul']); ?></strong>
+                        <p><?= htmlspecialchars($banner_notif_sewa['pesan']); ?></p>
+                    </div>
+                    <a href="/?page=analisis_kas&filter=belum_bayar<?= $is_filtered ? '&date_range=' . urlencode($date_range) : ''; ?>"
+                       onclick="filterTabKasPenghuni(event, 'belum_bayar')" class="iuran-notif-btn">
+                        Lihat Belum Bayar
+                    </a>
+                </div>
+                <?php endif; ?>
 
                 <div class="kas-cetak-mobile-row">
                     <button type="button" onclick="bukaModalCetakKas()" class="btn-cetak-pdf kas-btn-cetak-full">
@@ -73,8 +90,7 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                             </div>
                             <div class="kas-transaksi-info">
                                 <span class="kas-item-title"><?= htmlspecialchars($tx['judul']); ?></span>
-                                <span
-                                    class="kas-item-date"><?= date('Y-m-d H:i:s', strtotime($tx['tanggal'])); ?></span>
+                                <span class="kas-item-date"><?= date('Y-m-d H:i:s', strtotime($tx['tanggal'])); ?></span>
                             </div>
                         </div>
                         <span class="desktop-mutasi-badge-green">
@@ -85,16 +101,23 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                     <?php endif; ?>
                 </div>
 
+                <!-- FILTER TAB INSTAN MOBILE -->
                 <div class="kas-filter-row">
                     <a href="/?page=analisis_kas&filter=semua<?= $is_filtered ? '&date_range=' . urlencode($date_range) : ''; ?>"
+                        data-kas-tab="semua"
+                        onclick="filterTabKasPenghuni(event, 'semua')"
                         class="filter-pill <?= $filter_status === 'semua' ? 'active' : 'inactive'; ?>">
                         Semua (<?= $count_semua; ?>)
                     </a>
                     <a href="/?page=analisis_kas&filter=belum_bayar<?= $is_filtered ? '&date_range=' . urlencode($date_range) : ''; ?>"
+                        data-kas-tab="belum_bayar"
+                        onclick="filterTabKasPenghuni(event, 'belum_bayar')"
                         class="filter-pill <?= $filter_status === 'belum_bayar' ? 'active' : 'inactive'; ?>">
                         Belum Bayar (<?= $count_belum; ?>)
                     </a>
                     <a href="/?page=analisis_kas&filter=verifikasi<?= $is_filtered ? '&date_range=' . urlencode($date_range) : ''; ?>"
+                        data-kas-tab="verifikasi"
+                        onclick="filterTabKasPenghuni(event, 'verifikasi')"
                         class="filter-pill <?= $filter_status === 'verifikasi' ? 'active' : 'inactive'; ?>">
                         Verifikasi (<?= $count_verifikasi; ?>)
                     </a>
@@ -104,35 +127,30 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                     <?php if (empty($daftar_penghuni)): ?>
                     <div class="kas-empty-penghuni-mobile">
                         <i class="fa-regular fa-folder-open"></i>
-                        <p>
-                            <?php 
-                                if ($filter_status === 'verifikasi') {
-                                    echo 'Tidak ada pembayaran yang menunggu verifikasi';
-                                } elseif ($filter_status === 'belum_bayar') {
-                                    echo 'Semua penghuni sudah melunasi tagihan';
-                                } else {
-                                    echo 'Belum ada data penghuni';
-                                }
-                            ?>
-                        </p>
+                        <p>Belum ada data penghuni</p>
                     </div>
                     <?php else: ?>
                     <?php foreach ($daftar_penghuni as $p): ?>
-                    <div class="kas-penghuni-card">
+                    <div class="kas-penghuni-card kas-penghuni-item"
+                         data-lunas="<?= $p['is_lunas'] ? '1' : '0'; ?>"
+                         data-verifikasi="<?= $p['is_verifikasi'] ? '1' : '0'; ?>">
                         <div class="kas-penghuni-info">
                             <div class="kas-penghuni-top">
                                 <h4 class="kas-penghuni-name"><?= htmlspecialchars($p['nama']); ?></h4>
-                                <span class="badge-kamar-putih"><?= htmlspecialchars($p['kamar']); ?></span>
+                                <span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                             </div>
-                            <span class="kas-penghuni-nominal">Rp.
-                                <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
+                            <span class="kas-penghuni-nominal">Rp. <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
                         </div>
-                        <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>?text=Halo%20<?= urlencode($p['nama']); ?>%2C%20ini%20mengenai%20tagihan%20sewa%20kamar."
+                        <a href="<?= htmlspecialchars(buatLinkWaSewa($p)); ?>"
                             target="_blank" class="btn-chat-wa">
                             <i class="fa-brands fa-whatsapp"></i> Chat
                         </a>
                     </div>
                     <?php endforeach; ?>
+                    <div id="emptyKasFilterMobile" class="kas-empty-penghuni-mobile" style="display: none;">
+                        <i class="fa-regular fa-folder-open"></i>
+                        <p id="emptyKasFilterTextMobile">Tidak ada data penghuni pada kategori ini</p>
+                    </div>
                     <?php endif; ?>
                 </div>
             </main>
@@ -152,10 +170,26 @@ require_once __DIR__ . '/handler/kas_handlers.php';
             <div class="desktop-kelola-stats kas-desktop-single-stat">
                 <div class="desktop-kelola-stat-card">
                     <span class="desktop-kelola-stat-label">Total Pemasukan</span>
-                    <span class="desktop-kelola-stat-val">Rp.
-                        <?= number_format($total_pemasukan, 0, ',', '.'); ?></span>
+                    <span class="desktop-kelola-stat-val">Rp. <?= number_format($total_pemasukan, 0, ',', '.'); ?></span>
                 </div>
             </div>
+
+            <!-- BANNER NOTIFIKASI SEWA (DESKTOP) -->
+            <?php if (!empty($banner_notif_sewa)): ?>
+            <div class="iuran-notif-banner <?= $banner_notif_sewa['tipe'] === 'danger' ? 'notif-danger' : 'notif-warning'; ?>">
+                <div class="iuran-notif-icon">
+                    <i class="fa-solid <?= $banner_notif_sewa['tipe'] === 'danger' ? 'fa-bell' : 'fa-triangle-exclamation'; ?>"></i>
+                </div>
+                <div class="iuran-notif-body">
+                    <strong><?= htmlspecialchars($banner_notif_sewa['judul']); ?></strong>
+                    <p><?= htmlspecialchars($banner_notif_sewa['pesan']); ?></p>
+                </div>
+                <a href="/?page=analisis_kas&filter=belum_bayar<?= $is_filtered ? '&date_range=' . urlencode($date_range) : ''; ?>"
+                   onclick="filterTabKasPenghuni(event, 'belum_bayar')" class="iuran-notif-btn">
+                    Lihat Belum Bayar
+                </a>
+            </div>
+            <?php endif; ?>
 
             <div class="desktop-range-filter-wrapper">
                 <div class="kas-desktop-section-left">
@@ -204,16 +238,23 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                 <?php endif; ?>
             </div>
 
+            <!-- FILTER TAB INSTAN DESKTOP -->
             <div class="desktop-kelola-filter-row">
                 <a href="/?page=analisis_kas&filter=semua<?= $is_filtered ? '&date_range=' . urlencode($date_range) : ''; ?>"
+                    data-kas-tab="semua"
+                    onclick="filterTabKasPenghuni(event, 'semua')"
                     class="filter-pill <?= $filter_status === 'semua' ? 'active' : 'inactive'; ?>">
                     Semua (<?= $count_semua; ?>)
                 </a>
                 <a href="/?page=analisis_kas&filter=belum_bayar<?= $is_filtered ? '&date_range=' . urlencode($date_range) : ''; ?>"
+                    data-kas-tab="belum_bayar"
+                    onclick="filterTabKasPenghuni(event, 'belum_bayar')"
                     class="filter-pill <?= $filter_status === 'belum_bayar' ? 'active' : 'inactive'; ?>">
                     Belum Bayar (<?= $count_belum; ?>)
                 </a>
                 <a href="/?page=analisis_kas&filter=verifikasi<?= $is_filtered ? '&date_range=' . urlencode($date_range) : ''; ?>"
+                    data-kas-tab="verifikasi"
+                    onclick="filterTabKasPenghuni(event, 'verifikasi')"
                     class="filter-pill <?= $filter_status === 'verifikasi' ? 'active' : 'inactive'; ?>">
                     Verifikasi (<?= $count_verifikasi; ?>)
                 </a>
@@ -223,35 +264,30 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                 <?php if (empty($daftar_penghuni)): ?>
                 <div class="kas-empty-penghuni-desktop">
                     <i class="fa-regular fa-folder-open"></i>
-                    <p>
-                        <?php 
-                            if ($filter_status === 'verifikasi') {
-                                echo 'Tidak ada pembayaran yang menunggu verifikasi';
-                            } elseif ($filter_status === 'belum_bayar') {
-                                echo 'Semua penghuni sudah melunasi tagihan';
-                            } else {
-                                echo 'Belum ada data penghuni';
-                            }
-                        ?>
-                    </p>
+                    <p>Belum ada data penghuni</p>
                 </div>
                 <?php else: ?>
                 <?php foreach ($daftar_penghuni as $p): ?>
-                <div class="desktop-penghuni-card">
+                <div class="desktop-penghuni-card kas-penghuni-item"
+                     data-lunas="<?= $p['is_lunas'] ? '1' : '0'; ?>"
+                     data-verifikasi="<?= $p['is_verifikasi'] ? '1' : '0'; ?>">
                     <div class="desktop-penghuni-info">
                         <div class="desktop-penghuni-top">
                             <h4><?= htmlspecialchars($p['nama']); ?></h4>
                             <span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                         </div>
-                        <span class="desktop-penghuni-nominal">Rp.
-                            <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
+                        <span class="desktop-penghuni-nominal">Rp. <?= number_format((float)$p['nominal'], 0, ',', '.'); ?></span>
                     </div>
-                    <a href="https://wa.me/<?= preg_replace('/^0/', '62', $p['no_wa']); ?>?text=Halo%20<?= urlencode($p['nama']); ?>%2C%20ini%20mengenai%20tagihan%20sewa%20kamar."
+                    <a href="<?= htmlspecialchars(buatLinkWaSewa($p)); ?>"
                         target="_blank" class="btn-chat-wa">
                         <i class="fa-brands fa-whatsapp"></i> Chat
                     </a>
                 </div>
                 <?php endforeach; ?>
+                <div id="emptyKasFilterDesktop" class="kas-empty-penghuni-desktop" style="display: none;">
+                    <i class="fa-regular fa-folder-open"></i>
+                    <p id="emptyKasFilterTextDesktop">Tidak ada data penghuni pada kategori ini</p>
+                </div>
                 <?php endif; ?>
             </div>
         </main>
@@ -270,8 +306,7 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                     <label class="modal-label">Cakupan Periode</label>
                     <div class="periode-radio-grid">
                         <label class="alasan-option-label periode-radio-option">
-                            <input type="radio" name="periode" value="bulanan" checked
-                                onchange="toggleFormCetakKas('bulanan')">
+                            <input type="radio" name="periode" value="bulanan" checked onchange="toggleFormCetakKas('bulanan')">
                             <span>Bulanan</span>
                         </label>
                         <label class="alasan-option-label periode-radio-option">
@@ -296,8 +331,7 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                         ];
                         $current_m = (int)date('n');
                         foreach ($bulan_list as $num => $nm): ?>
-                        <option value="<?= $num; ?>" <?= ($num === $current_m) ? 'selected' : ''; ?>><?= $nm; ?>
-                        </option>
+                        <option value="<?= $num; ?>" <?= ($num === $current_m) ? 'selected' : ''; ?>><?= $nm; ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -315,7 +349,7 @@ require_once __DIR__ . '/handler/kas_handlers.php';
 
                 <div class="modal-actions modal-cetak-actions">
                     <button type="button" class="btn-modal-cancel" onclick="tutupModalCetakKas()">Batal</button>
-                    <button type="submit" class="btn-modal-submit btn-cetak-submit-teal">Buka & Cetak PDF</button>
+                    <button type="submit" class="btn-modal-submit btn-cetak-submit-teal">Buka &amp; Cetak PDF</button>
                 </div>
             </form>
         </div>
@@ -335,6 +369,77 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                 }
             }
         });
+    });
+
+    function filterTabKasPenghuni(e, kategori) {
+        if (e) e.preventDefault();
+
+        document.querySelectorAll('[data-kas-tab]').forEach(function (tab) {
+            if (tab.getAttribute('data-kas-tab') === kategori) {
+                tab.classList.add('active');
+                tab.classList.remove('inactive');
+            } else {
+                tab.classList.remove('active');
+                tab.classList.add('inactive');
+            }
+        });
+
+        let jumlahTampilDesktop = 0;
+        let jumlahTampilMobile  = 0;
+
+        document.querySelectorAll('.kas-penghuni-item').forEach(function (card) {
+            const isLunas = card.getAttribute('data-lunas') === '1';
+            const isVerif = card.getAttribute('data-verifikasi') === '1';
+
+            let tampil = true;
+            if (kategori === 'belum_bayar') {
+                tampil = !isLunas;
+            } else if (kategori === 'verifikasi') {
+                tampil = isVerif;
+            }
+
+            card.style.display = tampil ? '' : 'none';
+            if (tampil) {
+                if (card.classList.contains('desktop-penghuni-card')) jumlahTampilDesktop++;
+                if (card.classList.contains('kas-penghuni-card')) jumlahTampilMobile++;
+            }
+        });
+
+        let pesanKosong = 'Belum ada data penghuni';
+        if (kategori === 'verifikasi') {
+            pesanKosong = 'Tidak ada pembayaran yang menunggu verifikasi';
+        } else if (kategori === 'belum_bayar') {
+            pesanKosong = 'Semua penghuni sudah melunasi tagihan';
+        }
+
+        const emptyDesktop = document.getElementById('emptyKasFilterDesktop');
+        const textDesktop  = document.getElementById('emptyKasFilterTextDesktop');
+        if (emptyDesktop && textDesktop) {
+            textDesktop.textContent = pesanKosong;
+            emptyDesktop.style.display = (jumlahTampilDesktop === 0) ? 'block' : 'none';
+        }
+
+        const emptyMobile = document.getElementById('emptyKasFilterMobile');
+        const textMobile  = document.getElementById('emptyKasFilterTextMobile');
+        if (emptyMobile && textMobile) {
+            textMobile.textContent = pesanKosong;
+            emptyMobile.style.display = (jumlahTampilMobile === 0) ? 'block' : 'none';
+        }
+
+        const url = new URL(window.location.href);
+        if (kategori === 'semua') {
+            url.searchParams.delete('filter');
+        } else {
+            url.searchParams.set('filter', kategori);
+        }
+        window.history.replaceState({}, '', url);
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const initialFilter = <?= json_encode($filter_status); ?>;
+        if (initialFilter !== 'semua') {
+            filterTabKasPenghuni(null, initialFilter);
+        }
     });
 
     function bukaModalCetakKas() {

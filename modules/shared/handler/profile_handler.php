@@ -3,7 +3,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Pastikan koneksi PDO tersedia
 global $pdo;
 if (!isset($pdo) || !($pdo instanceof PDO)) {
     $possible_paths = [
@@ -20,7 +19,7 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
 }
 
 $role_user = $role_user ?? ($_SESSION['user']['role'] ?? 'pemilik');
-$user_id   = $user_id   ?? ($_SESSION['user']['id'] ?? 1);
+$user_id   = $user_id   ?? (int)($_SESSION['user']['id'] ?? 1);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
@@ -45,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmtCek = $pdo->query("SELECT id, pin FROM pemilik ORDER BY id ASC LIMIT 1");
                     $currentPemilik = $stmtCek->fetch(PDO::FETCH_ASSOC);
                     if ($currentPemilik) {
-                        $user_id = $currentPemilik['id'];
+                        $user_id = (int)$currentPemilik['id'];
                     }
                 }
 
@@ -62,7 +61,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['pesan_sukses'] = 'PIN akun berhasil diperbarui!';
                 }
             } else {
-                // Untuk Penghuni & PJ
                 $stmtCek = $pdo->prepare("SELECT id, pin FROM penghuni WHERE id = :id LIMIT 1");
                 $stmtCek->execute([':id' => $user_id]);
                 $currentPenghuni = $stmtCek->fetch(PDO::FETCH_ASSOC);
@@ -96,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($role_user === 'pemilik') {
                 $stmt = $pdo->prepare("SELECT pin FROM pemilik WHERE id = :id LIMIT 1");
                 $stmt->execute([':id' => $user_id]);
-                $pinDatabase = (string)$stmt->fetchColumn();
+                $pinDatabase = trim((string)$stmt->fetchColumn());
 
                 if ($pinDatabase !== $password_verifikasi) {
                     $_SESSION['pesan_error'] = 'Konfirmasi PIN salah. Perubahan email dibatalkan.';
@@ -113,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $stmt = $pdo->prepare("SELECT pin FROM penghuni WHERE id = :id LIMIT 1");
                 $stmt->execute([':id' => $user_id]);
-                $pinDatabase = (string)$stmt->fetchColumn();
+                $pinDatabase = trim((string)$stmt->fetchColumn());
 
                 if ($pinDatabase !== $password_verifikasi) {
                     $_SESSION['pesan_error'] = 'Konfirmasi PIN salah. Perubahan email dibatalkan.';
@@ -134,7 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    // 3. Ubah Data Profil (Validasi Anti-Angka & Disesuaikan Role)
+    // 3. Ubah Data Profil
     if ($action === 'ubah_profil') {
         $nama_baru        = trim($_POST['nama'] ?? '');
         $no_wa_baru       = preg_replace('/[^0-9]/', '', trim($_POST['no_wa'] ?? ''));
@@ -162,7 +160,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['user']['no_rekening'] = $no_rekening_baru;
                 $_SESSION['pesan_sukses']        = 'Data profil pemilik berhasil diperbarui!';
             } else {
-                // Untuk Penghuni dan PJ: Simpan nama, no_wa, dan kontak_wali
                 $updateStmt = $pdo->prepare("UPDATE penghuni SET nama = :nama, no_wa = :no_wa, kontak_wali = :kontak_wali WHERE id = :id");
                 $updateStmt->execute([
                     ':nama'        => $nama_baru,

@@ -1,33 +1,12 @@
 <?php
-/** @var PDO $pdo */
-$modal_aktif  = $modal_aktif ?? ($_GET['modal'] ?? '');
-$current_page = $current_page ?? ($_GET['page'] ?? 'manajemen_kamar');
-$daftar_kamar = $daftar_kamar ?? [];
-$list_skema   = $list_skema ?? [];
-
-// Ambil data Ketua Kost aktif dari database jika ada
-$ketuaAktif = null;
-$daftar_kamar_kosong = [];
-if (isset($pdo) && $pdo instanceof PDO) {
-    try {
-        $stmtCekKetua = $pdo->query("SELECT id, nama FROM penghuni WHERE is_ketua_kos = true LIMIT 1");
-        $ketuaAktif = $stmtCekKetua ? $stmtCekKetua->fetch(PDO::FETCH_ASSOC) : null;
-
-        $stmtKosong = $pdo->query("
-            SELECT k.no_kamar
-            FROM kamar k
-            LEFT JOIN penghuni_kamar pk ON k.id = pk.kamar_id
-            WHERE k.status_kamar = 'kosong' OR pk.id IS NULL
-            ORDER BY k.no_kamar::INTEGER ASC
-        ");
-        $daftar_kamar_kosong = $stmtKosong ? $stmtKosong->fetchAll(PDO::FETCH_ASSOC) : [];
-    } catch (Exception $e) {}
-}
+$modal_aktif         = $modal_aktif ?? ($_GET['modal'] ?? '');
+$current_page        = $current_page ?? ($_GET['page'] ?? 'manajemen_kamar');
+$list_skema          = $list_skema ?? [];
+$daftar_kamar_kosong = $daftar_kamar_kosong ?? [];
+$ketuaAktif          = $ketuaAktif ?? null;
 ?>
-
-<?php if ($modal_aktif === 'tambah_penghuni'): ?>
-<div class="modal-overlay active">
-    <div class="modal-card-penghuni-custom modal-size-md">
+<div id="modalTambahPenghuni" class="modal-overlay <?= $modal_aktif === 'tambah_penghuni' ? 'active' : ''; ?>" onclick="tutupSemuaModalInstan(event)">
+    <div class="modal-card-penghuni-custom modal-size-md" onclick="event.stopPropagation()">
         <h3 class="modal-penghuni-title">Tambah Penghuni</h3>
 
         <!-- POP-UP ALERT ERROR DINAMIS AJAX -->
@@ -54,12 +33,10 @@ if (isset($pdo) && $pdo instanceof PDO) {
                 <select id="pilihKamar" name="kamar_nomor" class="select-custom-pill" required>
                     <option value="">-- Pilih Kamar Kosong --</option>
                     <?php foreach ($daftar_kamar_kosong as $kamar): ?>
-                    <?php if ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni'])): ?>
                     <option value="<?= htmlspecialchars($kamar['no_kamar']) ?>"
                         <?= (isset($_GET['kamar']) && $_GET['kamar'] === $kamar['no_kamar']) ? 'selected' : ''; ?>>
                         Kamar <?= htmlspecialchars($kamar['no_kamar']) ?>
                     </option>
-                    <?php endif; ?>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -94,7 +71,7 @@ if (isset($pdo) && $pdo instanceof PDO) {
                 </div>
             </div>
 
-            <!-- Peran Penghuni (Kunci jika Ketua Kos sudah ada) -->
+            <!-- Peran Penghuni -->
             <div class="field-group-custom">
                 <label class="label-custom" for="isKetuaKos">Peran Penghuni</label>
                 <select id="isKetuaKos" name="is_ketua_kos" class="select-custom-pill">
@@ -165,10 +142,8 @@ if (isset($pdo) && $pdo instanceof PDO) {
             </div>
 
             <div class="actions-custom-row">
-                <a href="?page=<?= htmlspecialchars($current_page) ?>" class="btn-custom-pill btn-batal-custom"
-                    id="btnBatalModal">Batal</a>
-                <button type="submit" name="simpan_penghuni" class="btn-custom-pill btn-simpan-custom"
-                    id="btnSimpanModal">
+                <button type="button" onclick="tutupSemuaModalInstan(event)" class="btn-custom-pill btn-batal-custom" id="btnBatalModal">Batal</button>
+                <button type="submit" name="simpan_penghuni" class="btn-custom-pill btn-simpan-custom" id="btnSimpanModal">
                     <span id="btnSimpanText">Simpan</span>
                 </button>
             </div>
@@ -234,9 +209,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formTambah.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            if (!formTambah.checkValidity()) {
-                return;
-            }
+            if (!formTambah.checkValidity()) return;
 
             if (alertBox) alertBox.style.display = 'none';
 
@@ -246,12 +219,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 btnSimpan.style.cursor = 'not-allowed';
             }
             if (btnBatal) {
-                btnBatal.style.pointerEvents = 'none';
+                btnBatal.disabled = true;
                 btnBatal.style.opacity = '0.5';
             }
             if (btnSimpanText) {
-                btnSimpanText.innerHTML =
-                    '<i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 8px;"></i>Menyimpan...';
+                btnSimpanText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 8px;"></i>Menyimpan...';
             }
 
             const formData = new FormData(formTambah);
@@ -260,9 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(formTambah.action, {
                     method: 'POST',
                     body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
                 })
                 .then(response => response.json())
                 .then(data => {
@@ -279,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             btnSimpan.style.cursor = 'pointer';
                         }
                         if (btnBatal) {
-                            btnBatal.style.pointerEvents = 'auto';
+                            btnBatal.disabled = false;
                             btnBatal.style.opacity = '1';
                         }
                         if (btnSimpanText) btnSimpanText.textContent = 'Simpan';
@@ -296,7 +266,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         btnSimpan.style.cursor = 'pointer';
                     }
                     if (btnBatal) {
-                        btnBatal.style.pointerEvents = 'auto';
+                        btnBatal.disabled = false;
                         btnBatal.style.opacity = '1';
                     }
                     if (btnSimpanText) btnSimpanText.textContent = 'Simpan';
@@ -327,4 +297,3 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 </script>
-<?php endif; ?>

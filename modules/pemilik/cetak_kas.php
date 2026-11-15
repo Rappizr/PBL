@@ -8,19 +8,20 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Proteksi Ganda Hak Akses Pemilik
-$currentUser =$_SESSION['user'] ?? [];
+$currentUser = $_SESSION['user'] ?? [];
 if (($currentUser['role'] ?? '') !== 'pemilik') {
     http_response_code(403);
     die("Akses ditolak: Halaman laporan kas sewa hanya milik Pemilik Kos.");
 }
 
 global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {$possible_paths = [
+if (!isset($pdo) || !($pdo instanceof PDO)) {
+    $possible_paths = [
         __DIR__ . '/../../config/database.php',
         __DIR__ . '/../../../config/database.php',
         $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
     ];
-    foreach ($possible_paths as$p) {
+    foreach ($possible_paths as $p) {
         if (file_exists($p)) {
             require_once $p;
             if (isset($pdo) && ($pdo instanceof PDO)) break;
@@ -39,9 +40,10 @@ $nama_bulan_arr = [
     9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
 ];
 
-if ($periode === 'bulanan') {$label_periode = ($nama_bulan_arr[$bulan] ?? 'Bulan ' . $bulan) . ' ' .$tahun;
+if ($periode === 'bulanan') {
+    $label_periode = ($nama_bulan_arr[$bulan] ?? 'Bulan ' . $bulan) . ' ' . $tahun;
 } elseif ($periode === 'tahunan') {
-    $label_periode = 'Tahun ' .$tahun;
+    $label_periode = 'Tahun ' . $tahun;
 } else {
     $label_periode = 'Semua Periode (Seluruh Tahun)';
 }
@@ -65,18 +67,20 @@ $sql = "
 ";
 
 $params = [];
-if ($periode === 'bulanan') {$sql .= " AND EXTRACT(MONTH FROM p.tanggal_bayar) = :bulan AND EXTRACT(YEAR FROM p.tanggal_bayar) = :tahun ";
-    $params[':bulan'] =$bulan;
-    $params[':tahun'] =$tahun;
-} elseif ($periode === 'tahunan') {$sql .= " AND EXTRACT(YEAR FROM p.tanggal_bayar) = :tahun ";
-    $params[':tahun'] =$tahun;
+if ($periode === 'bulanan') {
+    $sql .= " AND EXTRACT(MONTH FROM p.tanggal_bayar) = :bulan AND EXTRACT(YEAR FROM p.tanggal_bayar) = :tahun ";
+    $params[':bulan'] = $bulan;
+    $params[':tahun'] = $tahun;
+} elseif ($periode === 'tahunan') {
+    $sql .= " AND EXTRACT(YEAR FROM p.tanggal_bayar) = :tahun ";
+    $params[':tahun'] = $tahun;
 }
 
 $sql .= " ORDER BY p.tanggal_bayar DESC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
-$data_transaksi =$stmt->fetchAll(PDO::FETCH_ASSOC);
+$data_transaksi = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -84,8 +88,8 @@ $data_transaksi =$stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <title>Laporan Arus Kas Sewa - <?= htmlspecialchars($label_periode); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 <body class="laporan-print-body">
 
@@ -146,9 +150,9 @@ $data_transaksi =$stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php 
                     $no = 1;
                     $grand_total = 0;
-                    foreach ($data_transaksi as$row): 
+                    foreach ($data_transaksi as $row): 
                         $nominal = (float)($row['nominal'] ?? 0);
-                        $grand_total +=$nominal;
+                        $grand_total += $nominal;
                     ?>
                         <tr>
                             <td class="text-center"><?= $no++; ?></td>

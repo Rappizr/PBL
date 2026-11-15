@@ -92,10 +92,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $detail_error = $_SESSION['debug_mail_error'] ?? 'Tidak ada log error.';
                         $_SESSION['flash_error'] = 'Gagal mengirim kode OTP: ' . $detail_error;
                         unset($_SESSION['debug_mail_error']);
-                    }   
+                    }
                 }
             }
-            // PRG Pattern: Redirect ke GET agar Refresh browser aman
             header('Location: /?page=reset');
             exit;
         }
@@ -120,7 +119,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     unset($_SESSION['debug_mail_error']);
                 }
             }
-            // PRG Pattern: Redirect ke GET agar Refresh browser aman
             header('Location: /?page=reset');
             exit;
         }
@@ -163,14 +161,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$langkah = 1;
+$langkah    = 1;
 $sisa_detik = 0;
 
 if ($sukses) {
     $langkah = 3;
 } elseif (!empty($_SESSION['reset_email'])) {
-    $langkah = 2;
-    // Hitung sisa detik secara presisi dari sesi
+    $langkah    = 2;
     $sisa_detik = max(0, (int)($_SESSION['reset_expire'] ?? 0) - time());
 }
 ?>
@@ -181,8 +178,8 @@ if ($sukses) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Ubah kata sandi</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 <body class="login-body">
 
@@ -273,7 +270,7 @@ if ($sukses) {
                         e.stopPropagation();
                     }
                     const input = document.getElementById('inputSandi');
-                    const icon = document.getElementById('iconMata');
+                    const icon  = document.getElementById('iconMata');
                     if (!input || !icon) return;
 
                     if (input.type === 'password') {
@@ -286,7 +283,7 @@ if ($sukses) {
                 }
 
                 document.addEventListener('DOMContentLoaded', function () {
-                    const otpInput = document.getElementById('inputOtp');
+                    const otpInput   = document.getElementById('inputOtp');
                     const sandiInput = document.getElementById('inputSandi');
 
                     [otpInput, sandiInput].forEach(function (el) {
@@ -303,14 +300,14 @@ if ($sukses) {
                 let remainingSeconds = <?= (int)$sisa_detik; ?>;
                 const targetTimestamp = Date.now() + (remainingSeconds * 1000);
 
-                const display = document.getElementById('countdownDisplay');
-                const btnSubmit = document.getElementById('btnSubmitOtp');
-                const inputOtp = document.getElementById('inputOtp');
-                const inputSandi = document.getElementById('inputSandi');
+                const display        = document.getElementById('countdownDisplay');
+                const btnSubmit      = document.getElementById('btnSubmitOtp');
+                const inputOtp       = document.getElementById('inputOtp');
+                const inputSandi     = document.getElementById('inputSandi');
                 const formKirimUlang = document.getElementById('formKirimUlang');
 
                 function updateCountdown() {
-                    const now = Date.now();
+                    const now         = Date.now();
                     const secondsLeft = Math.max(0, Math.ceil((targetTimestamp - now) / 1000));
 
                     if (secondsLeft <= 0) {
@@ -319,7 +316,7 @@ if ($sukses) {
 
                         btnSubmit.disabled = true;
                         btnSubmit.classList.add('btn-reset-disabled');
-                        inputOtp.disabled = true;
+                        inputOtp.disabled   = true;
                         inputSandi.disabled = true;
 
                         if (formKirimUlang) {

@@ -1,21 +1,11 @@
 <?php
-/** @var PDO $pdo */
-$modal_aktif    = $modal_aktif ?? ($_GET['modal'] ?? '');
-$current_page   = $current_page ?? ($_GET['page'] ?? 'manajemen_kamar');
-$kamar_terpilih = $kamar_terpilih ?? null;
-$daftar_kamar   = $daftar_kamar ?? [];
-$list_skema     = $list_skema ?? [];
+$modal_aktif         = $modal_aktif ?? ($_GET['modal'] ?? '');
+$current_page        = $current_page ?? ($_GET['page'] ?? 'manajemen_kamar');
+$kamar_terpilih      = $kamar_terpilih ?? null;
+$daftar_kamar_kosong = $daftar_kamar_kosong ?? [];
+$list_skema          = $list_skema ?? [];
+$ketuaAktif          = $ketuaAktif ?? null;
 
-// Ambil data Ketua Kost aktif dari database jika ada
-$ketuaAktif = null;
-if (isset($pdo) && $pdo instanceof PDO) {
-    try {
-        $stmtCekKetua = $pdo->query("SELECT id, nama FROM penghuni WHERE is_ketua_kos = true LIMIT 1");
-        $ketuaAktif = $stmtCekKetua ? $stmtCekKetua->fetch(PDO::FETCH_ASSOC) : null;
-    } catch (Exception $e) {}
-}
-
-// Baca file fisik foto KTP
 $foto_ktp_file = trim($kamar_terpilih['foto_ktp'] ?? '');
 $ktp_src_data  = '';
 $ada_ktp       = false;
@@ -34,8 +24,8 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
 
 <?php if ($modal_aktif === 'detail_kamar' && $kamar_terpilih): ?>
     <?php $is_kosong = ($kamar_terpilih['status_kamar'] === 'kosong' || empty($kamar_terpilih['nama'])); ?>
-    <div class="modal-overlay active">
-        <div class="modal-card-detail-kamar">
+    <div id="modalDetailKamar" class="modal-overlay active" onclick="tutupSemuaModalInstan(event)">
+        <div class="modal-card-detail-kamar" onclick="event.stopPropagation()">
             
             <div class="detail-kamar-header">
                 <h3 class="detail-kamar-title">Detail Kamar <?= htmlspecialchars($kamar_terpilih['nomor']); ?></h3>
@@ -56,17 +46,17 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                         </p>
                     </div>
                     <div class="detail-actions-vertical">
-                        <a href="?page=<?= htmlspecialchars($current_page); ?>&modal=tambah_penghuni&kamar=<?= urlencode($kamar_terpilih['nomor']); ?>" class="btn-detail-pill btn-detail-simpan">
+                        <button type="button" onclick="isiKamarKosongInstan('<?= htmlspecialchars($kamar_terpilih['nomor']); ?>')" class="btn-detail-pill btn-detail-simpan">
                             <i class="fa-solid fa-user-plus"></i> Isi Penghuni Kamar Ini
-                        </a>
+                        </button>
 
                         <button type="button" class="btn-detail-pill btn-detail-hapus" onclick="bukaModalKonfirmasiHapusKamar()">
                             <i class="fa-solid fa-trash-can"></i> Hapus Kamar
                         </button>
                         
-                        <a href="/?page=<?= htmlspecialchars($current_page); ?>" class="btn-detail-pill btn-detail-batal">
+                        <button type="button" onclick="tutupSemuaModalInstan(event)" class="btn-detail-pill btn-detail-batal">
                             Tutup
-                        </a>
+                        </button>
                     </div>
                 <?php else: ?>
                     <!-- Nama Penghuni -->
@@ -195,9 +185,9 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                             <i class="fa-solid fa-user-xmark"></i> Hapus Penghuni
                         </button>
                         
-                        <a href="/?page=<?= htmlspecialchars($current_page); ?>" class="btn-detail-pill btn-detail-batal">
+                        <button type="button" onclick="tutupSemuaModalInstan(event)" class="btn-detail-pill btn-detail-batal">
                             Batal
-                        </a>
+                        </button>
                     </div>
                 <?php endif; ?>
             </form>
@@ -244,8 +234,8 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                         <option value="" disabled selected>-- Pilih Kamar Kosong --</option>
                         <?php 
                         $ada_kosong = false;
-                        foreach ($daftar_kamar as $kmr): 
-                            if ($kmr['no_kamar'] !== $kamar_terpilih['nomor'] && ($kmr['status_kamar'] === 'kosong' || empty($kmr['nama_penghuni']))): 
+                        foreach ($daftar_kamar_kosong as $kmr): 
+                            if ($kmr['no_kamar'] !== $kamar_terpilih['nomor']): 
                                 $ada_kosong = true;
                         ?>
                                 <option value="<?= htmlspecialchars($kmr['no_kamar']); ?>">Kamar <?= htmlspecialchars($kmr['no_kamar']); ?> (Kosong)</option>
@@ -269,7 +259,7 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
         </div>
     </div>
 
-    <!-- MODAL KONFIRMASI TRANSFER KETUA KOS (CUSTOM MODAL) -->
+    <!-- MODAL KONFIRMASI TRANSFER KETUA KOS -->
     <div id="modalKonfirmasiKetua" class="modal-overlay" style="z-index: 1050;">
         <div class="modal-card-konfirmasi-kamar">
             <div class="konfirmasi-icon-wrapper" style="background-color: #fef3c7; color: #d97706;">
@@ -330,6 +320,15 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
 <?php endif; ?>
 
 <script>
+    function isiKamarKosongInstan(noKamar) {
+        tutupSemuaModalInstan();
+        const selectKamar = document.getElementById('pilihKamar');
+        if (selectKamar) {
+            selectKamar.value = noKamar;
+        }
+        bukaModalInstan(null, 'modalTambahPenghuni', 'tambah_penghuni');
+    }
+
     function bukaModalKonfirmasiHapus() {
         const m = document.getElementById('modalKonfirmasiHapus');
         if (m) m.classList.add('active');

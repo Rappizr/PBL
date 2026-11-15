@@ -4,12 +4,15 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // Helper untuk mengambil nama depan saja
-function getNamaDepan(string $fullName): string {
-    $parts = explode(' ', trim($fullName));
-    return $parts[0] ?? $fullName;
+if (!function_exists('getNamaDepan')) {
+    function getNamaDepan(string $fullName): string
+    {
+        $parts = explode(' ', trim($fullName));
+        return $parts[0] ?? $fullName;
+    }
 }
 
-// Sinkronisasi Real-Time Nama & Status dari Database
+// Sinkronisasi Real-Time Nama & Status dari Database (maksimal 1x per request)
 global $pdo;
 if (!isset($pdo) || !($pdo instanceof PDO)) {
     $possible_db = [
@@ -25,7 +28,7 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
     }
 }
 
-if (isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user']['id'])) {
+if (empty($GLOBALS['siteman_user_synced']) && isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user']['id'])) {
     $uid  = (int)$_SESSION['user']['id'];
     $role = $_SESSION['user']['role'] ?? 'penghuni';
 
@@ -41,6 +44,7 @@ if (isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user']['id'])) {
                 $_SESSION['user']['is_pj']        = (bool)$freshUser['is_ketua_kos'];
             }
         }
+        $GLOBALS['siteman_user_synced'] = true;
     } catch (Exception $e) {}
 }
 

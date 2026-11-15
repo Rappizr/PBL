@@ -30,7 +30,7 @@ $pesan_sukses = $_SESSION['pesan_sukses'] ?? '';
 $pesan_error  = $_SESSION['pesan_error'] ?? '';
 unset($_SESSION['pesan_sukses'], $_SESSION['pesan_error']);
 
-// 2. Pengambilan Data Profil
+// 2. Pengambilan Data Profil (1x query saja untuk page & modals)
 $nama_user   = 'Pengguna';
 $email_user  = null;
 $no_wa       = null;
@@ -53,13 +53,14 @@ if ($role_user === 'pemilik') {
         $no_rekening = $dataPemilik['no_rekening'];
         $pin_aktif   = trim((string)$dataPemilik['pin']);
 
-        $_SESSION['user']['id']    = $user_id;
-        $_SESSION['user']['nama']  = $nama_user;
-        $_SESSION['user']['email'] = $email_user;
-        $_SESSION['user']['pin']   = $pin_aktif;
+        $_SESSION['user']['id']          = $user_id;
+        $_SESSION['user']['nama']        = $nama_user;
+        $_SESSION['user']['email']       = $email_user;
+        $_SESSION['user']['no_wa']       = $no_wa;
+        $_SESSION['user']['no_rekening'] = $no_rekening;
+        $_SESSION['user']['pin']         = $pin_aktif;
     }
 } else {
-    // Data Penghuni & PJ (Ambil no_wa dan kontak_wali)
     $stmt = $pdo->prepare("
         SELECT p.id, p.pin, p.nama, p.no_wa, p.kontak_wali, p.email, p.is_ketua_kos, COALESCE(k.no_kamar, '-') AS no_kamar
         FROM penghuni p
@@ -90,6 +91,7 @@ if ($role_user === 'pemilik') {
         $_SESSION['user']['no_kamar']     = $no_kamar;
         $_SESSION['user']['is_pj']        = $is_pj;
         $_SESSION['user']['is_ketua_kos'] = $is_pj;
+        $_SESSION['user']['pin']          = $pin_aktif;
     }
 }
 
@@ -119,8 +121,8 @@ $role_icon = match (true) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Profil Akun</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=1.0">
-    <link rel="stylesheet" href="/css/modules.css?v=1.0">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 <body class="dashboard-body">
 
@@ -192,20 +194,19 @@ $role_icon = match (true) {
                             <span class="profile-info-value"><?= htmlspecialchars($no_rekening ?? '-'); ?></span>
                         </div>
                         <?php endif; ?>
-
                     </div>
                 </div>
 
                 <div class="profile-actions">
-                    <a href="/?page=profile&modal=ubah_profil" class="profile-action-btn">
+                    <a href="/?page=profile&modal=ubah_profil" onclick="bukaModalProfileInstan(event, 'modalUbahProfil', 'ubah_profil')" class="profile-action-btn">
                         <span class="profile-action-icon"><i class="fa-solid fa-user-pen"></i></span>
                         <span>Edit Data Profil</span>
                     </a>
-                    <a href="/?page=profile&modal=ubah_password" class="profile-action-btn">
+                    <a href="/?page=profile&modal=ubah_password" onclick="bukaModalProfileInstan(event, 'modalUbahPassword', 'ubah_password')" class="profile-action-btn">
                         <span class="profile-action-icon"><i class="fa-solid fa-key"></i></span>
                         <span>Ubah Pin</span>
                     </a>
-                    <a href="/?page=profile&modal=ubah_email" class="profile-action-btn">
+                    <a href="/?page=profile&modal=ubah_email" onclick="bukaModalProfileInstan(event, 'modalUbahEmail', 'ubah_email')" class="profile-action-btn">
                         <span class="profile-action-icon"><i class="fa-solid fa-envelope-open-text"></i></span>
                         <span>Ubah Email</span>
                     </a>
@@ -280,20 +281,19 @@ $role_icon = match (true) {
                             <span class="profile-info-value"><?= htmlspecialchars($no_rekening ?? '-'); ?></span>
                         </div>
                         <?php endif; ?>
-
                     </div>
                 </div>
 
                 <div class="profile-actions profile-actions-desktop">
-                    <a href="/?page=profile&modal=ubah_profil" class="profile-action-btn">
+                    <a href="/?page=profile&modal=ubah_profil" onclick="bukaModalProfileInstan(event, 'modalUbahProfil', 'ubah_profil')" class="profile-action-btn">
                         <span class="profile-action-icon"><i class="fa-solid fa-user-pen"></i></span>
                         <span>Edit Data Profil</span>
                     </a>
-                    <a href="/?page=profile&modal=ubah_password" class="profile-action-btn">
+                    <a href="/?page=profile&modal=ubah_password" onclick="bukaModalProfileInstan(event, 'modalUbahPassword', 'ubah_password')" class="profile-action-btn">
                         <span class="profile-action-icon"><i class="fa-solid fa-key"></i></span>
                         <span>Ubah Pin</span>
                     </a>
-                    <a href="/?page=profile&modal=ubah_email" class="profile-action-btn">
+                    <a href="/?page=profile&modal=ubah_email" onclick="bukaModalProfileInstan(event, 'modalUbahEmail', 'ubah_email')" class="profile-action-btn">
                         <span class="profile-action-icon"><i class="fa-solid fa-envelope-open-text"></i></span>
                         <span>Ubah Email</span>
                     </a>

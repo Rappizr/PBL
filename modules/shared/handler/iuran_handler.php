@@ -50,6 +50,43 @@ if (!function_exists('catatError')) {
     }
 }
 
+if (!function_exists('buatLinkWaIuran')) {
+    function buatLinkWaIuran(array $p, string $nama_iuran, string $tgl_selesai, int $selisih_hari): string
+    {
+        $nama    = $p['nama'] ?? 'Penghuni';
+        $kamar   = $p['kamar'] ?? '-';
+        $nominal = number_format((float)($p['nominal'] ?? 0), 0, ',', '.');
+        $batas   = date('d/m/Y', strtotime($tgl_selesai));
+
+        $status_tagihan = strtolower(trim($p['status_tagihan'] ?? 'belum_bayar'));
+        $status_verif   = strtolower(trim($p['status_verifikasi'] ?? ''));
+
+        if ($status_tagihan === 'lunas' && $status_verif === 'diterima') {
+            $pesan = "Halo *{$nama}* (Kamar {$kamar}), terima kasih pembayaran *{$nama_iuran}* sebesar *Rp {$nominal}* untuk periode s/d {$batas} sudah kami terima & terverifikasi LUNAS. 🙏\n\n_Pengelola SITEMAN - KOS_";
+        } elseif ($status_verif === 'pending') {
+            $pesan = "Halo *{$nama}* (Kamar {$kamar}), bukti pembayaran *{$nama_iuran}* sebesar *Rp {$nominal}* sudah masuk dan sedang kami proses verifikasi ya. Terima kasih. 🙏\n\n_Pengelola SITEMAN - KOS_";
+        } else {
+            if ($selisih_hari === 2) {
+                $waktu_info = "akan jatuh tempo dalam *2 hari lagi* (tanggal *{$batas}*)";
+            } elseif ($selisih_hari === 1) {
+                $waktu_info = "akan jatuh tempo *BESOK* (tanggal *{$batas}*)";
+            } elseif ($selisih_hari === 0) {
+                $waktu_info = "jatuh tempo *HARI INI* (tanggal *{$batas}*)";
+            } elseif ($selisih_hari < 0) {
+                $waktu_info = "telah *melewati batas waktu* (tanggal *{$batas}*)";
+            } else {
+                $waktu_info = "memiliki batas pembayaran hingga tanggal *{$batas}*";
+            }
+
+            $pesan = "Halo *{$nama}* (Kamar {$kamar}),\n\n"
+                   . "Kami dari Pengelola *SITEMAN - KOS* ingin mengingatkan bahwa tagihan *{$nama_iuran}* sebesar *Rp {$nominal}* {$waktu_info}.\n\n"
+                   . "Mohon untuk segera melakukan pembayaran dan mengunggah bukti bayar melalui aplikasi SITEMAN - KOS ya. Terima kasih atas perhatiannya. 🙏";
+        }
+
+        return linkWhatsApp($p['no_wa'] ?? '', $pesan) ?? '#';
+    }
+}
+
 // ==========================================================================
 // 1. Role dan Hak Akses
 // ==========================================================================
@@ -86,9 +123,6 @@ $tgl_selesai_iuran      = date('Y-m-t');
 $id_kategori_iuran      = null;
 
 try {
-    $pdo->exec("ALTER TABLE kategori_iuran ADD COLUMN IF NOT EXISTS tanggal_mulai DATE NULL");
-    $pdo->exec("ALTER TABLE kategori_iuran ADD COLUMN IF NOT EXISTS tanggal_selesai DATE NULL");
-
     $stmtGetSetting = $pdo->query("SELECT id, nama_iuran, nominal, tanggal_mulai, tanggal_selesai FROM kategori_iuran ORDER BY id ASC LIMIT 1");
     $rowIuran = $stmtGetSetting->fetch(PDO::FETCH_ASSOC);
 
@@ -283,7 +317,47 @@ if ($can_manage) {
     }
 }
 
-// Saldo Kas Iuran Murni (Keluarkan transaksi yang berkaitan dengan sewa)
+// ==========================================================================
+// 5. LOGIKA BANNER NOTIFIKASI PENGINGAT JATUH TEMPO (H-2, H-1, HARI H, TELAT)
+// ==========================================================================
+$hari_ini_dt    = new DateTime(date('Y-m-d'));
+$jatuh_tempo_dt = new DateTime(date('Y-m-d', strtotime($tgl_selesai_iuran)));
+$selisih_hari   = (int) $hari_ini_dt->diff($jatuh_tempo_dt)->format('%r%a');
+
+$banner_notif = null;
+if ($can_manage && $count_belum > 0) {
+    $tgl_batas_fmt = date('d/m/Y', strtotime($tgl_selesai_iuran));
+    if ($selisih_hari === 2) {
+        $banner_notif = [
+            'tipe'  => 'warning',
+            'judul' => 'Pengingat H-2 Batas Iuran!',
+            'pesan' => "Batas pembayaran {$nama_iuran_saat_ini} tinggal 2 hari lagi ({$tgl_batas_fmt}). Masih ada {$count_belum} penghuni yang belum lunas."
+        ];
+    } elseif ($selisih_hari === 1) {
+        $banner_notif = [
+            'tipe'  => 'warning',
+            'judul' => 'Pengingat H-1 (Besok Jatuh Tempo)!',
+            'pesan' => "Besok adalah batas akhir pembayaran {$nama_iuran_saat_ini} ({$tgl_batas_fmt}). Segera ingatkan {$count_belum} penghuni melalui tombol Chat WA di bawah."
+        ];
+    } elseif ($selisih_hari === 0) {
+        $banner_notif = [
+            'tipe'  => 'danger',
+            'judul' => 'HARI H — Jatuh Tempo Pembayaran Iuran!',
+            'pesan' => "Hari ini ({$tgl_batas_fmt}) adalah batas akhir pembayaran {$nama_iuran_saat_ini}. Silakan chat {$count_belum} penghuni yang belum melunasi."
+        ];
+    } elseif ($selisih_hari < 0) {
+        $telat = abs($selisih_hari);
+        $banner_notif = [
+            'tipe'  => 'danger',
+            'judul' => "Lewat Jatuh Tempo ({$telat} Hari)!",
+            'pesan' => "Periode {$nama_iuran_saat_ini} telah melewati batas bayar ({$tgl_batas_fmt}). Masih ada {$count_belum} penghuni yang belum membayar."
+        ];
+    }
+}
+
+// ==========================================================================
+// 6. SALDO & RIWAYAT MUTASI BUKU KAS IURAN
+// ==========================================================================
 $saldo_kas_iuran = 0;
 try {
     $stmtSaldo = $pdo->query("
@@ -301,7 +375,6 @@ try {
     catatError('hitung saldo', $e);
 }
 
-// Riwayat Mutasi Buku Kas Iuran Murni
 $daftar_transaksi = [];
 try {
     $sqlKas = "
@@ -342,7 +415,9 @@ try {
     catatError('riwayat transaksi', $e);
 }
 
-// Filter Tab Penghuni
+// ==========================================================================
+// 7. FILTER TAB & DAFTAR PENGHUNI (AMBIL SEMUA SEKALIGUS UNTUK INSTANT TAB)
+// ==========================================================================
 $filter_status = strtolower(trim($_GET['filter'] ?? 'semua'));
 if (!in_array($filter_status, ['semua', 'belum_bayar', 'verifikasi'], true)) {
     $filter_status = 'semua';
@@ -354,7 +429,6 @@ $filter_tabs = [
     'verifikasi'  => ['label' => 'Verifikasi',  'jumlah' => $count_verifikasi],
 ];
 
-// DAFTAR PENGHUNI BERDASARKAN TAB
 $daftar_penghuni = [];
 if ($can_manage) {
     try {
@@ -379,18 +453,21 @@ if ($can_manage) {
             ) lp ON lp.tagihan_id = t.id
             LEFT JOIN pembayaran pem ON pem.id = lp.max_pem_id
             WHERE LOWER(COALESCE(pen.status_akun, 'aktif')) = 'aktif'
+            ORDER BY k.no_kamar ASC
         ";
 
-        if ($filter_status === 'belum_bayar') {
-            $sqlPenghuni .= " AND (pem.status_verifikasi IS NULL OR LOWER(TRIM(pem.status_verifikasi)) != 'diterima' OR LOWER(TRIM(t.status_tagihan)) != 'lunas')";
-        } elseif ($filter_status === 'verifikasi') {
-            $sqlPenghuni .= " AND LOWER(TRIM(pem.status_verifikasi)) = 'pending'";
-        }
-
-        $sqlPenghuni .= " ORDER BY k.no_kamar ASC";
         $stmtP = $pdo->prepare($sqlPenghuni);
         $stmtP->execute([':nom_def' => $nominal_iuran_saat_ini]);
-        $daftar_penghuni = $stmtP->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $stmtP->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($rows as $r) {
+            $st_tagihan = strtolower(trim($r['status_tagihan'] ?? ''));
+            $st_verif   = strtolower(trim($r['status_verifikasi'] ?? ''));
+
+            $r['is_lunas']      = ($st_tagihan === 'lunas' && $st_verif === 'diterima');
+            $r['is_verifikasi'] = ($st_verif === 'pending');
+            $daftar_penghuni[]  = $r;
+        }
     } catch (PDOException $e) {
         catatError('daftar penghuni', $e);
     }

@@ -13,146 +13,76 @@ if ($page === 'logout') {
 
 // 2. Proteksi Autentikasi: Tamu (belum login) hanya boleh akses login dan reset
 if (empty($_SESSION['user']) && !in_array($page, ['login', 'reset'], true)) {
-    header("Location: /?page=login");
+    header('Location: /?page=login');
     exit;
 }
 
 // 3. Identifikasi Role Pengguna
-$userRole = $_SESSION['user']['role'] ?? 'penghuni';
-$is_pj    = !empty($_SESSION['user']['is_pj']) || !empty($_SESSION['user']['is_ketua_kos']) || $userRole === 'pj';
-
-// Dashboard fallback berdasarkan role masing-masing
+$userRole         = $_SESSION['user']['role'] ?? 'penghuni';
+$is_pj            = !empty($_SESSION['user']['is_pj']) || !empty($_SESSION['user']['is_ketua_kos']) || $userRole === 'pj';
 $defaultDashboard = ($userRole === 'pemilik') ? '/?page=dashboard_pemilik' : '/?page=dashboard_penghuni';
 
-// 4. Jika sudah login tapi iseng membuka halaman login/reset, arahkan ke dashboard
+// 4. Jika sudah login tapi membuka halaman login/reset, arahkan ke dashboard masing-masing
 if (!empty($_SESSION['user']) && in_array($page, ['login', 'reset'], true)) {
-    header("Location: " . $defaultDashboard);
+    header('Location: ' . $defaultDashboard);
     exit;
 }
 
-// 5. MATRIKS HAK AKSES HALAMAN (RBAC)
-// Tentukan role apa saja yang berhak membuka tiap halaman
-$rolePermissions = [
-    // Halaman Khusus Pemilik Kos Saja
-    'dashboard_pemilik'      => ['pemilik'],
-    'manajemen_kamar'        => ['pemilik'],
-    'arus_kas'               => ['pemilik'],
-    'analisis_kas'           => ['pemilik'],
-    'edit_tatib'             => ['pemilik'],
-    'cetak_kas'              => ['pemilik'],
+// 5. Normalisasi Alias URL Lama ke Nama Route Tunggal yang Solid
+$routeAliases = [
+    'kelola_iuran'          => 'iuran',
+    'monitoring_iuran'      => 'iuran',
+    'arus_kas'              => 'analisis_kas',
+    'verifikasi_pembayaran' => 'verifikasi_bayar',
+];
+if (isset($routeAliases[$page])) {
+    $page = $routeAliases[$page];
+}
 
-    // Halaman yang Boleh Dibuka Pemilik & PJ (Verifikasi Pembayaran)
-    'verifikasi_bayar'       => ['pemilik', 'pj'],
-    'verifikasi_pembayaran'  => ['pemilik', 'pj'],
+// 6. KONFIGURASI ROUTING & RBAC TUNGGAL (1 NAMA SOLID PER HALAMAN)
+$routes = [
+    // Auth
+    'login'              => ['file' => '/../modules/auth/login.php',                'roles' => ['*']],
+    'reset'              => ['file' => '/../modules/auth/reset.php',                'roles' => ['*']],
 
-    // Halaman Khusus Penghuni & PJ (Bukan untuk Pemilik)
-    'dashboard_penghuni'     => ['penghuni', 'pj'],
-    'tagihan_riwayat'        => ['penghuni', 'pj'],
-    'peraturan_kost'         => ['penghuni', 'pj'],
+    // Pemilik Kos
+    'dashboard_pemilik'  => ['file' => '/../modules/pemilik/dashboard.php',         'roles' => ['pemilik']],
+    'manajemen_kamar'    => ['file' => '/../modules/pemilik/manajemen_kamar.php',   'roles' => ['pemilik']],
+    'analisis_kas'       => ['file' => '/../modules/pemilik/analisis_kas.php',      'roles' => ['pemilik']],
+    'cetak_kas'          => ['file' => '/../modules/pemilik/cetak_kas.php',         'roles' => ['pemilik']],
+    'edit_tatib'         => ['file' => '/../modules/pemilik/edit_tatib.php',        'roles' => ['pemilik']],
 
-    // Halaman Bersama (Semua Role Boleh Akses)
-    'chat_penghuni'          => ['pemilik', 'pj', 'penghuni'],
-    'iuran'                  => ['pemilik', 'pj', 'penghuni'],
-    'kelola_iuran'           => ['pemilik', 'pj', 'penghuni'],
-    'monitoring_iuran'       => ['pemilik', 'pj', 'penghuni'],
-    'cetak_iuran'            => ['pemilik', 'pj', 'penghuni'],
-    'profile'                => ['pemilik', 'pj', 'penghuni'],
+    // Penghuni & PJ
+    'dashboard_penghuni' => ['file' => '/../modules/penghuni/dashboard.php',        'roles' => ['penghuni', 'pj']],
+    'tagihan_riwayat'    => ['file' => '/../modules/penghuni/tagihan_riwayat.php',  'roles' => ['penghuni', 'pj']],
+    'peraturan_kost'     => ['file' => '/../modules/penghuni/peraturan_kost.php',   'roles' => ['penghuni', 'pj']],
+    'cetak_invoice'      => ['file' => '/../modules/penghuni/cetak_invoice.php',    'roles' => ['penghuni', 'pj']],
+
+    // Shared (Pemilik, PJ, Penghuni)
+    'verifikasi_bayar'   => ['file' => '/../modules/shared/verifikasi_bayar.php',   'roles' => ['pemilik', 'pj']],
+    'chat_penghuni'      => ['file' => '/../modules/shared/chat_penghuni.php',      'roles' => ['pemilik', 'pj', 'penghuni']],
+    'iuran'              => ['file' => '/../modules/shared/iuran.php',              'roles' => ['pemilik', 'pj', 'penghuni']],
+    'cetak_iuran'        => ['file' => '/../modules/shared/cetak_iuran.php',        'roles' => ['pemilik', 'pj', 'penghuni']],
+    'profile'            => ['file' => '/../modules/shared/profile.php',            'roles' => ['pemilik', 'pj', 'penghuni']],
 ];
 
-// 6. VALIDASI HAK AKSES URL
-if (isset($rolePermissions[$page])) {
-    $allowedRoles = $rolePermissions[$page];
-    
-    // Cek apakah role user ada di daftar izin
-    $hasAccess = false;
-    if (in_array($userRole, $allowedRoles, true)) {
-        $hasAccess = true;
-    } elseif ($is_pj && in_array('pj', $allowedRoles, true)) {
-        $hasAccess = true;
-    }
+// 7. EKSEKUSI VALIDASI RBAC & LOAD HALAMAN
+if (!isset($routes[$page])) {
+    http_response_code(404);
+    require_once __DIR__ . '/../modules/components/404notfound.php';
+    exit;
+}
 
-    // Jika tidak berhak (misal penghuni mengetik ?page=arus_kas atau ?page=manajemen_kamar)
+$targetRoute  = $routes[$page];
+$allowedRoles = $targetRoute['roles'];
+
+if (!in_array('*', $allowedRoles, true)) {
+    $hasAccess = in_array($userRole, $allowedRoles, true) || ($is_pj && in_array('pj', $allowedRoles, true));
+
     if (!$hasAccess) {
-        // Opsi A: Lempar kembali ke dashboard miliknya dengan notifikasi URL terlarang
-        header("Location: " . $defaultDashboard);
+        header('Location: ' . $defaultDashboard);
         exit;
-
-        // Opsi B (alternatif jika ingin menampilkan pesan tegas):
-        // http_response_code(403);
-        // die("403 Forbidden: Anda tidak memiliki akses untuk membuka halaman ini.");
     }
 }
 
-// 7. ROUTING HALAMAN
-switch ($page) {
-    case 'login':
-        require_once __DIR__ . '/../modules/auth/login.php';
-        break;
-    
-    case 'reset':
-        require_once __DIR__ . '/../modules/auth/reset.php';
-        break;
-
-    case 'dashboard_pemilik':
-        require_once __DIR__ . '/../modules/pemilik/dashboard.php';
-        break;
-        
-    case 'manajemen_kamar':
-        require_once __DIR__ . '/../modules/pemilik/manajemen_kamar.php';
-        break;
-        
-    case 'analisis_kas':
-        require_once __DIR__ . '/../modules/pemilik/analisis_kas.php';
-        break;
-
-    case 'cetak_kas':
-        require_once __DIR__ . '/../modules/pemilik/cetak_kas.php';
-        break;
-
-    case 'cetak_iuran':
-        require_once __DIR__ . '/../modules/shared/cetak_iuran.php';
-        break;
-        
-    case 'verifikasi_bayar':
-        require_once __DIR__ . '/../modules/shared/verifikasi_bayar.php';
-        break;
-
-    case 'dashboard_penghuni':
-        require_once __DIR__ . '/../modules/penghuni/dashboard.php';
-        break;
-        
-    case 'tagihan_riwayat':
-        require_once __DIR__ . '/../modules/penghuni/tagihan_riwayat.php';
-        break;
-        
-    case 'peraturan_kost':
-        require_once __DIR__ . '/../modules/penghuni/peraturan_kost.php';
-        break;
-        
-    case 'edit_tatib':
-        require_once __DIR__ . '/../modules/pemilik/edit_tatib.php';
-        break;
-
-    case 'chat_penghuni':
-        require_once __DIR__ . '/../modules/shared/chat_penghuni.php';
-        break;
-    
-    case 'cetak_invoice':
-    require_once __DIR__ . '/../modules/penghuni/cetak_invoice.php';
-    break;
-        
-    case 'iuran':                     
-    case 'kelola_iuran':
-    case 'monitoring_iuran':
-        require_once __DIR__ . '/../modules/shared/iuran.php';
-        break;
-
-    case 'profile':
-        require_once __DIR__ . '/../modules/shared/profile.php';
-        break;
-
-    default:
-        http_response_code(404);
-        require_once __DIR__ . '/../modules/components/404notfound.php';
-        break;
-}
+require_once __DIR__ . $targetRoute['file'];

@@ -72,7 +72,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$peraturan_raw = $pdo->query('SELECT id, peraturan AS judul, deskripsi, icon FROM peraturan_kos ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
+$peraturan_raw  = $pdo->query('SELECT id, peraturan AS judul, deskripsi, icon FROM peraturan_kos ORDER BY id')->fetchAll(PDO::FETCH_ASSOC);
 $peraturan_list = [];
 foreach ($peraturan_raw as $r) {
     if (empty($r['icon'])) {
@@ -102,10 +102,10 @@ if ($modal === 'tambah_peraturan') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SITEMAN - KOS | Manajemen Peraturan kos</title>
+    <title>SITEMAN - KOS | Manajemen Peraturan Kos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 
 <body class="dashboard-body">
@@ -117,19 +117,29 @@ if ($modal === 'tambah_peraturan') {
 
             <main class="page-content">
                 <div class="subpage-banner-card">
-                    <h2 class="subpage-banner-title">Manajemen Peraturan kos</h2>
+                    <h2 class="subpage-banner-title">Manajemen Peraturan Kos</h2>
                     <a href="/?page=dashboard_pemilik" class="btn-kembali-banner">
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
                 </div>
 
-                <div style="margin-bottom: 16px;">
-                    <a href="/?page=edit_tatib&modal=tambah_peraturan" class="btn-tambah-tatib-mobile">
+                <?php if ($pesan): ?>
+                <p class="peraturan-flash <?= $pesan['tipe'] === 'sukses' ? 'sukses' : 'gagal'; ?>">
+                    <?= htmlspecialchars($pesan['teks']); ?>
+                </p>
+                <?php endif; ?>
+
+                <div class="peraturan-toolbar">
+                    <a href="/?page=edit_tatib&modal=tambah_peraturan" onclick="bukaModalTambahTatib(event)" class="btn-tambah-tatib-mobile">
                         <i class="fa-solid fa-plus"></i> Tambah Peraturan
                     </a>
                 </div>
 
                 <div class="peraturan-card-wrapper">
+                    <?php if (empty($peraturan_list)): ?>
+                    <p class="peraturan-kosong">Belum ada peraturan. Klik "Tambah Peraturan" untuk membuat yang pertama.</p>
+                    <?php endif; ?>
+
                     <?php foreach ($peraturan_list as $rule): ?>
                     <div class="peraturan-item-mobile">
                         <div class="peraturan-mobile-left">
@@ -144,10 +154,12 @@ if ($modal === 'tambah_peraturan') {
 
                         <div class="peraturan-mobile-actions">
                             <a href="/?page=edit_tatib&modal=edit_peraturan&id=<?= (int)$rule['id']; ?>"
+                                onclick="bukaModalEditTatib(event, <?= (int)$rule['id']; ?>, <?= htmlspecialchars(json_encode($rule['judul']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($rule['deskripsi']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($rule['icon']), ENT_QUOTES, 'UTF-8'); ?>)"
                                 class="btn-pill-edit-mobile">
                                 <i class="fa-solid fa-pen"></i> Edit
                             </a>
                             <a href="/?page=edit_tatib&modal=hapus_peraturan&id=<?= (int)$rule['id']; ?>"
+                                onclick="bukaModalHapusTatib(event, <?= (int)$rule['id']; ?>, <?= htmlspecialchars(json_encode($rule['judul']), ENT_QUOTES, 'UTF-8'); ?>)"
                                 class="btn-pill-hapus-mobile">
                                 <i class="fa-solid fa-trash-can"></i> Hapus
                             </a>
@@ -166,8 +178,8 @@ if ($modal === 'tambah_peraturan') {
         <?php require_once __DIR__ . '/../components/sidebar.php'; ?>
 
         <main class="desktop-content">
-            <h2 class="desktop-header-title">Manajemen Peraturan kos</h2>
-            <p class="peraturan-desktop-subtitle">Mengatur Peraturan kos</p>
+            <h2 class="desktop-header-title">Manajemen Peraturan Kos</h2>
+            <p class="peraturan-desktop-subtitle">Mengatur Peraturan Kos</p>
 
             <?php if ($pesan): ?>
             <p class="peraturan-flash <?= $pesan['tipe'] === 'sukses' ? 'sukses' : 'gagal'; ?>">
@@ -176,7 +188,7 @@ if ($modal === 'tambah_peraturan') {
             <?php endif; ?>
 
             <div class="peraturan-toolbar">
-                <a href="/?page=edit_tatib&modal=tambah_peraturan" class="btn-tambah-tatib-mobile">
+                <a href="/?page=edit_tatib&modal=tambah_peraturan" onclick="bukaModalTambahTatib(event)" class="btn-tambah-tatib-mobile">
                     <i class="fa-solid fa-plus"></i> Tambah Peraturan
                 </a>
             </div>
@@ -190,8 +202,7 @@ if ($modal === 'tambah_peraturan') {
 
                 <div class="tatib-table-body">
                     <?php if (empty($peraturan_list)): ?>
-                    <p class="peraturan-kosong">Belum ada peraturan. Klik "Tambah Peraturan" untuk membuat yang pertama.
-                    </p>
+                    <p class="peraturan-kosong">Belum ada peraturan. Klik "Tambah Peraturan" untuk membuat yang pertama.</p>
                     <?php endif; ?>
 
                     <?php foreach ($peraturan_list as $p): ?>
@@ -208,10 +219,12 @@ if ($modal === 'tambah_peraturan') {
 
                         <div class="tatib-row-actions">
                             <a href="/?page=edit_tatib&modal=edit_peraturan&id=<?= (int) $p['id']; ?>"
+                                onclick="bukaModalEditTatib(event, <?= (int)$p['id']; ?>, <?= htmlspecialchars(json_encode($p['judul']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($p['deskripsi']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($p['icon']), ENT_QUOTES, 'UTF-8'); ?>)"
                                 class="btn-pill-edit-desktop">
                                 <i class="fa-solid fa-pen"></i> Edit
                             </a>
                             <a href="/?page=edit_tatib&modal=hapus_peraturan&id=<?= (int) $p['id']; ?>"
+                                onclick="bukaModalHapusTatib(event, <?= (int)$p['id']; ?>, <?= htmlspecialchars(json_encode($p['judul']), ENT_QUOTES, 'UTF-8'); ?>)"
                                 class="btn-pill-hapus-desktop">
                                 <i class="fa-solid fa-trash-can"></i> Hapus
                             </a>
@@ -223,17 +236,14 @@ if ($modal === 'tambah_peraturan') {
         </main>
     </div>
 
-    <!-- MODAL TAMBAH / EDIT -->
-    <?php if ($mode_form): ?>
-    <div class="modal-overlay active">
-        <div class="modal-card">
-            <h3 class="modal-title"><?= $mode_form === 'tambah' ? 'Tambah Peraturan' : 'Edit Peraturan'; ?></h3>
+    <!-- MODAL TAMBAH / EDIT (INSTAN TANPA RELOAD) -->
+    <div id="modalFormTatib" class="modal-overlay <?= $mode_form ? 'active' : ''; ?>" onclick="tutupModalTatib(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <h3 class="modal-title" id="modalTatibTitle"><?= $mode_form === 'edit' ? 'Edit Peraturan' : 'Tambah Peraturan'; ?></h3>
 
             <form action="/?page=edit_tatib" method="POST" class="modal-form">
-                <input type="hidden" name="aksi" value="<?= $mode_form; ?>">
-                <?php if ($mode_form === 'edit'): ?>
-                <input type="hidden" name="id" value="<?= (int) $peraturan_aktif['id']; ?>">
-                <?php endif; ?>
+                <input type="hidden" name="aksi" id="tatibAksi" value="<?= $mode_form ?? 'tambah'; ?>">
+                <input type="hidden" name="id" id="tatibId" value="<?= $mode_form === 'edit' ? (int) $peraturan_aktif['id'] : 0; ?>">
 
                 <div class="modal-field">
                     <label class="modal-label" for="judul">Judul</label>
@@ -260,35 +270,99 @@ if ($modal === 'tambah_peraturan') {
                 </div>
 
                 <div class="modal-actions">
-                    <a href="/?page=edit_tatib" class="btn-modal-cancel">Batal</a>
+                    <button type="button" onclick="tutupModalTatib(event)" class="btn-modal-cancel">Batal</button>
                     <button type="submit" class="btn-modal-submit">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
-    <?php endif; ?>
 
-    <!-- MODAL KONFIRMASI HAPUS -->
-    <?php if ($modal === 'hapus_peraturan' && $peraturan_aktif): ?>
-    <div class="modal-overlay active">
-        <div class="modal-card">
+    <!-- MODAL KONFIRMASI HAPUS (INSTAN TANPA RELOAD) -->
+    <div id="modalHapusTatib" class="modal-overlay <?= ($modal === 'hapus_peraturan' && $peraturan_aktif) ? 'active' : ''; ?>" onclick="tutupModalTatib(event)">
+        <div class="modal-card" onclick="event.stopPropagation()">
             <h3 class="modal-title">Hapus Peraturan</h3>
             <p class="modal-konfirmasi">
-                Yakin ingin menghapus <strong><?= htmlspecialchars($peraturan_aktif['judul']); ?></strong>?
+                Yakin ingin menghapus <strong id="tatibHapusNama"><?= htmlspecialchars($peraturan_aktif['judul'] ?? ''); ?></strong>?
                 Tindakan ini tidak bisa dibatalkan.
             </p>
 
             <form action="/?page=edit_tatib" method="POST" class="modal-form">
                 <input type="hidden" name="aksi" value="hapus">
-                <input type="hidden" name="id" value="<?= (int) $peraturan_aktif['id']; ?>">
+                <input type="hidden" name="id" id="tatibHapusId" value="<?= (int) ($peraturan_aktif['id'] ?? 0); ?>">
                 <div class="modal-actions">
-                    <a href="/?page=edit_tatib" class="btn-modal-cancel">Batal</a>
-                    <button type="submit" class="btn-modal-submit" style="background-color: #b91c1c;">Hapus</button>
+                    <button type="button" onclick="tutupModalTatib(event)" class="btn-modal-cancel">Batal</button>
+                    <button type="submit" class="btn-modal-submit btn-konfirmasi-hapus">Hapus</button>
                 </div>
             </form>
         </div>
     </div>
-    <?php endif; ?>
+
+    <script>
+        function bukaModalTambahTatib(e) {
+            if (e) e.preventDefault();
+            document.getElementById('modalTatibTitle').textContent = 'Tambah Peraturan';
+            document.getElementById('tatibAksi').value = 'tambah';
+            document.getElementById('tatibId').value = '0';
+            document.getElementById('judul').value = '';
+            document.getElementById('deskripsi').value = '';
+            document.getElementById('ikon').selectedIndex = 0;
+
+            const modal = document.getElementById('modalFormTatib');
+            modal.classList.add('active');
+            setTimeout(() => document.getElementById('judul').focus(), 50);
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('modal', 'tambah_peraturan');
+            url.searchParams.delete('id');
+            window.history.replaceState({}, '', url);
+        }
+
+        function bukaModalEditTatib(e, id, judul, deskripsi, ikon) {
+            if (e) e.preventDefault();
+            document.getElementById('modalTatibTitle').textContent = 'Edit Peraturan';
+            document.getElementById('tatibAksi').value = 'edit';
+            document.getElementById('tatibId').value = id;
+            document.getElementById('judul').value = judul;
+            document.getElementById('deskripsi').value = deskripsi;
+            document.getElementById('ikon').value = ikon;
+
+            const modal = document.getElementById('modalFormTatib');
+            modal.classList.add('active');
+            setTimeout(() => document.getElementById('judul').focus(), 50);
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('modal', 'edit_peraturan');
+            url.searchParams.set('id', id);
+            window.history.replaceState({}, '', url);
+        }
+
+        function bukaModalHapusTatib(e, id, judul) {
+            if (e) e.preventDefault();
+            document.getElementById('tatibHapusId').value = id;
+            document.getElementById('tatibHapusNama').textContent = judul;
+
+            document.getElementById('modalHapusTatib').classList.add('active');
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('modal', 'hapus_peraturan');
+            url.searchParams.set('id', id);
+            window.history.replaceState({}, '', url);
+        }
+
+        function tutupModalTatib(e) {
+            if (e) e.preventDefault();
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+
+            const url = new URL(window.location.href);
+            url.searchParams.delete('modal');
+            url.searchParams.delete('id');
+            window.history.replaceState({}, '', url);
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') tutupModalTatib();
+        });
+    </script>
 
 </body>
 

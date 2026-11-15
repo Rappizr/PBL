@@ -6210,7 +6210,11 @@ body.laporan-print-body {
   text-decoration: none;
   box-shadow: 2px 3px 0px #c8924b;
   cursor: pointer;
-  transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, color 0.16s ease;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease;
 }
 
 .verif-page-btn:hover:not(:disabled) {
@@ -6245,7 +6249,10 @@ body.laporan-print-body {
   align-items: center;
   justify-content: center;
   box-shadow: 2px 3px 0px #c8924b;
-  transition: transform 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease;
+  transition:
+    transform 0.16s ease,
+    box-shadow 0.16s ease,
+    background-color 0.16s ease;
 }
 
 .verif-page-num:hover:not(.active) {
@@ -6492,5 +6499,78 @@ body.laporan-print-body {
     border-radius: 0 !important;
     padding: 10px 0 !important;
     overflow: visible !important;
+  }
+}
+
+/* ==========================================================================
+   36. BANNER NOTIFIKASI PENGINGAT JATUH TEMPO IURAN (H-2, H-1, HARI H)
+   ========================================================================== */
+.iuran-notif-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  margin-bottom: 18px;
+  max-width: 824px;
+  box-sizing: border-box;
+  box-shadow: 3px 4px 0px rgba(0, 0, 0, 0.12);
+}
+
+.iuran-notif-banner.notif-warning {
+  background-color: #fef3c7;
+  border: 1.5px solid #f59e0b;
+  color: #92400e;
+}
+
+.iuran-notif-banner.notif-danger {
+  background-color: #fee2e2;
+  border: 1.5px solid #ef4444;
+  color: #991b1b;
+}
+
+.iuran-notif-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.iuran-notif-body {
+  flex: 1;
+}
+
+.iuran-notif-body strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+
+.iuran-notif-body p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
+.iuran-notif-btn {
+  background-color: #ffffff;
+  color: #1a4d55;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  text-decoration: none;
+  white-space: nowrap;
+  box-shadow: 1px 2px 0px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 640px) {
+  .iuran-notif-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .iuran-notif-btn {
+    width: 100%;
+    text-align: center;
   }
 }

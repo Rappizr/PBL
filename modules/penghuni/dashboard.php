@@ -42,20 +42,20 @@ $daftar_tagihan = function_exists('fetchDaftarTagihan')
 // Susun Ringkasan Dinamis
 $ringkasan = [
     'sewa' => [
-        'id'           => null,
-        'status_label' => 'Belum Ada Tagihan',
-        'badge_style'  => 'background-color: #cbd5e1; color: #475569; font-weight: 800;',
-        'tenggat'      => '-',
-        'action_label' => 'Bayar Sekarang',
-        'is_actionable'=> false
+        'id'            => null,
+        'status_label'  => 'Belum Ada Tagihan',
+        'badge_style'   => 'background-color: #cbd5e1; color: #475569; font-weight: 800;',
+        'tenggat'       => '-',
+        'action_label'  => 'Bayar Sekarang',
+        'is_actionable' => false
     ],
     'iuran' => [
-        'id'           => null,
-        'status_label' => 'Belum Ada Tagihan',
-        'badge_style'  => 'background-color: #cbd5e1; color: #475569; font-weight: 800;',
-        'tenggat'      => '-',
-        'action_label' => 'Bayar Sekarang',
-        'is_actionable'=> false
+        'id'            => null,
+        'status_label'  => 'Belum Ada Tagihan',
+        'badge_style'   => 'background-color: #cbd5e1; color: #475569; font-weight: 800;',
+        'tenggat'       => '-',
+        'action_label'  => 'Bayar Sekarang',
+        'is_actionable' => false
     ]
 ];
 
@@ -89,12 +89,12 @@ foreach ($daftar_tagihan as $t) {
     }
 
     $ringkasan[$key] = [
-        'id'           => (int)$t['id'],
-        'status_label' => $status_txt,
-        'badge_style'  => $badge_style,
-        'tenggat'      => $t['jatuh_tempo'] ?? '-',
-        'action_label' => $action_label,
-        'is_actionable'=> $is_actionable
+        'id'            => (int)$t['id'],
+        'status_label'  => $status_txt,
+        'badge_style'   => $badge_style,
+        'tenggat'       => $t['jatuh_tempo'] ?? '-',
+        'action_label'  => $action_label,
+        'is_actionable' => $is_actionable
     ];
 }
 ?>
@@ -106,8 +106,8 @@ foreach ($daftar_tagihan as $t) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 
 <body class="dashboard-body">
@@ -163,30 +163,30 @@ foreach ($daftar_tagihan as $t) {
                 <h2 class="menu-heading">Silahkan pilih menu</h2>
                 <div class="menu-grid">
 
-                    <a href="/?page=tagihan_riwayat" class="menu-item-box">
+                    <a href="/?page=tagihan_riwayat" class="menu-item-box quick-nav-link">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-receipt"></i></div>
                         <span class="menu-label">Tagihan &amp; Riwayat</span>
                     </a>
 
-                    <a href="/?page=<?= $is_pj ? 'kelola_iuran' : 'monitoring_iuran'; ?>" class="menu-item-box">
+                    <a href="/?page=<?= $is_pj ? 'kelola_iuran' : 'monitoring_iuran'; ?>" class="menu-item-box quick-nav-link">
                         <div class="menu-icon-wrapper">
                             <i class="fa-solid <?= $is_pj ? 'fa-wallet' : 'fa-chart-pie'; ?>"></i>
                         </div>
                         <span class="menu-label"><?= $is_pj ? 'Kelola Iuran' : 'Monitoring<br>Iuran'; ?></span>
                     </a>
 
-                    <a href="/?page=peraturan_kost" class="menu-item-box">
+                    <a href="/?page=peraturan_kost" class="menu-item-box quick-nav-link">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-book-open"></i></div>
                         <span class="menu-label">Peraturan Kos</span>
                     </a>
 
-                    <a href="/?page=chat_penghuni" class="menu-item-box">
+                    <a href="/?page=chat_penghuni" class="menu-item-box quick-nav-link">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-comment-dots"></i></div>
                         <span class="menu-label">Chat Penghuni</span>
                     </a>
 
                     <?php if ($is_pj): ?>
-                    <a href="/?page=verifikasi_bayar" class="menu-item-box">
+                    <a href="/?page=verifikasi_bayar" class="menu-item-box quick-nav-link">
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
                         <span class="menu-label">Verifikasi<br>Pembayaran</span>
                     </a>
@@ -214,8 +214,7 @@ foreach ($daftar_tagihan as $t) {
                     <div class="tagihan-details">
                         <div class="tagihan-detail-row">
                             <span class="lbl">Status Pembayaran</span><span class="colon">:</span>
-                            <span
-                                style="<?= $ringkasan['sewa']['badge_style']; ?> padding: 2px 10px; border-radius: 999px; font-size: 11px;">
+                            <span style="<?= $ringkasan['sewa']['badge_style']; ?> padding: 2px 10px; border-radius: 999px; font-size: 11px;">
                                 <?= htmlspecialchars($ringkasan['sewa']['status_label']); ?>
                             </span>
                         </div>
@@ -225,11 +224,11 @@ foreach ($daftar_tagihan as $t) {
                         </div>
                     </div>
                     <?php if ($ringkasan['sewa']['is_actionable'] && $ringkasan['sewa']['id']): ?>
-                    <a href="/?page=tagihan_riwayat&bayar_id=<?= $ringkasan['sewa']['id']; ?>" class="btn-upload-bukti">
+                    <a href="/?page=tagihan_riwayat&bayar_id=<?= $ringkasan['sewa']['id']; ?>" class="btn-upload-bukti quick-nav-link">
                         <?= htmlspecialchars($ringkasan['sewa']['action_label']); ?>
                     </a>
                     <?php else: ?>
-                    <a href="/?page=tagihan_riwayat" class="btn-upload-bukti" style="opacity: 0.85;">
+                    <a href="/?page=tagihan_riwayat" class="btn-upload-bukti quick-nav-link" style="opacity: 0.85;">
                         <?= htmlspecialchars($ringkasan['sewa']['action_label']); ?>
                     </a>
                     <?php endif; ?>
@@ -241,8 +240,7 @@ foreach ($daftar_tagihan as $t) {
                     <div class="tagihan-details">
                         <div class="tagihan-detail-row">
                             <span class="lbl">Status Pembayaran</span><span class="colon">:</span>
-                            <span
-                                style="<?= $ringkasan['iuran']['badge_style']; ?> padding: 2px 10px; border-radius: 999px; font-size: 11px;">
+                            <span style="<?= $ringkasan['iuran']['badge_style']; ?> padding: 2px 10px; border-radius: 999px; font-size: 11px;">
                                 <?= htmlspecialchars($ringkasan['iuran']['status_label']); ?>
                             </span>
                         </div>
@@ -252,12 +250,11 @@ foreach ($daftar_tagihan as $t) {
                         </div>
                     </div>
                     <?php if ($ringkasan['iuran']['is_actionable'] && $ringkasan['iuran']['id']): ?>
-                    <a href="/?page=tagihan_riwayat&bayar_id=<?= $ringkasan['iuran']['id']; ?>"
-                        class="btn-upload-bukti">
+                    <a href="/?page=tagihan_riwayat&bayar_id=<?= $ringkasan['iuran']['id']; ?>" class="btn-upload-bukti quick-nav-link">
                         <?= htmlspecialchars($ringkasan['iuran']['action_label']); ?>
                     </a>
                     <?php else: ?>
-                    <a href="/?page=tagihan_riwayat" class="btn-upload-bukti" style="opacity: 0.85;">
+                    <a href="/?page=tagihan_riwayat" class="btn-upload-bukti quick-nav-link" style="opacity: 0.85;">
                         <?= htmlspecialchars($ringkasan['iuran']['action_label']); ?>
                     </a>
                     <?php endif; ?>
@@ -266,31 +263,30 @@ foreach ($daftar_tagihan as $t) {
 
             <h3 class="menu-utama-title">Menu utama</h3>
             <div class="desktop-menu-grid">
-                <a href="/?page=tagihan_riwayat" class="desktop-menu-card">
+                <a href="/?page=tagihan_riwayat" class="desktop-menu-card quick-nav-link">
                     <div class="desktop-menu-icon"><i class="fa-solid fa-receipt"></i></div>
                     <span class="desktop-menu-label">Tagihan &amp;<br>Riwayat</span>
                 </a>
 
-                <a href="/?page=peraturan_kost" class="desktop-menu-card">
+                <a href="/?page=peraturan_kost" class="desktop-menu-card quick-nav-link">
                     <div class="desktop-menu-icon"><i class="fa-solid fa-book-open"></i></div>
                     <span class="desktop-menu-label">Peraturan<br>Kos</span>
                 </a>
 
-                <a href="/?page=chat_penghuni" class="desktop-menu-card">
+                <a href="/?page=chat_penghuni" class="desktop-menu-card quick-nav-link">
                     <div class="desktop-menu-icon"><i class="fa-solid fa-comment-dots"></i></div>
                     <span class="desktop-menu-label">Chat<br>Penghuni</span>
                 </a>
 
-                <a href="/?page=<?= $is_pj ? 'kelola_iuran' : 'monitoring_iuran'; ?>" class="desktop-menu-card">
+                <a href="/?page=<?= $is_pj ? 'kelola_iuran' : 'monitoring_iuran'; ?>" class="desktop-menu-card quick-nav-link">
                     <div class="desktop-menu-icon">
                         <i class="fa-solid <?= $is_pj ? 'fa-wallet' : 'fa-chart-pie'; ?>"></i>
                     </div>
-                    <span
-                        class="desktop-menu-label"><?= $is_pj ? 'Kelola <br>Iuran' : 'Monitoring &amp;<br>Tagihan Iuran'; ?></span>
+                    <span class="desktop-menu-label"><?= $is_pj ? 'Kelola <br>Iuran' : 'Monitoring &amp;<br>Tagihan Iuran'; ?></span>
                 </a>
 
                 <?php if ($is_pj): ?>
-                <a href="/?page=verifikasi_bayar" class="desktop-menu-card">
+                <a href="/?page=verifikasi_bayar" class="desktop-menu-card quick-nav-link">
                     <div class="desktop-menu-icon"><i class="fa-solid fa-list-check"></i></div>
                     <span class="desktop-menu-label">Verifikasi<br>Pembayaran</span>
                 </a>
@@ -298,6 +294,32 @@ foreach ($daftar_tagihan as $t) {
             </div>
         </main>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const loader = document.getElementById('topNavLoader');
+
+            document.querySelectorAll('.quick-nav-link').forEach(function (link) {
+                link.addEventListener('mouseenter', function () {
+                    const url = this.getAttribute('href');
+                    if (url && !document.querySelector('link[rel="prefetch"][href="' + url + '"]')) {
+                        const prefetch = document.createElement('link');
+                        prefetch.rel = 'prefetch';
+                        prefetch.href = url;
+                        document.head.appendChild(prefetch);
+                    }
+                });
+
+                link.addEventListener('click', function (e) {
+                    if (e.ctrlKey || e.metaKey || this.target === '_blank') return;
+                    if (loader) {
+                        loader.style.opacity = '1';
+                        loader.style.width = '75%';
+                    }
+                });
+            });
+        });
+    </script>
 
 </body>
 

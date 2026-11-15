@@ -3,51 +3,21 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// 1. Ambil koneksi database secara aman
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_paths = [
-        __DIR__ . '/../../config/database.php',
-        __DIR__ . '/../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php',
-        dirname(__DIR__, 2) . '/config/database.php',
-        dirname(__DIR__, 3) . '/config/database.php'
-    ];
-    foreach ($possible_paths as $path) {
-        if (file_exists($path)) {
-            require_once $path;
-            break;
-        }
-    }
-}
-
-// 2. Ambil data penghuni aktif dan nomor kamar sesuai relasi baru
-$penghuniKos = [];
-
-if (isset($pdo) && $pdo instanceof PDO) {
-    try {
-        $sql = "
-            SELECT 
-                p.id,
-                p.nama,
-                COALESCE(k.no_kamar, '-') AS kamar,
-                COALESCE(p.no_wa, '-') AS no_wa
-            FROM penghuni p
-            LEFT JOIN penghuni_kamar pk ON p.id = pk.penghuni_id
-            LEFT JOIN kamar k ON pk.kamar_id = k.id AND k.status_kamar = 'terisi'
-            WHERE LOWER(p.status_akun) = 'aktif'
-            ORDER BY 
-                NULLIF(regexp_replace(k.no_kamar, '\D', '', 'g'), '')::INTEGER ASC NULLS LAST;
-        ";
-
-        $stmt = $pdo->query($sql);
-        $penghuniKos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Exception $e) {
-        $penghuniKos = [];
+// Panggil Handler (hapus duplikasi query di file view)
+$handler_paths = [
+    __DIR__ . '/handler/chat_handlers.php',
+    __DIR__ . '/../pemilik/handler/chat_handlers.php'
+];
+foreach ($handler_paths as $hp) {
+    if (file_exists($hp)) {
+        require_once $hp;
+        break;
     }
 }
 
 $role_user    = $_SESSION['user']['role'] ?? 'pemilik';
 $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?page=dashboard_penghuni';
+$penghuniKos  = $penghuniKos ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -57,8 +27,8 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Chat Penghuni</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 
 <body class="dashboard-body">
@@ -91,8 +61,7 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
                         style="width: 100%; text-align: center; padding: 20px; background: #fff; border-radius: 12px; margin-top: 10px;">
                         <i class="fa-solid fa-folder-open"
                             style="font-size: 24px; color: #4ca5b0; margin-bottom: 8px;"></i>
-                        <p style="margin: 0; font-size: 13px; font-weight: 600; color: #4a5568;">Tidak ada data penghuni
-                        </p>
+                        <p style="margin: 0; font-size: 13px; font-weight: 600; color: #4a5568;">Tidak ada data penghuni</p>
                     </div>
                     <?php else: ?>
                     <?php foreach ($penghuniKos as $p): ?>
@@ -105,7 +74,7 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
                             </div>
                             <span class="chat-wa"><?= htmlspecialchars($p['no_wa']); ?></span>
                         </div>
-                        <a href="https://wa.me/<?= preg_replace('/^0/', '62', preg_replace('/[^0-9]/', '', $p['no_wa'])); ?>"
+                        <a href="<?= htmlspecialchars(buatLinkWaSapaan($p, $role_user)); ?>"
                             target="_blank" class="btn-chat-wa">
                             <i class="fa-brands fa-whatsapp"></i> Chat
                         </a>
@@ -139,7 +108,7 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
             <h2 class="desktop-header-title">Chat Penghuni</h2>
             <p class="peraturan-desktop-subtitle">Cari nama/kamar penghuni lalu hubungi</p>
 
-            <h3 class="desktop-section-title">Data Penghuni kos</h3>
+            <h3 class="desktop-section-title">Data Penghuni Kos</h3>
 
             <div class="desktop-chat-search">
                 <i class="fa-solid fa-filter search-icon"></i>
@@ -165,7 +134,7 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
                         </div>
                         <span class="desktop-chat-telp"><?= htmlspecialchars($p['no_wa']); ?></span>
                     </div>
-                    <a href="https://wa.me/<?= preg_replace('/^0/', '62', preg_replace('/[^0-9]/', '', $p['no_wa'])); ?>"
+                    <a href="<?= htmlspecialchars(buatLinkWaSapaan($p, $role_user)); ?>"
                         target="_blank" class="btn-chat-wa">
                         <i class="fa-brands fa-whatsapp"></i> Chat
                     </a>
@@ -183,36 +152,31 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
     <!-- Script Filter Live Search -->
     <script>
     function cariPenghuni(idInput, idList, idPesanKosong, namaClassKartu) {
-        var kotakCari = document.getElementById(idInput);
-        var wadahList = document.getElementById(idList);
-        var pesanKosong = document.getElementById(idPesanKosong);
-        if (kotakCari === null || wadahList === null) {
-            return;
-        }
+        const kotakCari = document.getElementById(idInput);
+        const wadahList = document.getElementById(idList);
+        const pesanKosong = document.getElementById(idPesanKosong);
+        if (!kotakCari || !wadahList) return;
 
         kotakCari.addEventListener('input', function() {
-            var kataKunci = kotakCari.value.toLowerCase().trim();
-            var semuaKartu = wadahList.getElementsByClassName(namaClassKartu);
-            var jumlahTampil = 0;
-            for (var i = 0; i < semuaKartu.length; i++) {
-                var kartu = semuaKartu[i];
-                var nama = kartu.getAttribute('data-nama');
-                var kamar = kartu.getAttribute('data-kamar');
+            const kataKunci = kotakCari.value.toLowerCase().trim();
+            const semuaKartu = wadahList.getElementsByClassName(namaClassKartu);
+            let jumlahTampil = 0;
+
+            for (let i = 0; i < semuaKartu.length; i++) {
+                const kartu = semuaKartu[i];
+                const nama = kartu.getAttribute('data-nama') || '';
+                const kamar = kartu.getAttribute('data-kamar') || '';
 
                 if (nama.includes(kataKunci) || kamar.includes(kataKunci)) {
                     kartu.style.display = 'flex';
-                    jumlahTampil = jumlahTampil + 1;
+                    jumlahTampil++;
                 } else {
                     kartu.style.display = 'none';
                 }
             }
 
-            if (pesanKosong !== null) {
-                if (semuaKartu.length > 0 && jumlahTampil === 0) {
-                    pesanKosong.style.display = 'block';
-                } else {
-                    pesanKosong.style.display = 'none';
-                }
+            if (pesanKosong) {
+                pesanKosong.style.display = (semuaKartu.length > 0 && jumlahTampil === 0) ? 'block' : 'none';
             }
         });
     }

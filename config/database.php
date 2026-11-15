@@ -5,6 +5,11 @@ date_default_timezone_set('Asia/Jakarta');
 // Opsional: load .env hanya kalau sedang di local
 require_once __DIR__ . '/../misc/loadenv.php';
 
+// Hindari koneksi ulang jika $pdo sudah tersedia di request yang sama
+if (isset($pdo) && ($pdo instanceof PDO)) {
+    return;
+}
+
 // Ambil dari environment (berfungsi di Vercel + local)
 $host     = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? null);
 $port     = getenv('DB_PORT') ?: ($_ENV['DB_PORT'] ?? '5432');
@@ -21,9 +26,14 @@ try {
     $pdo = new PDO(
         "pgsql:host=$host;port=$port;dbname=$dbname",
         $username,
-        $password
+        $password,
+        [
+            PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES   => false,
+            PDO::ATTR_PERSISTENT         => true, // Reuse koneksi PostgreSQL agar pindah menu cepat
+        ]
     );
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     // Sinkronisasi timezone koneksi PostgreSQL
     $pdo->exec("SET TIME ZONE 'Asia/Jakarta';");
 } catch (PDOException $e) {

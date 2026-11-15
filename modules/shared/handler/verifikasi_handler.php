@@ -167,7 +167,7 @@ if ($date_range !== '') {
     $tgl_selesai = trim($parts[1] ?? $tgl_mulai);
 }
 
-// Query Ambil Data Pending Berdasarkan Role (DENGAN DISTINCT ON AGAR TIDAK DUPLIKAT)
+// Query Ambil Data Pending Berdasarkan Role
 $daftar_verifikasi = [];
 if (isset($pdo) && ($pdo instanceof PDO)) {
     try {

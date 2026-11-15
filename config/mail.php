@@ -7,8 +7,18 @@ require_once __DIR__ . '/../misc/loadenv.php';
 
 function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode_otp): bool
 {
-    // KUNCI: Kunci zona waktu ke WIB (Asia/Jakarta)
     date_default_timezone_set('Asia/Jakarta');
+
+    $smtpUser = getenv('EMAIL_USERNAME') ?: ($_ENV['EMAIL_USERNAME'] ?? 'sitemankos@gmail.com');
+    $smtpPass = getenv('EMAIL_PASSWORD') ?: ($_ENV['EMAIL_PASSWORD'] ?? '');
+
+    if ($smtpPass === '') {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION['debug_mail_error'] = 'Konfigurasi EMAIL_PASSWORD belum diatur pada environment.';
+        return false;
+    }
 
     $mail = new PHPMailer(true);
 
@@ -17,10 +27,12 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = getenv('EMAIL_USERNAME') ?: ($_ENV['EMAIL_USERNAME'] ?? null);
-        $mail->Password   = getenv('EMAIL_PASSWORD') ?: ($_ENV['EMAIL_PASSWORD'] ?? null);
+        $mail->Username   = $smtpUser;
+        $mail->Password   = $smtpPass;
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port       = 465;
+        $mail->Timeout    = 10;
+        $mail->CharSet    = 'UTF-8';
 
         $mail->SMTPOptions = [
             'ssl' => [
@@ -31,7 +43,7 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
         ];
 
         // Pengirim & Penerima
-        $mail->setFrom('sitemankos@gmail.com', 'SITEMAN - KOS');
+        $mail->setFrom($smtpUser, 'SITEMAN - KOS');
         $mail->addAddress($email_tujuan, $nama_tujuan);
 
         // Nomor Referensi Surat & Tanggal Realtime WIB
@@ -41,6 +53,7 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
         // Konten Email Berbentuk Surat Resmi
         $mail->isHTML(true);
         $mail->Subject = 'SURAT PEMBERITAHUAN: Kode Autentikasi Reset PIN (' . $kode_otp . ')';
+        $mail->AltBody = "Halo {$nama_tujuan},\n\nKode OTP Reset PIN SITEMAN - KOS Anda adalah: {$kode_otp}\nKode ini berlaku selama 5 menit. Jangan berikan kode ini kepada siapa pun.\n\nPengelola SITEMAN - KOS";
         $mail->Body    = "
         <!DOCTYPE html>
         <html>
@@ -73,7 +86,6 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
                 <!-- BADAN SURAT -->
                 <tr>
                     <td style='padding: 28px 36px;'>
-                        <!-- Header Tanggal & Nomor -->
                         <table width='100%' border='0' cellpadding='0' cellspacing='0' style='font-family: \"Arial\", sans-serif; font-size: 12px; color: #475569; margin-bottom: 24px;'>
                             <tr>
                                 <td><strong>No:</strong> {$no_surat}</td>
@@ -84,7 +96,6 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
                             </tr>
                         </table>
 
-                        <!-- Teks Pembuka -->
                         <p style='margin: 0 0 14px 0; font-size: 15px; color: #1e293b; line-height: 1.6;'>
                             Kepada Yth.<br>
                             <strong>Sdr/i. " . htmlspecialchars($nama_tujuan) . "</strong><br>

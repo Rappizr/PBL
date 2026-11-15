@@ -20,9 +20,8 @@ if (file_exists(__DIR__ . '/handler/kamar_handlers.php')) {
 // 2. Ambil Data Skema Sewa
 $list_skema = $pdo->query("SELECT * FROM skema_sewa ORDER BY tipe_periode DESC, durasi_nilai ASC")->fetchAll(PDO::FETCH_ASSOC);
 
-// 3. Ambil Data Kamar Realtime dengan Pagination
-$total_kamar = (int) $pdo->query("SELECT COUNT(*) FROM kamar")->fetchColumn();
-$sqlBaseKamar = "
+// 3. Ambil Data Kamar Realtime (Sekali query untuk semua kamar -> Pagination & Modal instan!)
+$semua_kamar = $pdo->query("
     SELECT 
         k.id AS kamar_id,
         k.no_kamar,
@@ -44,56 +43,34 @@ $sqlBaseKamar = "
         LIMIT 1
     ) t ON true
     ORDER BY k.no_kamar::INTEGER ASC
-    LIMIT :limit OFFSET :offset
-";
+")->fetchAll(PDO::FETCH_ASSOC);
+
+$total_kamar         = count($semua_kamar);
+$daftar_kamar        = $semua_kamar;
+$daftar_kamar_mobile = $semua_kamar;
+
+// Ambil kamar kosong & ketua kost aktif dari query ringan untuk modal
+$daftar_kamar_kosong = array_values(array_filter($semua_kamar, function ($kmr) {
+    return ($kmr['status_kamar'] === 'kosong' || empty($kmr['nama_penghuni']));
+}));
+
+$stmtCekKetua = $pdo->query("SELECT id, nama FROM penghuni WHERE is_ketua_kos = true LIMIT 1");
+$ketuaAktif   = $stmtCekKetua ? $stmtCekKetua->fetch(PDO::FETCH_ASSOC) : null;
 
 // --- A. Pagination Desktop (12 Kamar per Halaman) ---
 $limit_kamar   = 12;
 $halaman_aktif = isset($_GET['halaman']) ? max(1, (int)$_GET['halaman']) : 1;
 $total_halaman = max(1, (int) ceil($total_kamar / $limit_kamar));
-if ($halaman_aktif > $total_halaman) {
-    $halaman_aktif = $total_halaman;
-}
-$offset = ($halaman_aktif - 1) * $limit_kamar;
-
-$stmtKamar = $pdo->prepare($sqlBaseKamar);
-$stmtKamar->bindValue(':limit', $limit_kamar, PDO::PARAM_INT);
-$stmtKamar->bindValue(':offset', $offset, PDO::PARAM_INT);
-$stmtKamar->execute();
-$daftar_kamar = $stmtKamar->fetchAll(PDO::FETCH_ASSOC);
+if ($halaman_aktif > $total_halaman) $halaman_aktif = $total_halaman;
 
 // --- B. Pagination Mobile (8 Kamar per Halaman) ---
 $limit_kamar_mobile   = 8;
 $halaman_aktif_mobile = isset($_GET['halaman_m']) ? max(1, (int)$_GET['halaman_m']) : 1;
 $total_halaman_mobile = max(1, (int) ceil($total_kamar / $limit_kamar_mobile));
-if ($halaman_aktif_mobile > $total_halaman_mobile) {
-    $halaman_aktif_mobile = $total_halaman_mobile;
-}
-$offset_mobile = ($halaman_aktif_mobile - 1) * $limit_kamar_mobile;
-
-$stmtKamarMobile = $pdo->prepare($sqlBaseKamar);
-$stmtKamarMobile->bindValue(':limit', $limit_kamar_mobile, PDO::PARAM_INT);
-$stmtKamarMobile->bindValue(':offset', $offset_mobile, PDO::PARAM_INT);
-$stmtKamarMobile->execute();
-$daftar_kamar_mobile = $stmtKamarMobile->fetchAll(PDO::FETCH_ASSOC);
-
-// --- C. Semua Kamar Kosong ---
-$stmtKamarKosong = $pdo->query("
-    SELECT 
-        k.id AS kamar_id,
-        k.no_kamar,
-        k.status_kamar,
-        COALESCE(p.nama, '') AS nama_penghuni
-    FROM kamar k
-    LEFT JOIN penghuni_kamar pk ON k.id = pk.kamar_id
-    LEFT JOIN penghuni p ON pk.penghuni_id = p.id
-    WHERE k.status_kamar = 'kosong' OR p.id IS NULL
-    ORDER BY k.no_kamar::INTEGER ASC
-");
-$daftar_kamar_kosong = $stmtKamarKosong->fetchAll(PDO::FETCH_ASSOC);
+if ($halaman_aktif_mobile > $total_halaman_mobile) $halaman_aktif_mobile = $total_halaman_mobile;
 
 // 4. Data Kamar Terpilih untuk Modal Detail
-$nomor_pilih = $_GET['nomor'] ?? '';
+$nomor_pilih    = $_GET['nomor'] ?? '';
 $kamar_terpilih = null;
 
 if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
@@ -102,6 +79,7 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             k.no_kamar AS nomor,
             COALESCE(s.nominal, 0) AS harga_sewa,
             k.status_kamar,
+            p.id AS penghuni_id,
             COALESCE(p.nama, '') AS nama,
             COALESCE(p.no_wa, '') AS no_wa,
             COALESCE(p.email, '') AS email,
@@ -144,8 +122,8 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Manajemen Kamar</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 
 <body class="dashboard-body">
@@ -167,30 +145,32 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             <?php endif; ?>
 
             <div class="kamar-actions">
-                <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_kamar" class="btn-add-outline">
+                <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_kamar" onclick="bukaModalInstan(event, 'modalTambahKamar', 'tambah_kamar')" class="btn-add-outline">
                     <span class="plus-icon">+</span> Tambah Kamar
                 </a>
-                <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_penghuni" class="btn-add-outline">
+                <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_penghuni" onclick="bukaModalInstan(event, 'modalTambahPenghuni', 'tambah_penghuni')" class="btn-add-outline">
                     <span class="plus-icon">+</span> Tambah Penghuni
                 </a>
-                <a href="/?page=<?= urlencode($current_page) ?>&modal=kelola_skema"
-                    class="btn-add-outline btn-skema-highlight">
+                <a href="/?page=<?= urlencode($current_page) ?>&modal=kelola_skema" onclick="bukaModalInstan(event, 'modalKelolaSkema', 'kelola_skema')" class="btn-add-outline btn-skema-highlight">
                     <i class="fa-solid fa-sliders"></i> Skema Sewa
                 </a>
             </div>
 
-            <div class="kamar-grid">
+            <div class="kamar-grid" id="gridKamarMobile">
                 <?php if (empty($daftar_kamar_mobile)): ?>
                 <p class="kamar-empty-state-mobile">Belum ada kamar di database.</p>
                 <?php else: ?>
-                <?php foreach ($daftar_kamar_mobile as $kamar): ?>
+                <?php foreach ($daftar_kamar_mobile as $idx => $kamar): ?>
                 <?php
-                        $nama_penghuni = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
-                        $is_kosong = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
-                        $status_bayar_lower = strtolower($kamar['status_bayar'] ?? 'lunas');
-                        ?>
-                <a href="/?page=<?= urlencode($current_page) ?>&halaman_m=<?= $halaman_aktif_mobile; ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
-                    class="kamar-card">
+                    $nama_penghuni = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
+                    $is_kosong = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
+                    $status_bayar_lower = strtolower($kamar['status_bayar'] ?? 'lunas');
+                    $page_m = (int) floor($idx / $limit_kamar_mobile) + 1;
+                ?>
+                <a href="/?page=<?= urlencode($current_page) ?>&halaman_m=<?= $page_m; ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
+                    class="kamar-card kamar-item-mobile"
+                    data-page-m="<?= $page_m; ?>"
+                    style="<?= $page_m !== $halaman_aktif_mobile ? 'display: none;' : ''; ?>">
 
                     <?php if ($is_kosong): ?>
                     <span class="badge-status badge-kosong">Kosong</span>
@@ -207,34 +187,20 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                 <?php endif; ?>
             </div>
 
-            <!-- PAGINATION MOBILE (8 KOTAK PER HALAMAN) -->
+            <!-- PAGINATION MOBILE (INSTAN TANPA RELOAD) -->
             <?php if ($total_halaman_mobile > 1): ?>
             <div class="kamar-mobile-pagination">
-                <?php if ($halaman_aktif_mobile > 1): ?>
-                <a href="/?page=<?= urlencode($current_page); ?>&halaman_m=<?= $halaman_aktif_mobile - 1; ?>"
-                    class="kamar-mobile-page-btn" title="Halaman Sebelumnya">
-                    <i class="fa-solid fa-chevron-left"></i>
-                </a>
-                <?php else: ?>
-                <button type="button" class="kamar-mobile-page-btn" disabled>
+                <button type="button" class="kamar-mobile-page-btn" id="btnPrevMobile" onclick="gantiHalamanMobile(-1)" title="Halaman Sebelumnya" <?= $halaman_aktif_mobile <= 1 ? 'disabled' : ''; ?>>
                     <i class="fa-solid fa-chevron-left"></i>
                 </button>
-                <?php endif; ?>
 
-                <span class="kamar-mobile-page-info">
+                <span class="kamar-mobile-page-info" id="infoPageMobile">
                     Halaman <?= $halaman_aktif_mobile; ?> / <?= $total_halaman_mobile; ?>
                 </span>
 
-                <?php if ($halaman_aktif_mobile < $total_halaman_mobile): ?>
-                <a href="/?page=<?= urlencode($current_page); ?>&halaman_m=<?= $halaman_aktif_mobile + 1; ?>"
-                    class="kamar-mobile-page-btn" title="Halaman Berikutnya">
-                    <i class="fa-solid fa-chevron-right"></i>
-                </a>
-                <?php else: ?>
-                <button type="button" class="kamar-mobile-page-btn" disabled>
+                <button type="button" class="kamar-mobile-page-btn" id="btnNextMobile" onclick="gantiHalamanMobile(1)" title="Halaman Berikutnya" <?= $halaman_aktif_mobile >= $total_halaman_mobile ? 'disabled' : ''; ?>>
                     <i class="fa-solid fa-chevron-right"></i>
                 </button>
-                <?php endif; ?>
             </div>
             <?php endif; ?>
         </div>
@@ -257,51 +223,47 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
             <h3 class="desktop-kamar-section-label">Data terbaru</h3>
 
             <div class="desktop-kamar-top-actions">
-                <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_kamar" class="kamar-btn-pill-action">
+                <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_kamar" onclick="bukaModalInstan(event, 'modalTambahKamar', 'tambah_kamar')" class="kamar-btn-pill-action">
                     <i class="fa-solid fa-plus"></i> Tambah Kamar
                 </a>
-                <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_penghuni" class="kamar-btn-pill-action">
+                <a href="/?page=<?= urlencode($current_page) ?>&modal=tambah_penghuni" onclick="bukaModalInstan(event, 'modalTambahPenghuni', 'tambah_penghuni')" class="kamar-btn-pill-action">
                     <i class="fa-solid fa-plus"></i> Tambah Penghuni
                 </a>
-                <a href="/?page=<?= urlencode($current_page) ?>&modal=kelola_skema"
-                    class="kamar-btn-pill-action kamar-btn-skema-action">
+                <a href="/?page=<?= urlencode($current_page) ?>&modal=kelola_skema" onclick="bukaModalInstan(event, 'modalKelolaSkema', 'kelola_skema')" class="kamar-btn-pill-action kamar-btn-skema-action">
                     <i class="fa-solid fa-sliders"></i> Skema Sewa
                 </a>
             </div>
 
             <div class="kamar-desktop-panel">
-                <div class="kamar-desktop-grid-white">
+                <div class="kamar-desktop-grid-white" id="gridKamarDesktop">
                     <?php if (empty($daftar_kamar)): ?>
                     <p class="kamar-empty-state-desktop">Belum ada kamar tersimpan.</p>
                     <?php else: ?>
-                    <?php foreach ($daftar_kamar as $kamar): ?>
+                    <?php foreach ($daftar_kamar as $idx => $kamar): ?>
                     <?php
-                            $nama_penghuni = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
-                            $is_kosong = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
-                            $status_bayar_lower = strtolower($kamar['status_bayar'] ?? 'lunas');
-                            ?>
-                    <?php if ($is_kosong): ?>
-                    <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
-                        class="kamar-card-gray">
+                        $nama_penghuni = !empty($kamar['nama_penghuni']) ? $kamar['nama_penghuni'] : 'Kosong';
+                        $is_kosong = ($kamar['status_kamar'] === 'kosong' || empty($kamar['nama_penghuni']));
+                        $status_bayar_lower = strtolower($kamar['status_bayar'] ?? 'lunas');
+                        $page_d = (int) floor($idx / $limit_kamar) + 1;
+                    ?>
+                    <a href="/?page=<?= urlencode($current_page) ?>&halaman=<?= $page_d; ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
+                        class="<?= $is_kosong ? 'kamar-card-gray' : 'kamar-card-white'; ?> kamar-item-desktop"
+                        data-page-d="<?= $page_d; ?>"
+                        style="<?= $page_d !== $halaman_aktif ? 'display: none;' : ''; ?>">
+
+                        <?php if ($is_kosong): ?>
+                        <span class="badge-kamar-status badge-kamar-kosong">Kosong</span>
+                        <?php elseif ($status_bayar_lower === 'lunas'): ?>
+                        <span class="badge-kamar-status badge-kamar-lunas">Lunas</span>
                         <?php else: ?>
-                        <a href="/?page=<?= urlencode($current_page) ?>&modal=detail_kamar&nomor=<?= urlencode($kamar['no_kamar']) ?>"
-                            class="kamar-card-white">
-                            <?php endif; ?>
-
-                            <?php if ($is_kosong): ?>
-                            <span class="badge-kamar-status badge-kamar-kosong">Kosong</span>
-                            <?php elseif ($status_bayar_lower === 'lunas'): ?>
-                            <span class="badge-kamar-status badge-kamar-lunas">Lunas</span>
-                            <?php else: ?>
-                            <span class="badge-kamar-status badge-kamar-belum">Belum</span>
-                            <?php endif; ?>
-
-                            <div class="kamar-card-number">
-                                <?= htmlspecialchars(sprintf('%02d', intval($kamar['no_kamar']))) ?></div>
-                            <div class="kamar-card-resident"><?= htmlspecialchars($nama_penghuni) ?></div>
-                        </a>
-                        <?php endforeach; ?>
+                        <span class="badge-kamar-status badge-kamar-belum">Belum</span>
                         <?php endif; ?>
+
+                        <div class="kamar-card-number"><?= htmlspecialchars(sprintf('%02d', intval($kamar['no_kamar']))) ?></div>
+                        <div class="kamar-card-resident"><?= htmlspecialchars($nama_penghuni) ?></div>
+                    </a>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
 
                 <div class="kamar-desktop-bottom-bar">
@@ -311,32 +273,17 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
                         <span class="legend-item"><span class="legend-color-box color-kosong"></span> Kosong</span>
                     </div>
 
+                    <!-- PAGINATION DESKTOP (INSTAN TANPA RELOAD) -->
                     <div class="kamar-pagination-row">
-                        <?php if ($halaman_aktif > 1): ?>
-                        <a href="/?page=<?= urlencode($current_page); ?>&halaman=<?= $halaman_aktif - 1; ?>"
-                            class="kamar-page-btn" title="Halaman Sebelumnya">
-                            <i class="fa-solid fa-chevron-left"></i>
-                        </a>
-                        <?php else: ?>
-                        <button type="button" class="kamar-page-btn" disabled
-                            style="opacity: 0.45; cursor: not-allowed;">
+                        <button type="button" class="kamar-page-btn" id="btnPrevDesktop" onclick="gantiHalamanDesktop(-1)" title="Halaman Sebelumnya" <?= $halaman_aktif <= 1 ? 'disabled style="opacity: 0.45; cursor: not-allowed;"' : ''; ?>>
                             <i class="fa-solid fa-chevron-left"></i>
                         </button>
-                        <?php endif; ?>
 
-                        <span class="kamar-page-info"><?= $halaman_aktif; ?>/<?= $total_halaman; ?></span>
+                        <span class="kamar-page-info" id="infoPageDesktop"><?= $halaman_aktif; ?>/<?= $total_halaman; ?></span>
 
-                        <?php if ($halaman_aktif < $total_halaman): ?>
-                        <a href="/?page=<?= urlencode($current_page); ?>&halaman=<?= $halaman_aktif + 1; ?>"
-                            class="kamar-page-btn" title="Halaman Berikutnya">
-                            <i class="fa-solid fa-chevron-right"></i>
-                        </a>
-                        <?php else: ?>
-                        <button type="button" class="kamar-page-btn" disabled
-                            style="opacity: 0.45; cursor: not-allowed;">
+                        <button type="button" class="kamar-page-btn" id="btnNextDesktop" onclick="gantiHalamanDesktop(1)" title="Halaman Berikutnya" <?= $halaman_aktif >= $total_halaman ? 'disabled style="opacity: 0.45; cursor: not-allowed;"' : ''; ?>>
                             <i class="fa-solid fa-chevron-right"></i>
                         </button>
-                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -350,6 +297,105 @@ if ($modal_aktif === 'detail_kamar' && $nomor_pilih !== '') {
     require_once __DIR__ . '/modals/modal_tambah_penghuni.php';
     require_once __DIR__ . '/modals/modal_detail_kamar.php';
     ?>
+
+    <script>
+        // 1. Buka & Tutup Modal Secara Instan (0 ms tanpa reload halaman)
+        function bukaModalInstan(e, modalId, modalParam) {
+            if (e) e.preventDefault();
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+
+            modal.classList.add('active');
+            const firstInput = modal.querySelector('input:not([type="hidden"]):not([readonly])');
+            if (firstInput) setTimeout(() => firstInput.focus(), 50);
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('modal', modalParam);
+            window.history.replaceState({}, '', url);
+        }
+
+        function tutupSemuaModalInstan(e) {
+            if (e) e.preventDefault();
+            document.querySelectorAll('.modal-overlay').forEach(function (m) {
+                m.classList.remove('active');
+            });
+
+            const url = new URL(window.location.href);
+            url.searchParams.delete('modal');
+            url.searchParams.delete('nomor');
+            url.searchParams.delete('kamar');
+            window.history.replaceState({}, '', url);
+        }
+
+        // Tutup modal dengan tombol ESC
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                tutupSemuaModalInstan();
+            }
+        });
+
+        // 2. Pagination Desktop Instan (12 Kamar per halaman)
+        let currentPageDesktop = <?= (int)$halaman_aktif; ?>;
+        const totalPageDesktop = <?= (int)$total_halaman; ?>;
+
+        function gantiHalamanDesktop(delta) {
+            const target = currentPageDesktop + delta;
+            if (target < 1 || target > totalPageDesktop) return;
+            currentPageDesktop = target;
+
+            document.querySelectorAll('.kamar-item-desktop').forEach(function (card) {
+                card.style.display = (parseInt(card.getAttribute('data-page-d')) === currentPageDesktop) ? '' : 'none';
+            });
+
+            const info = document.getElementById('infoPageDesktop');
+            if (info) info.textContent = `${currentPageDesktop}/${totalPageDesktop}`;
+
+            const btnPrev = document.getElementById('btnPrevDesktop');
+            const btnNext = document.getElementById('btnNextDesktop');
+            if (btnPrev) {
+                btnPrev.disabled = currentPageDesktop <= 1;
+                btnPrev.style.opacity = currentPageDesktop <= 1 ? '0.45' : '1';
+                btnPrev.style.cursor = currentPageDesktop <= 1 ? 'not-allowed' : 'pointer';
+            }
+            if (btnNext) {
+                btnNext.disabled = currentPageDesktop >= totalPageDesktop;
+                btnNext.style.opacity = currentPageDesktop >= totalPageDesktop ? '0.45' : '1';
+                btnNext.style.cursor = currentPageDesktop >= totalPageDesktop ? 'not-allowed' : 'pointer';
+            }
+
+            const url = new URL(window.location.href);
+            if (currentPageDesktop === 1) url.searchParams.delete('halaman');
+            else url.searchParams.set('halaman', currentPageDesktop);
+            window.history.replaceState({}, '', url);
+        }
+
+        // 3. Pagination Mobile Instan (8 Kamar per halaman)
+        let currentPageMobile = <?= (int)$halaman_aktif_mobile; ?>;
+        const totalPageMobile = <?= (int)$total_halaman_mobile; ?>;
+
+        function gantiHalamanMobile(delta) {
+            const target = currentPageMobile + delta;
+            if (target < 1 || target > totalPageMobile) return;
+            currentPageMobile = target;
+
+            document.querySelectorAll('.kamar-item-mobile').forEach(function (card) {
+                card.style.display = (parseInt(card.getAttribute('data-page-m')) === currentPageMobile) ? '' : 'none';
+            });
+
+            const info = document.getElementById('infoPageMobile');
+            if (info) info.textContent = `Halaman ${currentPageMobile} / ${totalPageMobile}`;
+
+            const btnPrev = document.getElementById('btnPrevMobile');
+            const btnNext = document.getElementById('btnNextMobile');
+            if (btnPrev) btnPrev.disabled = currentPageMobile <= 1;
+            if (btnNext) btnNext.disabled = currentPageMobile >= totalPageMobile;
+
+            const url = new URL(window.location.href);
+            if (currentPageMobile === 1) url.searchParams.delete('halaman_m');
+            else url.searchParams.set('halaman_m', currentPageMobile);
+            window.history.replaceState({}, '', url);
+        }
+    </script>
 
 </body>
 

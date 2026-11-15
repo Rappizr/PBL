@@ -19,7 +19,7 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
     }
 }
 
-if (isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user']['id'])) {
+if (empty($GLOBALS['siteman_user_synced']) && isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user']['id'])) {
     $uid  = (int)$_SESSION['user']['id'];
     $role = $_SESSION['user']['role'] ?? 'penghuni';
 
@@ -35,6 +35,7 @@ if (isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user']['id'])) {
                 $_SESSION['user']['is_pj']        = (bool)$freshUser['is_ketua_kos'];
             }
         }
+        $GLOBALS['siteman_user_synced'] = true;
     } catch (Exception $e) {}
 }
 
@@ -57,7 +58,7 @@ $currentPage = $_GET['page'] ?? 'dashboard';
                     <i class="fa-solid fa-table-cells-large"></i><span>Dashboard</span>
                 </a>
                 <a href="/?page=manajemen_kamar" class="nav-item <?= $currentPage === 'manajemen_kamar' ? 'active' : '' ?>">
-                    <i class="fa-solid fa-warehouse"></i><span>Manajemen Kamar & Penghuni</span>
+                    <i class="fa-solid fa-warehouse"></i><span>Manajemen Kamar &amp; Penghuni</span>
                 </a>
                 <a href="/?page=analisis_kas" class="nav-item <?= $currentPage === 'analisis_kas' ? 'active' : '' ?>">
                     <i class="fa-solid fa-wallet"></i><span>Analisis Kas</span>
@@ -104,7 +105,7 @@ $currentPage = $_GET['page'] ?? 'dashboard';
 
         <div class="sidebar-footer">
             <p class="sidebar-footer-title">SITEMAN - KOS &copy; 2g2b - 2026</p>
-            <p class="sidebar-footer-desc">Sistem Manajemen Operasion Kos</p>
+            <p class="sidebar-footer-desc">Sistem Manajemen Operasional Kos</p>
         </div>
     </div>
 </aside>
@@ -126,6 +127,9 @@ $currentPage = $_GET['page'] ?? 'dashboard';
         </div>
     </div>
 </div>
+
+<!-- Progress Bar Indikator Perpindahan Halaman -->
+<div id="topNavLoader" style="position: fixed; top: 0; left: 0; height: 3px; width: 0%; background: #f3ca81; z-index: 999999; transition: width 0.25s ease, opacity 0.2s ease; opacity: 0; pointer-events: none;"></div>
 
 <script>
     function bukaModalLogoutSidebar() {
@@ -163,5 +167,47 @@ $currentPage = $_GET['page'] ?? 'dashboard';
 
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') tutupModalLogoutSidebar();
+    });
+
+    // Navigasi Cepat: Prefetch saat hover + Indikator Loading & Active Instan saat klik
+    document.addEventListener('DOMContentLoaded', function () {
+        const loader = document.getElementById('topNavLoader');
+        const navLinks = document.querySelectorAll('.desktop-sidebar a[href^="/?page="]');
+
+        navLinks.forEach(function (link) {
+            link.addEventListener('mouseenter', function () {
+                const url = this.getAttribute('href');
+                if (!document.querySelector('link[rel="prefetch"][href="' + url + '"]')) {
+                    const prefetch = document.createElement('link');
+                    prefetch.rel = 'prefetch';
+                    prefetch.href = url;
+                    document.head.appendChild(prefetch);
+                }
+            });
+
+            link.addEventListener('click', function (e) {
+                if (e.ctrlKey || e.metaKey || this.target === '_blank') return;
+
+                if (loader) {
+                    loader.style.opacity = '1';
+                    loader.style.width = '75%';
+                }
+
+                navLinks.forEach(function (item) {
+                    item.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        window.addEventListener('pageshow', function () {
+            if (loader) {
+                loader.style.width = '100%';
+                setTimeout(function () {
+                    loader.style.opacity = '0';
+                    loader.style.width = '0%';
+                }, 200);
+            }
+        });
     });
 </script>

@@ -55,7 +55,10 @@ $sql = "
         bk.nominal,
         bk.tanggal_transaksi
     FROM buku_kas bk
-    WHERE 1=1
+    LEFT JOIN pembayaran p ON bk.pembayaran_id = p.id
+    LEFT JOIN tagihan t ON p.tagihan_id = t.id
+    WHERE (bk.pembayaran_id IS NULL OR t.kategori_iuran_id IS NOT NULL)
+      AND bk.keterangan NOT LIKE '%Sewa%'
 ";
 
 $params = [];
@@ -80,8 +83,8 @@ $data_transaksi = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <title>Laporan Buku Kas Iuran - <?= htmlspecialchars($label_periode); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 <body class="laporan-print-body">
 

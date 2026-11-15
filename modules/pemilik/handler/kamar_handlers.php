@@ -3,21 +3,6 @@
 $current_page = $current_page ?? ($_GET['page'] ?? 'manajemen_kamar');
 $error_simpan = $error_simpan ?? '';
 
-// Pastikan tabel skema_sewa dan kolom nominal tersedia
-try {
-    $pdo->exec("
-        CREATE TABLE IF NOT EXISTS skema_sewa (
-            id SERIAL PRIMARY KEY,
-            nama_skema VARCHAR(50) NOT NULL UNIQUE,
-            tipe_periode VARCHAR(20) NOT NULL DEFAULT 'bulan',
-            durasi_nilai INTEGER NOT NULL DEFAULT 1,
-            nominal NUMERIC(12, 2) DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        ALTER TABLE skema_sewa ADD COLUMN IF NOT EXISTS nominal NUMERIC(12, 2) DEFAULT 0;
-    ");
-} catch (Exception $e) {}
-
 // 1. HANDLER: TAMBAH / UPDATE SKEMA SEWA DINAMIS
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_skema_baru'])) {
     $id_skema      = (int) ($_POST['id_skema'] ?? 0);
@@ -104,17 +89,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_kamar'])) {
 
             if ($stmtCek->fetch()) {
                 $_SESSION['error_simpan'] = "Nomor kamar {$no_kamar} sudah terdaftar!";
-                header("Location: /?page=" . urlencode($current_page));
-                exit;
             } else {
-                $stmt = $pdo->prepare("
-                    INSERT INTO kamar (no_kamar, status_kamar)
-                    VALUES (:no_kamar, 'kosong')
-                ");
+                $stmt = $pdo->prepare("INSERT INTO kamar (no_kamar, status_kamar) VALUES (:no_kamar, 'kosong')");
                 $stmt->execute([':no_kamar' => $no_kamar]);
-                header("Location: /?page=" . urlencode($current_page));
-                exit;
             }
+            header("Location: /?page=" . urlencode($current_page));
+            exit;
         } catch (PDOException $e) {
             $_SESSION['error_simpan'] = "Gagal menambah kamar: " . $e->getMessage();
             header("Location: /?page=" . urlencode($current_page));
@@ -153,14 +133,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
         exit;
     };
 
-    // VALIDASI SERVER-SIDE
     if (empty($nama)) $responseError("Nama lengkap wajib diisi.");
     if (empty($kamar_nomor)) $responseError("Nomor kamar wajib dipilih.");
     if (strlen($no_wa) < 10 || strlen($no_wa) > 15 || !str_starts_with($no_wa, '08')) $responseError("Nomor WA tidak valid.");
     if (strlen($kontak_wali) < 10 || strlen($kontak_wali) > 15 || !str_starts_with($kontak_wali, '08')) $responseError("Nomor Wali tidak valid.");
     if (strlen($pin) !== 6) $responseError("PIN Akun harus 6 digit angka.");
 
-    // TOLAK JIKA MENAMBAH KETUA KOS BARU PADAHAL SUDAH ADA KETUA KOS AKTIF
     if ($is_ketua_kos === 'true') {
         $stmtCek = $pdo->query("SELECT nama FROM penghuni WHERE is_ketua_kos = true LIMIT 1");
         $ketuaAda = $stmtCek ? $stmtCek->fetch(PDO::FETCH_ASSOC) : null;
@@ -216,7 +194,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
 
         if (!$kamar) throw new Exception("Kamar nomor {$kamar_nomor} tidak ditemukan.");
 
-        // 1. Simpan Penghuni
         $stmtP = $pdo->prepare("
             INSERT INTO penghuni (nama, no_wa, email, kontak_wali, foto_ktp, pin, status_akun, is_ketua_kos)
             VALUES (:nama, :no_wa, :email, :kontak_wali, :foto_ktp, :pin, 'aktif', {$is_ketua_kos})
@@ -232,7 +209,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
         ]);
         $penghuni_id = $stmtP->fetchColumn();
 
-        // 2. Simpan Penghuni Kamar
         $stmtPK = $pdo->prepare("
             INSERT INTO penghuni_kamar (kamar_id, penghuni_id, tanggal_masuk, tanggal_selesai, skema_id)
             VALUES (:kamar_id, :penghuni_id, :tgl_masuk, :tgl_selesai, :skema_id)
@@ -247,7 +223,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
         ]);
         $penghuni_kamar_id = $stmtPK->fetchColumn();
 
-        // 3. Buat Tagihan Sewa
         $tgl_jatuh_tempo = date('Y-m-d', strtotime('+7 days', strtotime($tgl_mulai)));
         $stmtTagihanSewa = $pdo->prepare("
             INSERT INTO tagihan (penghuni_kamar_id, kategori_iuran_id, tanggal_awal_tagihan, tanggal_jatuh_tempo, status_tagihan)
@@ -259,7 +234,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
             ':tgl_tempo' => $tgl_jatuh_tempo
         ]);
 
-        // 4. Tagihan Iuran
         $stmtIuran = $pdo->query("SELECT id FROM kategori_iuran ORDER BY id ASC LIMIT 1");
         $masterIuran = $stmtIuran ? $stmtIuran->fetch(PDO::FETCH_ASSOC) : null;
         $iuran_id = $masterIuran ? (int)$masterIuran['id'] : 1;
@@ -275,7 +249,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
             ':tgl_tempo' => $tgl_jatuh_tempo
         ]);
 
-        // 5. Update Kamar Terisi
         $pdo->prepare("UPDATE kamar SET status_kamar = 'terisi' WHERE id = :kamar_id")->execute([':kamar_id' => $kamar['id']]);
 
         $pdo->commit();
@@ -295,7 +268,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
     }
 }
 
-// 5. HANDLER: SIMPAN DETAIL KAMAR & PENGHUNI (TRANSFER KETUA KOS VIA EDIT)
+// 5. HANDLER: SIMPAN DETAIL KAMAR & PENGHUNI
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
     $nomor_kamar   = trim($_POST['nomor_kamar'] ?? '');
     $nama          = trim($_POST['nama'] ?? '');
@@ -338,13 +311,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
         if ($data) {
             $penghuni_id = $data['penghuni_id'];
 
-            // JIKA PENGHUNI INI DIPILIH JADI KETUA KOS, AUTOMATIS COPOT JABATAN KETUA KOS LAMA
             if ($is_ketua_kos === 'true') {
                 $stmtCopot = $pdo->prepare("UPDATE penghuni SET is_ketua_kos = false WHERE is_ketua_kos = true AND id != :id");
                 $stmtCopot->execute([':id' => $penghuni_id]);
             }
 
-            // Update Data Akun Penghuni
             $sqlUP = "
                 UPDATE penghuni 
                 SET nama = :nama, 
@@ -370,7 +341,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
             $stmtUP = $pdo->prepare($sqlUP);
             $stmtUP->execute($paramsUP);
 
-            // Update Kontrak Sewa
             $stmtUPK = $pdo->prepare("
                 UPDATE penghuni_kamar 
                 SET skema_id = :skema_id,
@@ -385,7 +355,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
                 ':pk_id'       => $data['penghuni_kamar_id']
             ]);
 
-            // Update Status Tagihan Sewa Terakhir
             $stmtTagihan = $pdo->prepare("
                 UPDATE tagihan 
                 SET status_tagihan = :status_bayar 
@@ -434,7 +403,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_penghuni'])) {
                 $kamar_id    = (int)$row['kamar_id'];
                 $pk_id       = (int)$row['pk_id'];
 
-                // Hapus buku_kas terkait pembayaran ini
                 $pdo->prepare("
                     DELETE FROM buku_kas 
                     WHERE pembayaran_id IN (
@@ -444,7 +412,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_penghuni'])) {
                     )
                 ")->execute([':pk_id' => $pk_id]);
 
-                // Hapus pembayaran
                 $pdo->prepare("
                     DELETE FROM pembayaran 
                     WHERE tagihan_id IN (
@@ -452,21 +419,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_penghuni'])) {
                     )
                 ")->execute([':pk_id' => $pk_id]);
 
-                // Hapus tagihan
-                $pdo->prepare("DELETE FROM tagihan WHERE penghuni_kamar_id = :pk_id")
-                    ->execute([':pk_id' => $pk_id]);
-
-                // Hapus kontrak sewa dari penghuni_kamar
-                $pdo->prepare("DELETE FROM penghuni_kamar WHERE id = :pk_id")
-                    ->execute([':pk_id' => $pk_id]);
-
-                // Hapus akun penghuni
-                $pdo->prepare("DELETE FROM penghuni WHERE id = :id")
-                    ->execute([':id' => $penghuni_id]);
-
-                // Kembalikan status kamar jadi 'kosong'
-                $pdo->prepare("UPDATE kamar SET status_kamar = 'kosong' WHERE id = :kamar_id")
-                    ->execute([':kamar_id' => $kamar_id]);
+                $pdo->prepare("DELETE FROM tagihan WHERE penghuni_kamar_id = :pk_id")->execute([':pk_id' => $pk_id]);
+                $pdo->prepare("DELETE FROM penghuni_kamar WHERE id = :pk_id")->execute([':pk_id' => $pk_id]);
+                $pdo->prepare("DELETE FROM penghuni WHERE id = :id")->execute([':id' => $penghuni_id]);
+                $pdo->prepare("UPDATE kamar SET status_kamar = 'kosong' WHERE id = :kamar_id")->execute([':kamar_id' => $kamar_id]);
 
                 $_SESSION['pesan_sukses'] = "Penghuni berhasil dikeluarkan dan data akunnya terhapus.";
             }
@@ -500,29 +456,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proses_pindah_kamar']
             $stmtAsal->execute([':no' => $nomor_kamar_asal]);
             $asal = $stmtAsal->fetch(PDO::FETCH_ASSOC);
 
-            $stmtTujuan = $pdo->prepare("
-                SELECT id FROM kamar 
-                WHERE no_kamar = :no AND status_kamar = 'kosong'
-                LIMIT 1
-            ");
+            $stmtTujuan = $pdo->prepare("SELECT id FROM kamar WHERE no_kamar = :no AND status_kamar = 'kosong' LIMIT 1");
             $stmtTujuan->execute([':no' => $nomor_kamar_tujuan]);
             $tujuan = $stmtTujuan->fetch(PDO::FETCH_ASSOC);
 
-            if (!$asal) {
-                throw new Exception("Kamar asal tidak ditemukan atau tidak berpenghuni.");
-            }
-            if (!$tujuan) {
-                throw new Exception("Kamar tujuan tidak ditemukan atau sudah terisi.");
-            }
+            if (!$asal) throw new Exception("Kamar asal tidak ditemukan atau tidak berpenghuni.");
+            if (!$tujuan) throw new Exception("Kamar tujuan tidak ditemukan atau sudah terisi.");
 
-            // Ubah kamar_id pada data sewa aktif
-            $stmtPindah = $pdo->prepare("UPDATE penghuni_kamar SET kamar_id = :kamar_baru WHERE id = :pk_id");
-            $stmtPindah->execute([
-                ':kamar_baru' => $tujuan['id'],
-                ':pk_id'      => $asal['pk_id']
-            ]);
+            $pdo->prepare("UPDATE penghuni_kamar SET kamar_id = :kamar_baru WHERE id = :pk_id")
+                ->execute([':kamar_baru' => $tujuan['id'], ':pk_id' => $asal['pk_id']]);
 
-            // Kosongkan kamar lama dan isi kamar baru
             $pdo->prepare("UPDATE kamar SET status_kamar = 'kosong' WHERE id = :id")->execute([':id' => $asal['kamar_id']]);
             $pdo->prepare("UPDATE kamar SET status_kamar = 'terisi' WHERE id = :id")->execute([':id' => $tujuan['id']]);
 
