@@ -55,10 +55,10 @@ if (isset($pdo) && $pdo instanceof PDO) {
                 COALESCE(p.no_wa, '-') AS no_wa
             FROM penghuni p
             LEFT JOIN penghuni_kamar pk ON p.id = pk.penghuni_id
-            LEFT JOIN kamar k ON pk.kamar_id = k.id AND k.status_kamar = 'terisi'
-            WHERE LOWER(COALESCE(p.status_akun, 'aktif')) = 'aktif'
+            LEFT JOIN kamar k ON pk.kamar_id = k.id
+            WHERE LOWER(COALESCE(p.status_akun, 'aktif')) IN ('aktif', 'freeze')
             ORDER BY 
-                NULLIF(regexp_replace(k.no_kamar, '\D', '', 'g'), '')::INTEGER ASC NULLS LAST,
+                NULLIF(regexp_replace(COALESCE(k.no_kamar, '0'), '\D', '', 'g'), '')::INTEGER ASC NULLS LAST,
                 p.nama ASC
         ";
 

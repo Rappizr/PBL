@@ -3,10 +3,28 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// Panggil Handler (hapus duplikasi query di file view)
+// 1. Pastikan koneksi database $pdo terhubung
+global $pdo;
+if (!isset($pdo) || !($pdo instanceof PDO)) {
+    $db_paths = [
+        __DIR__ . '/../../config/database.php',
+        __DIR__ . '/../config/database.php',
+        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
+    ];
+    foreach ($db_paths as $dbp) {
+        if (file_exists($dbp)) {
+            require_once $dbp;
+            if (isset($pdo) && ($pdo instanceof PDO)) break;
+        }
+    }
+}
+
+// 2. Load handler jika file tersedia
 $handler_paths = [
     __DIR__ . '/handler/chat_handlers.php',
-    __DIR__ . '/../pemilik/handler/chat_handlers.php'
+    __DIR__ . '/handler/chat_handler.php',
+    __DIR__ . '/../pemilik/handler/chat_handlers.php',
+    __DIR__ . '/../pemilik/handler/chat_handler.php'
 ];
 foreach ($handler_paths as $hp) {
     if (file_exists($hp)) {
@@ -15,9 +33,56 @@ foreach ($handler_paths as $hp) {
     }
 }
 
+if (!function_exists('buatLinkWaSapaan')) {
+    function buatLinkWaSapaan(array $p, string $role_pengirim = 'pemilik'): string
+    {
+        $nomor = preg_replace('/\D/', '', (string)($p['no_wa'] ?? ''));
+        if ($nomor === '' || $nomor === '-') {
+            return '#';
+        }
+        if (str_starts_with($nomor, '0')) {
+            $nomor = '62' . substr($nomor, 1);
+        }
+
+        $nama     = $p['nama'] ?? 'Penghuni';
+        $kamar    = $p['kamar'] ?? '-';
+        $pengirim = ($role_pengirim === 'pemilik') ? 'Pemilik SITEMAN - KOS' : 'Penghuni / Pengurus SITEMAN - KOS';
+
+        $pesan = "Halo *{$nama}* (Kamar {$kamar}), salam dari {$pengirim}. 🙏";
+        return "https://wa.me/{$nomor}?text=" . rawurlencode($pesan);
+    }
+}
+
+// 3. Fallback query langsung jika $penghuniKos masih kosong
+$penghuniKos = $penghuniKos ?? [];
+if (empty($penghuniKos) && isset($pdo) && ($pdo instanceof PDO)) {
+    try {
+        $sql = "
+            SELECT DISTINCT ON (p.id)
+                p.id,
+                p.nama,
+                COALESCE(k.no_kamar, '-') AS kamar,
+                COALESCE(p.no_wa, '-') AS no_wa
+            FROM penghuni p
+            LEFT JOIN penghuni_kamar pk ON p.id = pk.penghuni_id
+            LEFT JOIN kamar k ON pk.kamar_id = k.id
+            ORDER BY p.id ASC, pk.id DESC
+        ";
+        $stmt = $pdo->query($sql);
+        $penghuniKos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Urutkan berdasarkan nomor kamar secara natural di PHP (aman untuk angka maupun huruf)
+        usort($penghuniKos, function ($a, $b) {
+            return strnatcmp((string)$a['kamar'], (string)$b['kamar']);
+        });
+    } catch (Throwable $e) {
+        error_log('[chat_penghuni] ' . $e->getMessage());
+        $penghuniKos = [];
+    }
+}
+
 $role_user    = $_SESSION['user']['role'] ?? 'pemilik';
 $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?page=dashboard_penghuni';
-$penghuniKos  = $penghuniKos ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="id">
