@@ -84,7 +84,7 @@ if (isset($_SESSION['login_error'])) {
                 </button>
             </div>
             
-            <a href="/?page=reset" class="link-lupa">Lupa kata sandi?</a>
+            <a href="/?page=reset" class="link-lupa">Lupa PIN?</a>
 
             <button type="submit" class="btn-submit" id="submitBtn">
                 <span class="btn-text">Login</span>

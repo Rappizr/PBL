@@ -6479,7 +6479,7 @@ body.laporan-print-body {
    35. PRINT STYLING KHUSUS POP-UP INVOICE
    ========================================================================== */
 @media print {
-  body > *:not(.modal-overlay.active),
+  body:not(.laporan-print-body) > *:not(.modal-overlay.active),
   .invoice-actions {
     display: none !important;
   }

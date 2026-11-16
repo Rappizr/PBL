@@ -128,9 +128,6 @@ $currentPage = $_GET['page'] ?? 'dashboard';
     </div>
 </div>
 
-<!-- Progress Bar Indikator Perpindahan Halaman -->
-<div id="topNavLoader" style="position: fixed; top: 0; left: 0; height: 3px; width: 0%; background: #f3ca81; z-index: 999999; transition: width 0.25s ease, opacity 0.2s ease; opacity: 0; pointer-events: none;"></div>
-
 <script>
     function bukaModalLogoutSidebar() {
         const modal = document.getElementById('modalKonfirmasiLogoutSidebar');

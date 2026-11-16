@@ -1,4 +1,13 @@
 <?php
+ob_start();
+
+// Cegah eksekusi ganda akibat request otomatis /favicon.ico dari browser
+$uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+if ($uriPath === '/favicon.ico') {
+    http_response_code(204);
+    exit;
+}
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -106,6 +115,7 @@ $routes = [
 // 7. EKSEKUSI VALIDASI RBAC & LOAD HALAMAN
 if (!isset($routes[$page])) {
     http_response_code(404);
+    if (ob_get_length()) ob_clean();
     require_once __DIR__ . '/../modules/components/404notfound.php';
     exit;
 }
@@ -120,6 +130,11 @@ if (!in_array('*', $allowedRoles, true)) {
         header('Location: ' . $defaultDashboard);
         exit;
     }
+}
+
+// Bersihkan spasi/BOM tersembunyi sebelum merender HTML halaman
+if (ob_get_length()) {
+    ob_clean();
 }
 
 require_once __DIR__ . $targetRoute['file'];

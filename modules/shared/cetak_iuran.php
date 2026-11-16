@@ -85,6 +85,16 @@ $data_transaksi = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
+    <style>
+        @media print {
+            body.laporan-print-body > .laporan-page-container {
+                display: block !important;
+            }
+            .no-print-bar {
+                display: none !important;
+            }
+        }
+    </style>
 </head>
 <body class="laporan-print-body">
 
