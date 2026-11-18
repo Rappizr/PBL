@@ -379,7 +379,7 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
         </div>
     </div>
 
-    <!-- MODAL KONFIRMASI HAPUS KAMAR -->
+    <!-- KONFIRMASI HAPUS KAMAR -->
     <div id="modalKonfirmasiHapusKamar" class="modal-overlay">
         <div class="modal-card-konfirmasi-kamar">
             <div class="konfirmasi-icon-wrapper">
