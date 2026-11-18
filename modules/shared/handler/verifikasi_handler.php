@@ -1,6 +1,7 @@
 <?php
 /**
  * HANDLER LOGIK & DATABASE VERIFIKASI PEMBAYARAN
+ * Mendukung verifikasi pelunasan penuh maupun cicilan bertahap.
  * Lokasi: modules/shared/handler/verifikasi_handler.php
  */
 
@@ -51,6 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                     t.id AS tagihan_id,
                     t.penghuni_kamar_id,
                     t.kategori_iuran_id,
+                    COALESCE(ki.nominal, s.nominal, 5500000) AS total_tagihan,
                     pk.penghuni_id,
                     pen.nama AS nama_penghuni,
                     pen.no_wa AS no_wa_penghuni,
@@ -59,6 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 FROM pembayaran p
                 JOIN tagihan t ON p.tagihan_id = t.id
                 LEFT JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
+                LEFT JOIN skema_sewa s ON pk.skema_id = s.id
+                LEFT JOIN kategori_iuran ki ON t.kategori_iuran_id = ki.id
                 LEFT JOIN penghuni pen ON pk.penghuni_id = pen.id
                 LEFT JOIN kamar k ON pk.kamar_id = k.id
                 WHERE p.id = :id AND LOWER(TRIM(p.status_verifikasi)) = 'pending'
@@ -70,15 +74,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 throw new Exception("Data pembayaran tidak ditemukan atau sudah diproses.");
             }
 
-            $is_sewa      = empty($bayar['kategori_iuran_id']);
-            $tagihan_id   = (int)$bayar['tagihan_id'];
-            $jumlah_bayar = (float)$bayar['jumlah_bayar'];
-            $penghuni_id  = (int)($bayar['penghuni_id'] ?? 0);
-            $nama_pen     = $bayar['nama_penghuni'] ?? 'Penghuni';
-            $no_wa_pen    = preg_replace('/[^0-9]/', '', (string)($bayar['no_wa_penghuni'] ?? ''));
-            $kamar_pen    = $bayar['no_kamar'] ?? '-';
-            $status_akun  = $bayar['status_akun'] ?? 'aktif';
-            $tipe_label   = $is_sewa ? 'Sewa Kamar' : 'Iuran Kos';
+            $is_sewa       = empty($bayar['kategori_iuran_id']);
+            $tagihan_id    = (int)$bayar['tagihan_id'];
+            $jumlah_bayar  = (float)$bayar['jumlah_bayar'];
+            $total_tagihan = (float)$bayar['total_tagihan'];
+            $penghuni_id   = (int)($bayar['penghuni_id'] ?? 0);
+            $nama_pen      = $bayar['nama_penghuni'] ?? 'Penghuni';
+            $no_wa_pen     = preg_replace('/[^0-9]/', '', (string)($bayar['no_wa_penghuni'] ?? ''));
+            $kamar_pen     = $bayar['no_kamar'] ?? '-';
+            $status_akun   = $bayar['status_akun'] ?? 'aktif';
+            $tipe_label    = $is_sewa ? 'Sewa Kamar' : 'Iuran Kos';
 
             // Proteksi Hak Akses: Ketua kos dilarang memverifikasi sewa kamar
             if (!$is_pemilik && $is_sewa) {
@@ -95,16 +100,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 ");
                 $stmtUpdBayar->execute([':id' => $pembayaran_id]);
 
-                // 2. Update status tagihan menjadi 'lunas' dan bersihkan log reminder
+                // 2. Hitung akumulasi pembayaran 'diterima' pada tagihan ini (untuk menentukan lunas vs sebagian)
+                $stmtTotalMasuk = $pdo->prepare("
+                    SELECT COALESCE(SUM(jumlah_bayar), 0)
+                    FROM pembayaran
+                    WHERE tagihan_id = :tid
+                      AND LOWER(TRIM(status_verifikasi)) = 'diterima'
+                ");
+                $stmtTotalMasuk->execute([':tid' => $tagihan_id]);
+                $totalDiterima = (float)$stmtTotalMasuk->fetchColumn();
+                $sisaSetelahBayar = max(0, $total_tagihan - $totalDiterima);
+                $statusBaru = ($sisaSetelahBayar <= 0) ? 'lunas' : 'sebagian';
+
                 $stmtUpdTagihan = $pdo->prepare("
                     UPDATE tagihan 
-                    SET status_tagihan = 'lunas',
+                    SET status_tagihan = :status_baru,
                         reminder_sent_by = NULL,
                         reminder_sent_at = NULL,
                         reminder_fase = NULL
                     WHERE id = :tagihan_id
                 ");
-                $stmtUpdTagihan->execute([':tagihan_id' => $tagihan_id]);
+                $stmtUpdTagihan->execute([
+                    ':status_baru' => $statusBaru,
+                    ':tagihan_id'  => $tagihan_id
+                ]);
 
                 // 3. Catat ke buku_kas HANYA JIKA IURAN BERSAMA
                 if (!$is_sewa) {
@@ -113,12 +132,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                     $sudahAdaKas = $stmtCekKas->fetchColumn();
 
                     if (!$sudahAdaKas) {
+                        $ketKas = ($statusBaru === 'lunas')
+                            ? 'Pembayaran Iuran Terverifikasi (' . $nama_pen . ')'
+                            : 'Cicilan Iuran Terverifikasi (' . $nama_pen . ')';
+
                         $stmtKas = $pdo->prepare("
                             INSERT INTO buku_kas (keterangan, tipe_transaksi, nominal, tanggal_transaksi, penghuni_id, pembayaran_id)
                             VALUES (:ket, 'pemasukan', :nominal, NOW(), :uid, :pembayaran_id)
                         ");
                         $stmtKas->execute([
-                            ':ket'           => 'Pembayaran Iuran Terverifikasi (' . $nama_pen . ')',
+                            ':ket'           => $ketKas,
                             ':nominal'       => $jumlah_bayar,
                             ':uid'           => $penghuni_id,
                             ':pembayaran_id' => $pembayaran_id
@@ -129,7 +152,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 // 4. Auto-Unfreeze jika akun penghuni berstatus 'freeze' dan tidak ada tunggakan melewati tenggang
                 $infoUnfreeze = '';
                 if ($penghuni_id > 0 && $status_akun === 'freeze') {
-                    // Cek apakah masih ada tagihan sewa yang melewati tenggang +7 hari (atau tanggal janji bayar di tagihan)
                     $stmtCekSewa = $pdo->prepare("
                         SELECT COUNT(t.id)
                         FROM tagihan t
@@ -145,7 +167,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                     $stmtCekSewa->execute([':pid' => $penghuni_id]);
                     $masihNunggakSewa = ((int)$stmtCekSewa->fetchColumn() > 0);
 
-                    // Cek apakah masih ada tagihan iuran aktif yang melewati tenggang +7 hari
                     $stmtCekIuran = $pdo->prepare("
                         SELECT COUNT(t.id)
                         FROM tagihan t
@@ -154,7 +175,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                         WHERE pk.penghuni_id = :pid
                           AND LOWER(TRIM(t.status_tagihan)) != 'lunas'
                           AND CURRENT_DATE > GREATEST(
-                              (ki.tanggal_selesai + INTERVAL '7 days')::date,
+                              (t.tanggal_jatuh_tempo + INTERVAL '7 days')::date,
                               COALESCE(t.tanggal_janji_bayar, '1970-01-01'::date)
                           )
                     ");
@@ -174,9 +195,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 }
 
                 $pdo->commit();
+                $infoSisa = ($statusBaru === 'sebagian')
+                    ? " (Cicilan diterima, sisa tagihan: Rp " . number_format($sisaSetelahBayar, 0, ',', '.') . ")."
+                    : " (Tagihan LUNAS).";
+
                 $_SESSION['pesan_sukses'] = ($is_sewa
-                    ? "Pembayaran sewa berhasil diterima (tercatat di Analisis Kas)."
-                    : "Pembayaran iuran berhasil diterima dan dicatat ke kas bersama.") . $infoUnfreeze;
+                    ? "Pembayaran sewa berhasil diterima{$infoSisa}"
+                    : "Pembayaran iuran berhasil diterima dan dicatat ke kas bersama{$infoSisa}") . $infoUnfreeze;
                 header("Location: /?page=verifikasi_bayar");
                 exit;
 
@@ -197,13 +222,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                     ':id'     => $pembayaran_id
                 ]);
 
-                // 2. Kembalikan status tagihan ke 'belum_bayar'
+                // 2. Kembalikan status tagihan ke 'sebagian' (jika sudah pernah cicil diterima) atau 'belum_bayar'
+                $stmtCekCicil = $pdo->prepare("
+                    SELECT COALESCE(SUM(jumlah_bayar), 0)
+                    FROM pembayaran
+                    WHERE tagihan_id = :tid AND LOWER(TRIM(status_verifikasi)) = 'diterima'
+                ");
+                $stmtCekCicil->execute([':tid' => $tagihan_id]);
+                $sudahAdaCicilan = ((float)$stmtCekCicil->fetchColumn() > 0);
+
                 $stmtUpdTagihan = $pdo->prepare("
                     UPDATE tagihan 
-                    SET status_tagihan = 'belum_bayar' 
+                    SET status_tagihan = :st
                     WHERE id = :tagihan_id
                 ");
-                $stmtUpdTagihan->execute([':tagihan_id' => $tagihan_id]);
+                $stmtUpdTagihan->execute([
+                    ':st'         => $sudahAdaCicilan ? 'sebagian' : 'belum_bayar',
+                    ':tagihan_id' => $tagihan_id
+                ]);
 
                 $pdo->commit();
 

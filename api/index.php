@@ -1,10 +1,18 @@
 <?php
 ob_start();
 
-// Cegah eksekusi ganda akibat request otomatis /favicon.ico dari browser
 $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+
+// Cegah eksekusi ganda akibat request otomatis /favicon.ico dari browser
 if ($uriPath === '/favicon.ico') {
     http_response_code(204);
+    exit;
+}
+
+// Endpoint API Notifikasi Sidebar Real-Time (Vercel)
+if ($uriPath === '/api/notif_sidebar' || $uriPath === '/api/notif_sidebar.php') {
+    if (ob_get_length()) ob_clean();
+    require_once __DIR__ . '/notif_sidebar.php';
     exit;
 }
 

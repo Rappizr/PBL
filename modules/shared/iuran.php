@@ -14,6 +14,19 @@ $map_freeze_iuran_pid = [];
 foreach ($daftar_freeze_iuran as $frzItem) {
     $map_freeze_iuran_pid[(int)$frzItem['penghuni_id']] = $frzItem;
 }
+
+// Pisahkan notifikasi menjadi 2 kelompok (seperti Manajemen Kamar):
+// 1) Akun Freeze (pink/merah) — diurutkan yang sudah mengajukan janji bayar (belum di-ACC) di paling atas
+// 2) Mendekati Jatuh Tempo / Masa Tenggang (kuning)
+$notif_iuran_freeze = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n['fase'] ?? '') === 'freeze'));
+usort($notif_iuran_freeze, function ($a, $b) {
+    $janjiA = !empty($a['tanggal_janji_bayar']) ? 0 : 1;
+    $janjiB = !empty($b['tanggal_janji_bayar']) ? 0 : 1;
+    if ($janjiA !== $janjiB) return $janjiA <=> $janjiB;
+    return ((int)$a['no_kamar']) <=> ((int)$b['no_kamar']);
+});
+
+$notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n['fase'] ?? '') !== 'freeze'));
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -88,46 +101,39 @@ foreach ($daftar_freeze_iuran as $frzItem) {
                     </div>
                 </div>
 
-                <!-- ACCORDION RINGKASAN NOTIFIKASI & FREEZE IURAN (MOBILE) -->
-                <?php if (!empty($daftar_notif_iuran)): ?>
-                <div class="kamar-notif-accordion <?= $jumlah_freeze_iuran > 0 ? 'accordion-danger' : 'accordion-warning'; ?>">
-                    <button type="button" class="kamar-notif-accordion-header" onclick="toggleNotifIuran('listNotifIuranMob', 'iconNotifIuranMob')">
+                <!-- ACCORDION 1: AKUN FREEZE IURAN (MOBILE - MERAH/PINK) -->
+                <?php if (!empty($notif_iuran_freeze)): ?>
+                <div class="kamar-notif-accordion accordion-danger">
+                    <button type="button" class="kamar-notif-accordion-header" onclick="toggleNotifIuran('listNotifIuranFrzMob', 'iconNotifIuranFrzMob')">
                         <div class="kamar-notif-acc-left">
-                            <span class="kamar-notif-acc-icon">
-                                <i class="fa-solid <?= $jumlah_freeze_iuran > 0 ? 'fa-triangle-exclamation' : 'fa-bell'; ?>"></i>
-                            </span>
+                            <span class="kamar-notif-acc-icon"><i class="fa-solid fa-lock"></i></span>
                             <div class="kamar-notif-acc-text">
-                                <strong><?= count($daftar_notif_iuran); ?> Kamar Perlu Perhatian Iuran</strong>
-                                <span>
-                                    <?= $jumlah_freeze_iuran > 0 ? "{$jumlah_freeze_iuran} Akun Freeze" : ""; ?>
-                                    <?= ($jumlah_freeze_iuran > 0 && $jumlah_peringatan_iuran > 0) ? " &bull; " : ""; ?>
-                                    <?= $jumlah_peringatan_iuran > 0 ? "{$jumlah_peringatan_iuran} Jatuh Tempo / Tenggang" : ""; ?>
-                                </span>
+                                <strong><?= count($notif_iuran_freeze); ?> Akun Penghuni Freeze (Iuran)</strong>
+                                <span>Ketuk untuk melihat &amp; setujui pengajuan</span>
                             </div>
                         </div>
                         <span class="kamar-notif-acc-toggle">
-                            Rincian <i class="fa-solid fa-chevron-down" id="iconNotifIuranMob"></i>
+                            Lihat <i class="fa-solid fa-chevron-down" id="iconNotifIuranFrzMob"></i>
                         </span>
                     </button>
 
-                    <div class="kamar-notif-accordion-body <?= $jumlah_freeze_iuran > 0 ? 'is-open' : ''; ?>" id="listNotifIuranMob">
-                        <?php foreach ($daftar_notif_iuran as $ni): ?>
+                    <div class="kamar-notif-accordion-body" id="listNotifIuranFrzMob">
+                        <?php foreach ($notif_iuran_freeze as $ni): ?>
                         <?php
-                            $isFrz   = (($ni['fase'] ?? '') === 'freeze');
                             $pidNi   = (int)($ni['penghuni_id'] ?? 0);
                             $frzData = $map_freeze_iuran_pid[$pidNi] ?? null;
                             $tglAj   = $ni['tanggal_janji_bayar'] ?? '';
                             $catRaw  = trim((string)($ni['catatan_tunggakan'] ?? ''));
                             $isDtlk  = str_starts_with($catRaw, '[Ditolak]');
                         ?>
-                        <div class="kamar-notif-compact-item <?= $isFrz ? 'item-danger' : 'item-warning'; ?>">
+                        <div class="kamar-notif-compact-item item-danger">
                             <div class="compact-item-top">
                                 <strong>
-                                    <i class="fa-solid <?= $isFrz ? 'fa-lock' : 'fa-clock'; ?>"></i>
+                                    <i class="fa-solid fa-lock"></i>
                                     Kamar <?= htmlspecialchars(sprintf('%02d', (int)$ni['no_kamar'])); ?> &bull; <?= htmlspecialchars($ni['nama_penghuni']); ?>
                                 </strong>
-                                <span class="compact-badge <?= $isFrz ? 'badge-text-danger' : 'badge-text-warning'; ?>">
-                                    <?= htmlspecialchars($ni['label_status']); ?>
+                                <span class="compact-badge badge-text-danger">
+                                    <?= $tglAj !== '' ? 'Ajuan Janji Bayar' : 'Freeze'; ?>
                                 </span>
                             </div>
                             <p class="compact-item-desc">
@@ -139,7 +145,7 @@ foreach ($daftar_freeze_iuran as $frzItem) {
                                 <?php endif; ?>
                             </p>
 
-                            <?php if ($isFrz && $frzData): ?>
+                            <?php if ($frzData): ?>
                                 <?php if ($frzData['bisa_di_acc']): ?>
                                 <form method="POST" action="<?= htmlspecialchars(urlIuran($current_page)); ?>" class="detail-freeze-form">
                                     <input type="hidden" name="penghuni_id" value="<?= $pidNi; ?>">
@@ -148,7 +154,7 @@ foreach ($daftar_freeze_iuran as $frzItem) {
                                     <div class="row-input-dual">
                                         <input type="date" name="tanggal_janji_bayar"
                                                min="<?= date('Y-m-d'); ?>"
-                                               value="<?= htmlspecialchars($tglAj !== '' ? $tglAj : date('Y-m-d', strtotime('+3 days'))); ?>"
+                                               value="<?= htmlspecialchars($tglAj); ?>"
                                                class="detail-freeze-date-input" required>
                                         <input type="text" name="catatan_tunggakan"
                                                value="<?= htmlspecialchars($isDtlk ? '' : $catRaw); ?>"
@@ -173,19 +179,55 @@ foreach ($daftar_freeze_iuran as $frzItem) {
                                 <?php else: ?>
                                 <p class="compact-item-desc"><em>Akun Anda sendiri sedang ter-freeze. Hubungi Pemilik Kos untuk membuka akses.</em></p>
                                 <?php endif; ?>
-                            <?php else: ?>
-                                <div class="kamar-notif-mob-actions">
-                                    <?php if (!empty($ni['wa_pengingat_url'])): ?>
-                                    <a href="<?= htmlspecialchars($ni['wa_pengingat_url']); ?>" target="_blank" class="kamar-notif-btn-wa">
-                                        <i class="fa-brands fa-whatsapp"></i> Ingatkan WA
-                                    </a>
-                                    <?php endif; ?>
-                                    <a href="<?= urlIuran($current_page, ['filter' => 'belum_bayar', 'date_range' => $date_range]); ?>"
-                                       onclick="filterTabPenghuni(event, 'belum_bayar')" class="kamar-notif-btn-kelola">
-                                        Lihat Daftar
-                                    </a>
-                                </div>
                             <?php endif; ?>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- ACCORDION 2: JATUH TEMPO / MASA TENGGANG IURAN (MOBILE - KUNING) -->
+                <?php if (!empty($notif_iuran_warn)): ?>
+                <div class="kamar-notif-accordion accordion-warning">
+                    <button type="button" class="kamar-notif-accordion-header" onclick="toggleNotifIuran('listNotifIuranWarnMob', 'iconNotifIuranWarnMob')">
+                        <div class="kamar-notif-acc-left">
+                            <span class="kamar-notif-acc-icon"><i class="fa-solid fa-clock"></i></span>
+                            <div class="kamar-notif-acc-text">
+                                <strong><?= count($notif_iuran_warn); ?> Tagihan Iuran Mendekati / Masa Tenggang</strong>
+                                <span>Ketuk untuk kirim pengingat WA</span>
+                            </div>
+                        </div>
+                        <span class="kamar-notif-acc-toggle">
+                            Lihat <i class="fa-solid fa-chevron-down" id="iconNotifIuranWarnMob"></i>
+                        </span>
+                    </button>
+
+                    <div class="kamar-notif-accordion-body" id="listNotifIuranWarnMob">
+                        <?php foreach ($notif_iuran_warn as $ni): ?>
+                        <div class="kamar-notif-compact-item item-warning">
+                            <div class="compact-item-top">
+                                <strong>
+                                    <i class="fa-solid fa-bell"></i>
+                                    Kamar <?= htmlspecialchars(sprintf('%02d', (int)$ni['no_kamar'])); ?> &bull; <?= htmlspecialchars($ni['nama_penghuni']); ?>
+                                </strong>
+                                <span class="compact-badge badge-text-warning">
+                                    <?= htmlspecialchars($ni['label_status']); ?>
+                                </span>
+                            </div>
+                            <p class="compact-item-desc">
+                                <?= htmlspecialchars($ni['pesan_ringkas']); ?> (<strong>Rp <?= number_format((float)$ni['total_tunggakan'], 0, ',', '.'); ?></strong>)
+                            </p>
+                            <div class="kamar-notif-mob-actions">
+                                <?php if (!empty($ni['wa_pengingat_url'])): ?>
+                                <a href="<?= htmlspecialchars($ni['wa_pengingat_url']); ?>" target="_blank" class="kamar-notif-btn-wa">
+                                    <i class="fa-brands fa-whatsapp"></i> Ingatkan WA
+                                </a>
+                                <?php endif; ?>
+                                <a href="<?= urlIuran($current_page, ['filter' => 'belum_bayar', 'date_range' => $date_range]); ?>"
+                                   onclick="filterTabPenghuni(event, 'belum_bayar')" class="kamar-notif-btn-kelola">
+                                    Lihat Daftar
+                                </a>
+                            </div>
                         </div>
                         <?php endforeach; ?>
                     </div>
@@ -354,47 +396,40 @@ foreach ($daftar_freeze_iuran as $frzItem) {
                 </div>
             </div>
 
-            <!-- ACCORDION RINGKASAN NOTIFIKASI & FREEZE IURAN (DESKTOP) -->
-            <?php if (!empty($daftar_notif_iuran)): ?>
-            <div class="kamar-notif-accordion kamar-notif-acc-desktop <?= $jumlah_freeze_iuran > 0 ? 'accordion-danger' : 'accordion-warning'; ?>">
-                <button type="button" class="kamar-notif-accordion-header" onclick="toggleNotifIuran('listNotifIuranDesk', 'iconNotifIuranDesk')">
+            <!-- ACCORDION 1: AKUN FREEZE IURAN (DESKTOP - MERAH/PINK, PENGAJUAN JANJI BAYAR DI ATAS) -->
+            <?php if (!empty($notif_iuran_freeze)): ?>
+            <div class="kamar-notif-accordion kamar-notif-acc-desktop accordion-danger">
+                <button type="button" class="kamar-notif-accordion-header" onclick="toggleNotifIuran('listNotifIuranFrzDesk', 'iconNotifIuranFrzDesk')">
                     <div class="kamar-notif-acc-left">
-                        <span class="kamar-notif-acc-icon">
-                            <i class="fa-solid <?= $jumlah_freeze_iuran > 0 ? 'fa-triangle-exclamation' : 'fa-bell'; ?>"></i>
-                        </span>
+                        <span class="kamar-notif-acc-icon"><i class="fa-solid fa-lock"></i></span>
                         <div class="kamar-notif-acc-text">
-                            <strong><?= count($daftar_notif_iuran); ?> Kamar Perlu Perhatian Tagihan Iuran</strong>
-                            <span>
-                                <?= $jumlah_freeze_iuran > 0 ? "{$jumlah_freeze_iuran} Akun Freeze" : ""; ?>
-                                <?= ($jumlah_freeze_iuran > 0 && $jumlah_peringatan_iuran > 0) ? " &bull; " : ""; ?>
-                                <?= $jumlah_peringatan_iuran > 0 ? "{$jumlah_peringatan_iuran} Jatuh Tempo / Masa Tenggang" : ""; ?>
-                            </span>
+                            <strong><?= count($notif_iuran_freeze); ?> Akun Penghuni dalam Status Freeze Iuran (Dibekukan)</strong>
+                            <span>Klik untuk melihat pengajuan janji bayar &amp; mengaktifkan kembali akun</span>
                         </div>
                     </div>
                     <span class="kamar-notif-acc-toggle">
-                        Lihat Rincian <i class="fa-solid fa-chevron-down" id="iconNotifIuranDesk"></i>
+                        Lihat <i class="fa-solid fa-chevron-down" id="iconNotifIuranFrzDesk"></i>
                     </span>
                 </button>
 
-                <div class="kamar-notif-accordion-body <?= $jumlah_freeze_iuran > 0 ? 'is-open' : ''; ?>" id="listNotifIuranDesk">
-                    <?php foreach ($daftar_notif_iuran as $ni): ?>
+                <div class="kamar-notif-accordion-body" id="listNotifIuranFrzDesk">
+                    <?php foreach ($notif_iuran_freeze as $ni): ?>
                     <?php
-                        $isFrz   = (($ni['fase'] ?? '') === 'freeze');
                         $pidNi   = (int)($ni['penghuni_id'] ?? 0);
                         $frzData = $map_freeze_iuran_pid[$pidNi] ?? null;
                         $tglAj   = $ni['tanggal_janji_bayar'] ?? '';
                         $catRaw  = trim((string)($ni['catatan_tunggakan'] ?? ''));
                         $isDtlk  = str_starts_with($catRaw, '[Ditolak]');
                     ?>
-                    <div class="kamar-notif-compact-item <?= $isFrz ? 'item-danger' : 'item-warning'; ?>">
+                    <div class="kamar-notif-compact-item item-danger">
                         <div class="kamar-notif-compact-row">
                             <div class="compact-row-info">
-                                <i class="fa-solid <?= $isFrz ? 'fa-lock' : 'fa-bell'; ?>"></i>
+                                <i class="fa-solid fa-lock"></i>
                                 <div>
                                     <strong>
                                         Kamar <?= htmlspecialchars(sprintf('%02d', (int)$ni['no_kamar'])); ?> &mdash; <?= htmlspecialchars($ni['nama_penghuni']); ?>
-                                        <span class="compact-badge <?= $isFrz ? 'badge-text-danger' : 'badge-text-warning'; ?>">
-                                            <?= htmlspecialchars($ni['label_status']); ?>
+                                        <span class="compact-badge badge-text-danger">
+                                            <?= $tglAj !== '' ? 'Pengajuan Janji Bayar (Menunggu ACC)' : htmlspecialchars($ni['label_status']); ?>
                                         </span>
                                     </strong>
                                     <span>
@@ -407,19 +442,9 @@ foreach ($daftar_freeze_iuran as $frzItem) {
                                     </span>
                                 </div>
                             </div>
-
-                            <?php if (!$isFrz): ?>
-                            <div class="kamar-notif-desk-actions">
-                                <?php if (!empty($ni['wa_pengingat_url'])): ?>
-                                <a href="<?= htmlspecialchars($ni['wa_pengingat_url']); ?>" target="_blank" class="kamar-notif-desk-wa">
-                                    <i class="fa-brands fa-whatsapp"></i> Ingatkan WA
-                                </a>
-                                <?php endif; ?>
-                            </div>
-                            <?php endif; ?>
                         </div>
 
-                        <?php if ($isFrz && $frzData): ?>
+                        <?php if ($frzData): ?>
                             <?php if ($frzData['bisa_di_acc']): ?>
                             <form method="POST" action="<?= htmlspecialchars(urlIuran($current_page)); ?>" class="detail-freeze-form">
                                 <input type="hidden" name="penghuni_id" value="<?= $pidNi; ?>">
@@ -428,7 +453,7 @@ foreach ($daftar_freeze_iuran as $frzItem) {
                                 <div class="row-input-dual">
                                     <input type="date" name="tanggal_janji_bayar"
                                            min="<?= date('Y-m-d'); ?>"
-                                           value="<?= htmlspecialchars($tglAj !== '' ? $tglAj : date('Y-m-d', strtotime('+3 days'))); ?>"
+                                           value="<?= htmlspecialchars($tglAj); ?>"
                                            class="detail-freeze-date-input" required>
                                     <input type="text" name="catatan_tunggakan"
                                            value="<?= htmlspecialchars($isDtlk ? '' : $catRaw); ?>"
@@ -459,6 +484,47 @@ foreach ($daftar_freeze_iuran as $frzItem) {
                             <p class="compact-item-desc"><em>Akun Anda sendiri sedang ter-freeze. Hubungi Pemilik Kos untuk membuka akses akun.</em></p>
                             <?php endif; ?>
                         <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endif; ?>
+
+            <!-- ACCORDION 2: TAGIHAN IURAN MENDEKATI / MASA TENGGANG (DESKTOP - KUNING SEPERTI SEWA) -->
+            <?php if (!empty($notif_iuran_warn)): ?>
+            <div class="kamar-notif-accordion kamar-notif-acc-desktop accordion-warning">
+                <button type="button" class="kamar-notif-accordion-header" onclick="toggleNotifIuran('listNotifIuranWarnDesk', 'iconNotifIuranWarnDesk')">
+                    <div class="kamar-notif-acc-left">
+                        <span class="kamar-notif-acc-icon"><i class="fa-solid fa-clock"></i></span>
+                        <div class="kamar-notif-acc-text">
+                            <strong><?= count($notif_iuran_warn); ?> Tagihan Iuran Mendekati Jatuh Tempo / Masa Tenggang</strong>
+                            <span>Klik untuk mengirim pengingat pembayaran ke penghuni</span>
+                        </div>
+                    </div>
+                    <span class="kamar-notif-acc-toggle">
+                        Lihat <i class="fa-solid fa-chevron-down" id="iconNotifIuranWarnDesk"></i>
+                    </span>
+                </button>
+
+                <div class="kamar-notif-accordion-body" id="listNotifIuranWarnDesk">
+                    <?php foreach ($notif_iuran_warn as $ni): ?>
+                    <div class="kamar-notif-compact-row">
+                        <div class="compact-row-info">
+                            <strong>
+                                Kamar <?= htmlspecialchars(sprintf('%02d', (int)$ni['no_kamar'])); ?> - <?= htmlspecialchars($ni['nama_penghuni']); ?>
+                                <span class="compact-badge badge-text-warning"><?= htmlspecialchars($ni['label_status']); ?></span>
+                            </strong>
+                            <span>
+                                <?= htmlspecialchars($ni['pesan_ringkas']); ?> Total: <strong>Rp <?= number_format((float)$ni['total_tunggakan'], 0, ',', '.'); ?></strong>
+                            </span>
+                        </div>
+                        <div class="kamar-notif-desk-actions">
+                            <?php if (!empty($ni['wa_pengingat_url'])): ?>
+                            <a href="<?= htmlspecialchars($ni['wa_pengingat_url']); ?>" target="_blank" class="kamar-notif-desk-wa">
+                                <i class="fa-brands fa-whatsapp"></i> Ingatkan WA
+                            </a>
+                            <?php endif; ?>
+                        </div>
                     </div>
                     <?php endforeach; ?>
                 </div>

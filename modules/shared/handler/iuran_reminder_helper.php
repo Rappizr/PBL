@@ -1,8 +1,45 @@
 <?php
 /**
  * HELPER PENGINGAT JATUH TEMPO IURAN, MASA TENGGANG (+7 HARI), & AUTO-FREEZE IURAN
+ * Mendukung akumulasi tunggakan lintas periode, cicilan, dan prioritas pengajuan janji bayar.
  * Lokasi: modules/shared/handler/iuran_reminder_helper.php
  */
+
+if (!function_exists('sinkronTagihanIuranPeriodeAktif')) {
+    function sinkronTagihanIuranPeriodeAktif(PDO $pdo, array $ki): void
+    {
+        if (empty($ki['id']) || empty($ki['tanggal_selesai'])) {
+            return;
+        }
+
+        $kiId       = (int)$ki['id'];
+        $tglMulai   = $ki['tanggal_mulai'] ?? date('Y-m-01');
+        $tglSelesai = $ki['tanggal_selesai'];
+
+        $stmtSync = $pdo->prepare("
+            INSERT INTO tagihan (penghuni_kamar_id, kategori_iuran_id, tanggal_awal_tagihan, tanggal_jatuh_tempo, status_tagihan)
+            SELECT pk.id, :ki_id, :tgl_m, :tgl_s, 'belum_bayar'
+            FROM penghuni_kamar pk
+            JOIN penghuni p ON p.id = pk.penghuni_id
+            JOIN kamar k ON k.id = pk.kamar_id
+            WHERE LOWER(TRIM(k.status_kamar)) = 'terisi'
+              AND LOWER(TRIM(COALESCE(p.status_akun, 'aktif'))) IN ('aktif', 'freeze')
+              AND NOT EXISTS (
+                  SELECT 1 FROM tagihan t
+                  WHERE t.penghuni_kamar_id = pk.id
+                    AND t.kategori_iuran_id = :ki_id_cek
+                    AND t.tanggal_jatuh_tempo = :tgl_s_cek
+              )
+        ");
+        $stmtSync->execute([
+            ':ki_id'     => $kiId,
+            ':tgl_m'     => $tglMulai,
+            ':tgl_s'     => $tglSelesai,
+            ':ki_id_cek' => $kiId,
+            ':tgl_s_cek' => $tglSelesai,
+        ]);
+    }
+}
 
 if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
     function evaluasiStatusIuranSemuaKamar(PDO $pdo): array
@@ -22,8 +59,9 @@ if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
                 return [];
             }
 
-            $dtSelesai      = new DateTimeImmutable($ki['tanggal_selesai']);
-            $dtBatasDefault = $dtSelesai->modify('+7 days');
+            sinkronTagihanIuranPeriodeAktif($pdo, $ki);
+
+            $nominalAktif = (float)$ki['nominal'];
 
             $sql = "
                 SELECT
@@ -33,28 +71,48 @@ if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
                     p.id AS penghuni_id,
                     p.nama AS nama_penghuni,
                     COALESCE(p.no_wa, '') AS no_wa,
+                    COALESCE(p.is_ketua_kos, false) AS is_ketua_kos,
                     LOWER(TRIM(COALESCE(p.status_akun, 'aktif'))) AS status_akun,
                     LOWER(TRIM(COALESCE(p.freeze_reason, ''))) AS freeze_reason,
-                    t.id AS tagihan_id,
-                    t.tanggal_janji_bayar,
-                    t.catatan_tunggakan,
-                    LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) AS status_tagihan,
-                    LOWER(TRIM(COALESCE(pem.status_verifikasi, ''))) AS status_verifikasi
+                    MIN(t.tanggal_jatuh_tempo) AS jatuh_tempo_tertua,
+                    MAX(t.tanggal_janji_bayar) AS tanggal_janji_bayar,
+                    MAX(t.catatan_tunggakan) AS catatan_tunggakan,
+                    COUNT(t.id) AS jumlah_periode_nunggak,
+                    COALESCE(SUM(GREATEST(0, :nom_aktif - COALESCE(bayar_ok.total_diterima, 0))), 0) AS total_tunggakan,
+                    COALESCE(SUM(COALESCE(bayar_pend.jml_pending, 0)), 0) AS jumlah_pending
                 FROM kamar k
                 INNER JOIN penghuni_kamar pk ON pk.kamar_id = k.id
                 INNER JOIN penghuni p ON p.id = pk.penghuni_id
-                LEFT JOIN tagihan t ON t.penghuni_kamar_id = pk.id AND t.kategori_iuran_id = :ki_id
+                INNER JOIN tagihan t ON t.penghuni_kamar_id = pk.id
+                    AND t.kategori_iuran_id IS NOT NULL
+                    AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
                 LEFT JOIN (
-                    SELECT tagihan_id, MAX(id) AS max_id FROM pembayaran GROUP BY tagihan_id
-                ) lp ON lp.tagihan_id = t.id
-                LEFT JOIN pembayaran pem ON pem.id = lp.max_id
+                    SELECT tagihan_id, SUM(jumlah_bayar) AS total_diterima
+                    FROM pembayaran
+                    WHERE LOWER(TRIM(status_verifikasi)) = 'diterima'
+                    GROUP BY tagihan_id
+                ) bayar_ok ON bayar_ok.tagihan_id = t.id
+                LEFT JOIN (
+                    SELECT tagihan_id, COUNT(*) AS jml_pending
+                    FROM pembayaran
+                    WHERE LOWER(TRIM(status_verifikasi)) = 'pending'
+                    GROUP BY tagihan_id
+                ) bayar_pend ON bayar_pend.tagihan_id = t.id
                 WHERE LOWER(TRIM(k.status_kamar)) = 'terisi'
                   AND LOWER(TRIM(COALESCE(p.status_akun, 'aktif'))) IN ('aktif', 'freeze')
-                ORDER BY NULLIF(regexp_replace(k.no_kamar, '\D', '', 'g'), '')::INTEGER ASC NULLS LAST
+                GROUP BY
+                    k.id, k.no_kamar, pk.id, p.id, p.nama, p.no_wa, p.is_ketua_kos, p.status_akun, p.freeze_reason
+                HAVING COALESCE(SUM(GREATEST(0, :nom_aktif_hav - COALESCE(bayar_ok.total_diterima, 0))), 0) > 0
+                ORDER BY
+                    CASE WHEN MAX(t.tanggal_janji_bayar) IS NOT NULL THEN 0 ELSE 1 END ASC,
+                    NULLIF(regexp_replace(k.no_kamar, '\D', '', 'g'), '')::INTEGER ASC NULLS LAST
             ";
 
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([':ki_id' => $ki['id']]);
+            $stmt->execute([
+                ':nom_aktif'     => $nominalAktif,
+                ':nom_aktif_hav' => $nominalAktif,
+            ]);
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
             $stmtFreezeIuran = $pdo->prepare("
@@ -65,14 +123,16 @@ if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
             $hasil = [];
 
             foreach ($rows as $row) {
-                $isLunas   = ($row['status_tagihan'] === 'lunas' && $row['status_verifikasi'] === 'diterima');
-                $isPending = ($row['status_verifikasi'] === 'pending');
+                $totalTunggakan = (float)$row['total_tunggakan'];
+                $isPending      = ((int)$row['jumlah_pending'] > 0);
 
-                if ($isLunas || $isPending) {
+                if ($totalTunggakan <= 0 || $isPending) {
                     continue;
                 }
 
-                $dtBatasFreeze = $dtBatasDefault;
+                $dtSelesai     = new DateTimeImmutable($row['jatuh_tempo_tertua']);
+                $dtBatasFreeze = $dtSelesai->modify('+7 days');
+
                 if (!empty($row['tanggal_janji_bayar'])) {
                     $dtJanji = new DateTimeImmutable($row['tanggal_janji_bayar']);
                     if ($dtJanji > $dtBatasFreeze) {
@@ -85,6 +145,7 @@ if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
                 $penghuniId     = (int)$row['penghuni_id'];
                 $statusAkun     = $row['status_akun'];
                 $freezeReason   = $row['freeze_reason'];
+                $jmlPeriode     = (int)$row['jumlah_periode_nunggak'];
 
                 $fase         = null;
                 $labelStatus  = '';
@@ -97,12 +158,12 @@ if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
                     }
                     $fase         = 'freeze';
                     $labelStatus  = 'Akun Dibekukan (Iuran)';
-                    $pesanRingkas = "Tunggakan {$ki['nama_iuran']} melewati batas tenggang +7 hari ({$dtBatasFreeze->format('d/m/Y')}).";
+                    $pesanRingkas = "Akumulasi {$jmlPeriode} periode {$ki['nama_iuran']} melewati batas tenggang ({$dtBatasFreeze->format('d/m/Y')}).";
                 } elseif ($diffJatuhTempo < 0) {
                     $hariTelat    = abs($diffJatuhTempo);
                     $fase         = 'tenggang';
                     $labelStatus  = "Iuran Telat {$hariTelat} Hari (Sisa {$sisaHariFreeze} hari)";
-                    $pesanRingkas = "Masa tenggang {$ki['nama_iuran']} berjalan hingga {$dtBatasFreeze->format('d/m/Y')}.";
+                    $pesanRingkas = "Masa tenggang {$ki['nama_iuran']} ({$jmlPeriode} periode) hingga {$dtBatasFreeze->format('d/m/Y')}.";
                 } elseif ($diffJatuhTempo === 0) {
                     $fase         = 'pengingat';
                     $labelStatus  = 'Hari H Jatuh Tempo Iuran';
@@ -118,8 +179,8 @@ if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
                     $row['status_akun']          = $statusAkun;
                     $row['fase']                 = $fase;
                     $row['nama_iuran']           = $ki['nama_iuran'];
-                    $row['total_tunggakan']      = (float)$ki['nominal'];
-                    $row['jumlah_bulan_nunggak'] = 1;
+                    $row['total_tunggakan']      = $totalTunggakan;
+                    $row['jumlah_bulan_nunggak'] = $jmlPeriode;
                     $row['diff_jatuh_tempo']     = $diffJatuhTempo;
                     $row['sisa_hari_freeze']     = $sisaHariFreeze;
                     $row['jatuh_tempo_fmt']      = $dtSelesai->format('d/m/Y');
@@ -172,13 +233,13 @@ if (!function_exists('buatLinkWaPengingatIuran')) {
 
         if ($fase === 'freeze') {
             $pesan = "Halo *{$nama}* (Kamar {$kamar}),\n\n"
-                   . "Akun SITEMAN - KOS Anda saat ini *dibekukan (Freeze)* karena tagihan *{$namaIuran}* sebesar *{$nominalFmt}* telah melewati batas masa tenggang (+7 hari).\n\n"
+                   . "Akun SITEMAN - KOS Anda saat ini *dibekukan (Freeze)* karena sisa tunggakan *{$namaIuran}* sebesar *{$nominalFmt}* telah melewati batas masa tenggang (+7 hari).\n\n"
                    . "Silakan balas pesan ini untuk konfirmasi rencana pelunasan agar akun dapat kami aktifkan kembali. Terima kasih. 🙏\n\n"
                    . "_Pengurus / Pemilik SITEMAN - KOS_";
         } else {
             $pesan = "Halo *{$nama}* (Kamar {$kamar}),\n\n"
-                   . "Mengingatkan pembayaran *{$namaIuran}* (*{$data['label_status']}*) sebesar *{$nominalFmt}*.\n"
-                   . "Mohon segera melakukan pembayaran sebelum *{$batasFmt}* agar akun SITEMAN - KOS Anda tetap aktif. Terima kasih. 🙏\n\n"
+                   . "Mengingatkan sisa tagihan *{$namaIuran}* (*{$data['label_status']}*) sebesar *{$nominalFmt}*.\n"
+                   . "Mohon segera melakukan pembayaran (lunas/cicilan) sebelum *{$batasFmt}* agar akun SITEMAN - KOS Anda tetap aktif. Terima kasih. 🙏\n\n"
                    . "_Pengurus / Pemilik SITEMAN - KOS_";
         }
 
@@ -229,7 +290,7 @@ if (!function_exists('buatLinkWaPermohonanUnfreezeIuran')) {
         $tglJanji   = $tanggalJanjiInput !== '' ? date('d/m/Y', strtotime($tanggalJanjiInput)) : '[Isi Tanggal Bayar]';
 
         $pesan = "Halo {$sapaan},\n\n"
-               . "Saya *{$nama}* penghuni *Kamar {$kamar}*. Akun SITEMAN - KOS saya saat ini ter-freeze karena tunggakan *{$namaIuran}* sebesar *{$nominalFmt}*.\n\n"
+               . "Saya *{$nama}* penghuni *Kamar {$kamar}*. Akun SITEMAN - KOS saya saat ini ter-freeze karena sisa tunggakan *{$namaIuran}* sebesar *{$nominalFmt}*.\n\n"
                . "Saya memohon kebijaksanaannya untuk membuka akses akun saya sementara, dan saya berjanji akan melunasi iuran tersebut pada tanggal *{$tglJanji}*.\n\n"
                . "Terima kasih banyak atas pengertiannya. 🙏";
 

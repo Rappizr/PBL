@@ -85,8 +85,8 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                                 <label class="detail-freeze-label">Tanggal Janji Bayar</label>
                                 <input type="date" name="tanggal_janji_bayar"
                                        min="<?= date('Y-m-d'); ?>"
-                                       value="<?= htmlspecialchars($kamar_terpilih['tanggal_janji_bayar'] ?? date('Y-m-d', strtotime('+3 days'))); ?>"
-                                       class="detail-freeze-date-input">
+                                       value="<?= htmlspecialchars($kamar_terpilih['tanggal_janji_bayar'] ?? ''); ?>" required
+                                       class="detail-freeze-date-input" required>
                             </div>
                             <div class="detail-form-group flex-1">
                                 <label class="detail-freeze-label">Keterangan Tunggakan</label>
@@ -97,17 +97,22 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                             </div>
                         </div>
 
-                        <button type="submit" name="buka_freeze_penghuni" class="btn-detail-unfreeze">
-                            <i class="fa-solid fa-lock-open"></i>
-                            <?= $is_freeze ? 'Setujui & Aktifkan Kembali Akun (Unfreeze)' : 'Simpan Perpanjangan Janji Bayar'; ?>
+                        <button type="submit" name="buka_freeze_penghuni" value="1"
+                                onclick="ubahIkonKunciDetail(this)"
+                                class="btn-detail-unfreeze">
+                            <i class="fa-solid <?= $is_freeze ? 'fa-lock-open' : 'fa-calendar-check'; ?>"></i>
+                            <span><?= $is_freeze ? 'Setujui & Aktifkan Kembali Akun (Unfreeze)' : 'Simpan Perpanjangan Janji Bayar'; ?></span>
                         </button>
 
                         <?php if ($is_freeze && !empty($kamar_terpilih['tanggal_janji_bayar'])): ?>
                             <input type="text" name="alasan_tolak_janji"
                                    placeholder="Alasan penolakan (contoh: Maksimal tanggal 19 Nov)..."
                                    class="detail-freeze-text-input">
-                            <button type="submit" name="tolak_janji_bayar" value="1" class="btn-detail-pill btn-detail-hapus">
-                                <i class="fa-solid fa-xmark"></i> Tolak Pengajuan Janji Bayar
+                            <button type="submit" name="tolak_janji_bayar" value="1"
+                                    onclick="ubahIkonKunciDetail(this)"
+                                    class="btn-detail-pill btn-detail-hapus">
+                                <i class="fa-solid fa-xmark"></i>
+                                <span>Tolak Pengajuan Janji Bayar</span>
                             </button>
                         <?php endif; ?>
                     </form>
@@ -400,6 +405,24 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
 <?php endif; ?>
 
 <script>
+    function ubahIkonKunciDetail(btn) {
+        const form = btn.closest('form');
+        if (form && !form.checkValidity()) return;
+
+        const icon = btn.querySelector('i');
+        const textSpan = btn.querySelector('span');
+
+        if (icon) {
+            icon.className = 'fa-solid fa-lock';
+        }
+        if (textSpan) {
+            textSpan.textContent = 'Memproses...';
+        }
+
+        btn.style.opacity = '0.85';
+        btn.style.pointerEvents = 'none';
+    }
+
     function isiKamarKosongInstan(noKamar) {
         tutupSemuaModalInstan();
         const selectKamar = document.getElementById('pilihKamar');

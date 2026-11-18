@@ -4,6 +4,14 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/handler/kas_handlers.php';
+
+// Filter default: Jika tidak sedang memfilter rentang tanggal, hanya tampilkan transaksi HARI INI
+if (!$is_filtered && !empty($daftar_transaksi)) {
+    $hari_ini = date('Y-m-d');
+    $daftar_transaksi = array_values(array_filter($daftar_transaksi, function ($tx) use ($hari_ini) {
+        return date('Y-m-d', strtotime($tx['tanggal'])) === $hari_ini;
+    }));
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -38,37 +46,24 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                     <span class="kas-total-value">Rp. <?= number_format($total_pemasukan, 0, ',', '.'); ?></span>
                 </div>
 
-                <!-- BANNER NOTIFIKASI SEWA (MOBILE) -->
-                <?php if (!empty($banner_notif_sewa)): ?>
-                <div class="iuran-notif-banner <?= $banner_notif_sewa['tipe'] === 'danger' ? 'notif-danger' : 'notif-warning'; ?>">
-                    <div class="iuran-notif-icon">
-                        <i class="fa-solid <?= $banner_notif_sewa['tipe'] === 'danger' ? 'fa-bell' : 'fa-triangle-exclamation'; ?>"></i>
-                    </div>
-                    <div class="iuran-notif-body">
-                        <strong><?= htmlspecialchars($banner_notif_sewa['judul']); ?></strong>
-                        <p><?= htmlspecialchars($banner_notif_sewa['pesan']); ?></p>
-                    </div>
-                    <a href="/?page=analisis_kas&filter=belum_bayar<?= $is_filtered ? '&date_range=' . urlencode($date_range) : ''; ?>"
-                       onclick="filterTabKasPenghuni(event, 'belum_bayar')" class="iuran-notif-btn">
-                        Lihat Belum Bayar
-                    </a>
-                </div>
-                <?php endif; ?>
-
                 <div class="kas-cetak-mobile-row">
                     <button type="button" onclick="bukaModalCetakKas()" class="btn-cetak-pdf kas-btn-cetak-full">
                         <i class="fa-solid fa-file-pdf"></i> Cetak PDF
                     </button>
                 </div>
 
+                <h3 class="section-title-white">
+                    <?= $is_filtered ? 'Riwayat Arus Kas' : 'Arus Kas Hari Ini'; ?>
+                </h3>
+
                 <form method="GET" action="" id="formFilterMobile" class="filter-range-form kas-filter-form-mobile">
                     <input type="hidden" name="page" value="analisis_kas">
                     <div class="flatpickr-box-wrapper">
                         <i class="fa-regular fa-calendar date-icon"></i>
                         <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
-                            placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                            placeholder="Filter Riwayat Tanggal..." class="flatpickr-range-input" readonly>
                         <?php if ($is_filtered): ?>
-                        <a href="/?page=analisis_kas" class="btn-reset-range" title="Reset">
+                        <a href="/?page=analisis_kas" class="btn-reset-range" title="Reset ke Hari Ini">
                             <i class="fa-solid fa-rotate-left"></i>
                         </a>
                         <?php endif; ?>
@@ -79,7 +74,7 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                     <?php if (empty($daftar_transaksi)): ?>
                     <div class="empty-state-card">
                         <i class="fa-regular fa-folder-open"></i>
-                        <p>Tidak ada transaksi pada rentang tanggal ini</p>
+                        <p><?= $is_filtered ? 'Tidak ada transaksi pada rentang tanggal ini' : 'Belum ada transaksi arus kas hari ini. Gunakan filter tanggal untuk melihat riwayat sebelumnya.'; ?></p>
                     </div>
                     <?php else: ?>
                     <?php foreach ($daftar_transaksi as $tx): ?>
@@ -174,26 +169,11 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                 </div>
             </div>
 
-            <!-- BANNER NOTIFIKASI SEWA (DESKTOP) -->
-            <?php if (!empty($banner_notif_sewa)): ?>
-            <div class="iuran-notif-banner <?= $banner_notif_sewa['tipe'] === 'danger' ? 'notif-danger' : 'notif-warning'; ?>">
-                <div class="iuran-notif-icon">
-                    <i class="fa-solid <?= $banner_notif_sewa['tipe'] === 'danger' ? 'fa-bell' : 'fa-triangle-exclamation'; ?>"></i>
-                </div>
-                <div class="iuran-notif-body">
-                    <strong><?= htmlspecialchars($banner_notif_sewa['judul']); ?></strong>
-                    <p><?= htmlspecialchars($banner_notif_sewa['pesan']); ?></p>
-                </div>
-                <a href="/?page=analisis_kas&filter=belum_bayar<?= $is_filtered ? '&date_range=' . urlencode($date_range) : ''; ?>"
-                   onclick="filterTabKasPenghuni(event, 'belum_bayar')" class="iuran-notif-btn">
-                    Lihat Belum Bayar
-                </a>
-            </div>
-            <?php endif; ?>
-
             <div class="desktop-range-filter-wrapper">
                 <div class="kas-desktop-section-left">
-                    <h3 class="desktop-section-title kas-title-no-margin">Riwayat Arus Kas</h3>
+                    <h3 class="desktop-section-title kas-title-no-margin">
+                        <?= $is_filtered ? 'Riwayat Arus Kas' : 'Arus Kas Hari Ini'; ?>
+                    </h3>
                     <button type="button" onclick="bukaModalCetakKas()" class="btn-cetak-pdf">
                         <i class="fa-solid fa-file-pdf"></i> Cetak PDF
                     </button>
@@ -204,9 +184,9 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                     <div class="flatpickr-box-wrapper">
                         <i class="fa-regular fa-calendar date-icon"></i>
                         <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
-                            placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                            placeholder="Filter Riwayat Tanggal..." class="flatpickr-range-input" readonly>
                         <?php if ($is_filtered): ?>
-                        <a href="/?page=analisis_kas" class="btn-reset-range" title="Reset Filter">
+                        <a href="/?page=analisis_kas" class="btn-reset-range" title="Reset ke Hari Ini">
                             <i class="fa-solid fa-rotate-left"></i> Reset
                         </a>
                         <?php endif; ?>
@@ -218,7 +198,7 @@ require_once __DIR__ . '/handler/kas_handlers.php';
                 <?php if (empty($daftar_transaksi)): ?>
                 <div class="empty-state-card">
                     <i class="fa-regular fa-folder-open"></i>
-                    <p>Tidak ada transaksi arus kas pada rentang tanggal yang dipilih</p>
+                    <p><?= $is_filtered ? 'Tidak ada transaksi arus kas pada rentang tanggal yang dipilih' : 'Belum ada transaksi arus kas hari ini. Pilih rentang tanggal di atas untuk melihat riwayat sebelumnya.'; ?></p>
                 </div>
                 <?php else: ?>
                 <?php foreach ($daftar_transaksi as $tx): ?>

@@ -194,10 +194,13 @@ if (isset($_GET['invoice_id'])) {
                     <?php else: ?>
                     <?php foreach ($daftar_tagihan_saya as $t): ?>
                     <?php
-                        $is_lunas   = ($t['status_tagihan'] === 'lunas');
-                        $is_pending = (($t['status_verif'] ?? '') === 'pending' || $t['status_tagihan'] === 'sebagian');
-                        $is_ditolak = (($t['status_verif'] ?? '') === 'ditolak');
-                        $nominalFmt = number_format($t['nominal'], 0, ',', '.');
+                        $is_lunas      = ($t['status_tagihan'] === 'lunas');
+                        $is_pending    = (($t['status_verif'] ?? '') === 'pending');
+                        $is_ditolak    = (!$is_pending && ($t['status_verif'] ?? '') === 'ditolak');
+                        $sudahDibayar  = (float)($t['sudah_dibayar'] ?? 0);
+                        $sisaTagihan   = (float)($t['nominal'] ?? 0);
+                        $nominalFmt    = number_format($sisaTagihan, 0, ',', '.');
+                        $sudahBayarFmt = number_format($sudahDibayar, 0, ',', '.');
                     ?>
                     <div class="item-tagihan-card <?= $is_ditolak ? 'tagihan-ditolak' : ''; ?>">
                         <div class="item-tagihan-header">
@@ -208,13 +211,15 @@ if (isset($_GET['invoice_id'])) {
                             <span class="badge-tagihan-pending">Menunggu Verifikasi</span>
                             <?php elseif ($is_ditolak): ?>
                             <span class="badge-tagihan-pending badge-tagihan-ditolak">Ditolak</span>
+                            <?php elseif ($sudahDibayar > 0): ?>
+                            <span class="badge-tagihan-pending">Dicicil (Masuk Rp <?= $sudahBayarFmt; ?>)</span>
                             <?php else: ?>
                             <span class="badge-tagihan-belum">Belum bayar</span>
                             <?php endif; ?>
                         </div>
                         <div class="item-tagihan-body">
                             <div class="item-tagihan-left">
-                                <span>Total tagihan</span>
+                                <span><?= $sudahDibayar > 0 ? 'Sisa tagihan' : 'Total tagihan'; ?></span>
                                 <span>Batas bayar</span>
                             </div>
                             <div class="item-tagihan-right">
@@ -233,17 +238,17 @@ if (isset($_GET['invoice_id'])) {
                         <?php if ($is_lunas): ?>
                         <div class="btn-card-action btn-card-lunas"><i class="fa-solid fa-circle-check"></i> Lunas</div>
                         <?php elseif ($is_pending): ?>
-                        <div class="btn-card-action btn-card-pending"><i class="fa-solid fa-clock"></i> Diproses</div>
+                        <div class="btn-card-action btn-card-pending"><i class="fa-solid fa-clock"></i> Diproses (Rp <?= number_format((float)($t['nominal_pending'] ?? $sisaTagihan), 0, ',', '.'); ?>)</div>
                         <?php elseif ($is_ditolak): ?>
                         <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>"
-                            onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>)"
+                            onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>, <?= (int)$sisaTagihan; ?>)"
                             class="btn-card-action btn-card-upload-ulang">
                             <i class="fa-solid fa-cloud-arrow-up"></i> Upload Ulang Bukti
                         </a>
                         <?php else: ?>
                         <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>"
-                            onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>)"
-                            class="btn-card-action">Bayar</a>
+                            onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>, <?= (int)$sisaTagihan; ?>)"
+                            class="btn-card-action"><?= $sudahDibayar > 0 ? 'Cicil / Lunasi Sisa' : 'Bayar / Cicil'; ?></a>
                         <?php endif; ?>
                     </div>
                     <?php endforeach; ?>
@@ -291,7 +296,7 @@ if (isset($_GET['invoice_id'])) {
                         <div class="item-tagihan-header">
                             <h4 class="item-tagihan-name"><?= htmlspecialchars($r['judul']); ?></h4>
                             <div class="riwayat-status-actions">
-                                <span class="badge-status-lunas">Lunas</span>
+                                <span class="badge-status-lunas">Diterima</span>
                                 <a href="/?page=tagihan_riwayat&hal_m=<?= $page_m; ?><?= $query_tanggal; ?>&invoice_id=<?= $r['id']; ?>"
                                     onclick="bukaModalInvoiceInstan(event, <?= $invJson; ?>)"
                                     class="btn-invoice-pill">
@@ -334,7 +339,7 @@ if (isset($_GET['invoice_id'])) {
 
         <main class="desktop-content">
             <h2 class="desktop-header-title">Tagihan &amp; Riwayat</h2>
-            <p class="tagihan-desktop-subtitle">Ringkasan tagihan dan riwayat pembayaran</p>
+            <p class="tagihan-desktop-subtitle">Ringkasan tagihan, cicilan, dan riwayat pembayaran</p>
 
             <?php if (!empty($peringatanTagihan)): ?>
             <?php $isTenggang = ($peringatanTagihan['fase'] === 'tenggang'); ?>
@@ -344,7 +349,7 @@ if (isset($_GET['invoice_id'])) {
                 </div>
                 <div class="iuran-notif-body">
                     <strong><?= htmlspecialchars($judulPeringatan); ?>: <?= htmlspecialchars($peringatanTagihan['label_status']); ?></strong>
-                    <p><?= htmlspecialchars($peringatanTagihan['pesan_ringkas']); ?> Total tagihan: <strong>Rp <?= number_format((float)$peringatanTagihan['total_tunggakan'], 0, ',', '.'); ?></strong></p>
+                    <p><?= htmlspecialchars($peringatanTagihan['pesan_ringkas']); ?> Total sisa tagihan: <strong>Rp <?= number_format((float)$peringatanTagihan['total_tunggakan'], 0, ',', '.'); ?></strong></p>
                 </div>
             </div>
             <?php endif; ?>
@@ -359,10 +364,13 @@ if (isset($_GET['invoice_id'])) {
                 <?php else: ?>
                 <?php foreach ($daftar_tagihan_saya as $t): ?>
                 <?php
-                    $is_lunas   = ($t['status_tagihan'] === 'lunas');
-                    $is_pending = (($t['status_verif'] ?? '') === 'pending' || $t['status_tagihan'] === 'sebagian');
-                    $is_ditolak = (($t['status_verif'] ?? '') === 'ditolak');
-                    $nominalFmt = number_format($t['nominal'], 0, ',', '.');
+                    $is_lunas      = ($t['status_tagihan'] === 'lunas');
+                    $is_pending    = (($t['status_verif'] ?? '') === 'pending');
+                    $is_ditolak    = (!$is_pending && ($t['status_verif'] ?? '') === 'ditolak');
+                    $sudahDibayar  = (float)($t['sudah_dibayar'] ?? 0);
+                    $sisaTagihan   = (float)($t['nominal'] ?? 0);
+                    $nominalFmt    = number_format($sisaTagihan, 0, ',', '.');
+                    $sudahBayarFmt = number_format($sudahDibayar, 0, ',', '.');
                 ?>
                 <div class="item-tagihan-card <?= $is_ditolak ? 'tagihan-ditolak' : ''; ?>">
                     <div class="item-tagihan-header">
@@ -373,13 +381,15 @@ if (isset($_GET['invoice_id'])) {
                         <span class="badge-tagihan-pending">Menunggu Verifikasi</span>
                         <?php elseif ($is_ditolak): ?>
                         <span class="badge-tagihan-pending badge-tagihan-ditolak">Ditolak</span>
+                        <?php elseif ($sudahDibayar > 0): ?>
+                        <span class="badge-tagihan-pending">Dicicil (Masuk Rp <?= $sudahBayarFmt; ?>)</span>
                         <?php else: ?>
                         <span class="badge-tagihan-belum">Belum bayar</span>
                         <?php endif; ?>
                     </div>
                     <div class="item-tagihan-body">
                         <div class="item-tagihan-left">
-                            <span>Total tagihan</span>
+                            <span><?= $sudahDibayar > 0 ? 'Sisa tagihan' : 'Total tagihan'; ?></span>
                             <span>Batas bayar</span>
                         </div>
                         <div class="item-tagihan-right">
@@ -398,17 +408,17 @@ if (isset($_GET['invoice_id'])) {
                     <?php if ($is_lunas): ?>
                     <div class="btn-card-action btn-card-lunas"><i class="fa-solid fa-circle-check"></i> Lunas</div>
                     <?php elseif ($is_pending): ?>
-                    <div class="btn-card-action btn-card-pending"><i class="fa-solid fa-clock"></i> Diproses</div>
+                    <div class="btn-card-action btn-card-pending"><i class="fa-solid fa-clock"></i> Diproses (Rp <?= number_format((float)($t['nominal_pending'] ?? $sisaTagihan), 0, ',', '.'); ?>)</div>
                     <?php elseif ($is_ditolak): ?>
                     <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>"
-                        onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>)"
+                        onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>, <?= (int)$sisaTagihan; ?>)"
                         class="btn-card-action btn-card-upload-ulang">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Upload Ulang Bukti
                     </a>
                     <?php else: ?>
                     <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>"
-                        onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>)"
-                        class="btn-card-action">Bayar</a>
+                        onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>, <?= (int)$sisaTagihan; ?>)"
+                        class="btn-card-action"><?= $sudahDibayar > 0 ? 'Cicil / Lunasi Sisa' : 'Bayar / Cicil'; ?></a>
                     <?php endif; ?>
                 </div>
                 <?php endforeach; ?>
@@ -461,7 +471,7 @@ if (isset($_GET['invoice_id'])) {
                     </div>
                     <div class="desktop-riwayat-right">
                         <div class="riwayat-status-actions">
-                            <span class="badge-lunas-pill">Lunas</span>
+                            <span class="badge-lunas-pill">Diterima</span>
                             <a href="/?page=tagihan_riwayat&hal=<?= $page_d; ?><?= $query_tanggal; ?>&invoice_id=<?= $r['id']; ?>"
                                 onclick="bukaModalInvoiceInstan(event, <?= $invJson; ?>)"
                                 class="btn-invoice-pill">
@@ -512,7 +522,7 @@ if (isset($_GET['invoice_id'])) {
                 <div class="invoice-tag-box">
                     <h2 class="invoice-main-title" id="invModalTitle"><?= $is_sewa_init ? 'INVOICE SEWA' : 'INVOICE IURAN'; ?></h2>
                     <p class="invoice-number" id="invModalNomor"><?= htmlspecialchars($invoice_dipilih['nomor_invoice'] ?? ''); ?></p>
-                    <span class="badge-invoice-status badge-status-paid"><i class="fa-solid fa-circle-check"></i> Lunas</span>
+                    <span class="badge-invoice-status badge-status-paid"><i class="fa-solid fa-circle-check"></i> Diterima</span>
                 </div>
             </header>
 
@@ -551,7 +561,7 @@ if (isset($_GET['invoice_id'])) {
 
             <div class="invoice-summary-row">
                 <div class="invoice-summary-box">
-                    <span class="summary-total-label">Total Tagihan</span>
+                    <span class="summary-total-label">Nominal Dibayar</span>
                     <span class="summary-total-value" id="invModalTotal"><?= $invoice_dipilih ? 'Rp ' . number_format($invoice_dipilih['nominal'], 0, ',', '.') : 'Rp 0'; ?></span>
                 </div>
             </div>
@@ -563,10 +573,10 @@ if (isset($_GET['invoice_id'])) {
         </div>
     </div>
 
-    <!-- MODAL BAYAR (INSTAN TANPA RELOAD) -->
+    <!-- MODAL BAYAR / CICIL (INSTAN TANPA RELOAD) -->
     <div id="modalBayarTagihan" class="modal-overlay <?= $tagihan_dipilih ? 'active' : ''; ?>" onclick="tutupModalTagihanInstan(event)">
         <div class="modal-bayar-card" onclick="event.stopPropagation()">
-            <h3 class="modal-bayar-title">Bayar Tagihan</h3>
+            <h3 class="modal-bayar-title">Bayar / Cicil Tagihan</h3>
             <div class="modal-ringkasan-box">
                 <div class="modal-ringkasan-top">
                     <span class="modal-ringkasan-jenis" id="bayarModalJenis"><?= htmlspecialchars($tagihan_dipilih['jenis'] ?? ''); ?></span>
@@ -578,6 +588,16 @@ if (isset($_GET['invoice_id'])) {
             <form action="/?page=tagihan_riwayat" method="POST" enctype="multipart/form-data"
                 class="modal-form-upload-tagihan" onsubmit="handleKirimBuktiSubmit(event)">
                 <input type="hidden" name="tagihan_id" id="bayarModalTagihanId" value="<?= (int)($tagihan_dipilih['id'] ?? 0); ?>">
+                <input type="hidden" id="bayarModalMaxSisa" value="<?= (int)($tagihan_dipilih['nominal'] ?? 0); ?>">
+
+                <!-- INPUT NOMINAL PEMBAYARAN / CICILAN -->
+                <div class="modal-rekening-wrapper">
+                    <label class="modal-rekening-label" for="inputNominalBayar">Nominal Bayar / Cicilan (Rp)</label>
+                    <input type="text" name="nominal_bayar" id="inputNominalBayar" class="modal-input"
+                        value="<?= $tagihan_dipilih ? number_format((float)$tagihan_dipilih['nominal'], 0, ',', '.') : ''; ?>"
+                        placeholder="Masukkan nominal bayar atau cicilan" inputmode="numeric" required
+                        oninput="formatDanSyncNominalBayar(this)">
+                </div>
 
                 <!-- PILIHAN METODE PEMBAYARAN -->
                 <div class="metode-bayar-group">
@@ -669,14 +689,41 @@ if (isset($_GET['invoice_id'])) {
         }
     });
 
-    function bukaModalBayarInstan(e, id, jenis, nominalFmt, batas) {
+    function formatAngkaRibuan(angka) {
+        return String(angka).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    function formatDanSyncNominalBayar(input) {
+        const maxSisa = parseInt(document.getElementById('bayarModalMaxSisa').value || '0', 10);
+        let digits = input.value.replace(/[^0-9]/g, '');
+        let val = parseInt(digits || '0', 10);
+
+        if (maxSisa > 0 && val > maxSisa) {
+            val = maxSisa;
+        }
+
+        input.value = val > 0 ? formatAngkaRibuan(val) : '';
+        const tunaiLabel = document.getElementById('bayarModalTunaiNominal');
+        if (tunaiLabel) {
+            tunaiLabel.textContent = 'Rp ' + (val > 0 ? formatAngkaRibuan(val) : '0');
+        }
+    }
+
+    function bukaModalBayarInstan(e, id, jenis, nominalFmt, batas, sisaAngka) {
         if (e) e.preventDefault();
 
+        const maxVal = parseInt(sisaAngka || 0, 10);
         document.getElementById('bayarModalTagihanId').value = id;
+        document.getElementById('bayarModalMaxSisa').value = maxVal;
         document.getElementById('bayarModalJenis').textContent = jenis;
         document.getElementById('bayarModalNominal').textContent = nominalFmt;
         document.getElementById('bayarModalBatas').textContent = batas;
         document.getElementById('bayarModalTunaiNominal').textContent = nominalFmt;
+
+        const inputNom = document.getElementById('inputNominalBayar');
+        if (inputNom) {
+            inputNom.value = maxVal > 0 ? formatAngkaRibuan(maxVal) : '';
+        }
 
         const radioTransfer = document.getElementById('radioMetodeTransfer');
         if (radioTransfer) radioTransfer.checked = true;
@@ -833,6 +880,17 @@ if (isset($_GET['invoice_id'])) {
     }
 
     function handleKirimBuktiSubmit(e) {
+        const inputNom = document.getElementById('inputNominalBayar');
+        const maxSisa = parseInt(document.getElementById('bayarModalMaxSisa').value || '0', 10);
+        const valNom = parseInt((inputNom ? inputNom.value.replace(/[^0-9]/g, '') : '0') || '0', 10);
+
+        if (valNom < 1000 || (maxSisa > 0 && valNom > maxSisa)) {
+            alert('Masukkan nominal bayar antara Rp 1.000 hingga Rp ' + formatAngkaRibuan(maxSisa));
+            if (inputNom) inputNom.focus();
+            e.preventDefault();
+            return;
+        }
+
         const radios = document.getElementsByName('metode_bayar');
         let metode = 'transfer';
         for (const r of radios) {
