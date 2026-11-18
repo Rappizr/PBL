@@ -98,7 +98,7 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                     <p class="verifikasi-subpage-desc">
                         <?= $is_pemilik ? 'Daftar bukti transfer sewa dan iuran kos' : 'Daftar bukti transfer iuran bersama penghuni kos'; ?>
                     </p>
-                    <a href="<?= $link_kembali; ?>" class="btn-kembali" style="margin-top: 12px;">
+                    <a href="<?= $link_kembali; ?>" class="btn-kembali verif-btn-kembali-banner">
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
                 </div>
@@ -131,15 +131,13 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                         $is_tunai   = ($metode_raw === 'tunai' || empty($item['foto']));
                         $page_m     = (int)floor($idx / $limit_mobile) + 1;
                     ?>
-                    <div class="verifikasi-card verif-item-mobile"
-                         data-page-m="<?= $page_m; ?>"
-                         style="<?= $page_m !== $page_mobile ? 'display: none;' : ''; ?>">
+                    <div class="verifikasi-card verif-item-mobile <?= $page_m !== $page_mobile ? 'verif-hidden-item' : ''; ?>"
+                         data-page-m="<?= $page_m; ?>">
                         <div class="verifikasi-card-body">
                             <?php if ($is_tunai): ?>
-                            <div class="bukti-wrapper"
-                                style="background-color: #e0f2fe; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: default; box-shadow: none; border: 1.5px solid #bae6fd;">
-                                <i class="fa-solid fa-hand-holding-dollar" style="font-size: 26px; color: #0284c7;"></i>
-                                <span style="font-size: 10px; font-weight: 800; color: #0369a1; text-transform: uppercase;">Tunai</span>
+                            <div class="bukti-wrapper verif-tunai-box">
+                                <i class="fa-solid fa-hand-holding-dollar verif-tunai-icon-mob"></i>
+                                <span class="verif-tunai-label">Tunai</span>
                             </div>
                             <?php else: ?>
                             <div class="bukti-wrapper">
@@ -243,15 +241,13 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                     $is_tunai   = ($metode_raw === 'tunai' || empty($item['foto']));
                     $page_d     = (int)floor($idx / $limit_desktop) + 1;
                 ?>
-                <div class="verifikasi-card verif-item-desktop"
-                     data-page-d="<?= $page_d; ?>"
-                     style="<?= $page_d !== $page_desktop ? 'display: none;' : ''; ?>">
+                <div class="verifikasi-card verif-item-desktop <?= $page_d !== $page_desktop ? 'verif-hidden-item' : ''; ?>"
+                     data-page-d="<?= $page_d; ?>">
                     <div class="verifikasi-card-body">
                         <?php if ($is_tunai): ?>
-                        <div class="bukti-wrapper"
-                            style="background-color: #e0f2fe; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: default; box-shadow: none; border: 1.5px solid #bae6fd;">
-                            <i class="fa-solid fa-hand-holding-dollar" style="font-size: 28px; color: #0284c7;"></i>
-                            <span style="font-size: 10px; font-weight: 800; color: #0369a1; text-transform: uppercase;">Tunai</span>
+                        <div class="bukti-wrapper verif-tunai-box">
+                            <i class="fa-solid fa-hand-holding-dollar verif-tunai-icon-desk"></i>
+                            <span class="verif-tunai-label">Tunai</span>
                         </div>
                         <?php else: ?>
                         <div class="bukti-wrapper">
@@ -335,11 +331,11 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                 <input type="hidden" name="aksi_verifikasi" id="modalInputAksi" value="">
 
                 <!-- LIST ALASAN PENOLAKAN (DINAMIS SESUAI TRANSFER / TUNAI) -->
-                <div id="boxAlasanTolak" class="alasan-tolak-container" style="display: none;">
-                    <div id="listOpsiAlasan" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                <div id="boxAlasanTolak" class="alasan-tolak-container verif-hidden-item">
+                    <div id="listOpsiAlasan" class="verif-opsi-alasan-list"></div>
 
-                    <input type="text" name="alasan_lainnya" id="inputAlasanLainnya" class="input-alasan-lainnya"
-                        placeholder="Tuliskan alasan spesifik..." style="display: none;">
+                    <input type="text" name="alasan_lainnya" id="inputAlasanLainnya" class="input-alasan-lainnya verif-hidden-item"
+                        placeholder="Tuliskan alasan spesifik...">
                 </div>
 
                 <div class="konfirmasi-verif-actions">
@@ -410,7 +406,7 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
         currentHalVerifDesk = target;
 
         document.querySelectorAll('.verif-item-desktop').forEach(card => {
-            card.style.display = (parseInt(card.getAttribute('data-page-d')) === currentHalVerifDesk) ? '' : 'none';
+            card.classList.toggle('verif-hidden-item', parseInt(card.getAttribute('data-page-d')) !== currentHalVerifDesk);
         });
 
         document.querySelectorAll('[data-verif-page-btn]').forEach(btn => {
@@ -438,7 +434,7 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
         currentHalVerifMob = target;
 
         document.querySelectorAll('.verif-item-mobile').forEach(card => {
-            card.style.display = (parseInt(card.getAttribute('data-page-m')) === currentHalVerifMob) ? '' : 'none';
+            card.classList.toggle('verif-hidden-item', parseInt(card.getAttribute('data-page-m')) !== currentHalVerifMob);
         });
 
         const badge = document.getElementById('badgeVerifMob');
@@ -475,7 +471,7 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
         inputAksi.value = aksi;
 
         if (aksi === 'terima') {
-            boxAlasan.style.display = 'none';
+            boxAlasan.classList.add('verif-hidden-item');
             iconBox.className = 'konfirmasi-verif-icon icon-terima';
             icon.className = 'fa-solid fa-circle-check';
             title.innerText = 'Terima Pembayaran?';
@@ -484,8 +480,8 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
             btnSubmit.className = 'btn-konfir-submit btn-terima';
             btnText.innerText = 'Ya, Terima';
         } else {
-            boxAlasan.style.display = 'flex';
-            inputLain.style.display = 'none';
+            boxAlasan.classList.remove('verif-hidden-item');
+            inputLain.classList.add('verif-hidden-item');
             inputLain.value = '';
             inputLain.required = false;
 
@@ -527,7 +523,7 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
         const inputAksi = document.getElementById('modalInputAksi').value;
         const inputLain = document.getElementById('inputAlasanLainnya');
 
-        if (inputAksi === 'tolak' && inputLain.style.display === 'block' && inputLain.value.trim() === '') {
+        if (inputAksi === 'tolak' && !inputLain.classList.contains('verif-hidden-item') && inputLain.value.trim() === '') {
             alert('Silakan tuliskan alasan penolakan secara spesifik.');
             inputLain.focus();
             e.preventDefault();
@@ -543,7 +539,7 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
     function toggleAlasanLain(isLainnya) {
         const inputLain = document.getElementById('inputAlasanLainnya');
         if (inputLain) {
-            inputLain.style.display = isLainnya ? 'block' : 'none';
+            inputLain.classList.toggle('verif-hidden-item', !isLainnya);
             if (isLainnya) {
                 inputLain.focus();
                 inputLain.required = true;

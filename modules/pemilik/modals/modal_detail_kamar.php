@@ -28,6 +28,9 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
         $statusAkun = strtolower(trim($kamar_terpilih['status_akun'] ?? 'aktif'));
         $is_freeze  = (!$is_kosong && $statusAkun === 'freeze');
         $infoSewa   = $kamar_terpilih['info_sewa'] ?? null;
+        $catatanRaw = trim((string)($kamar_terpilih['catatan_tunggakan'] ?? ''));
+        $isDitolak  = str_starts_with($catatanRaw, '[Ditolak]');
+        $catatanInputVal = $isDitolak ? '' : $catatanRaw;
     ?>
     <div id="modalDetailKamar" class="modal-overlay active" onclick="tutupSemuaModalInstan(event)">
         <div class="modal-card-detail-kamar" onclick="event.stopPropagation()">
@@ -37,60 +40,76 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                 <?php if ($is_kosong): ?>
                     <span class="badge-detail-kamar badge-kosong-detail">Kosong</span>
                 <?php elseif ($is_freeze): ?>
-                    <span class="badge-detail-kamar" style="background-color: #fee2e2; color: #dc2626;">Akun Freeze</span>
+                    <span class="badge-detail-kamar badge-detail-freeze">Akun Freeze</span>
                 <?php else: ?>
                     <span class="badge-detail-kamar badge-terisi">Terisi</span>
                 <?php endif; ?>
             </div>
 
             <?php if (!$is_kosong && ($is_freeze || !empty($infoSewa))): ?>
-                <div style="background-color: <?= $is_freeze ? '#fee2e2' : '#fef3c7'; ?>; border: 1.5px solid <?= $is_freeze ? '#ef4444' : '#f59e0b'; ?>; border-radius: 16px; padding: 12px 14px; margin-bottom: 14px; color: <?= $is_freeze ? '#991b1b' : '#92400e'; ?>;">
-                    <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 13px; margin-bottom: 4px;">
+                <div class="detail-freeze-panel <?= $is_freeze ? 'panel-freeze-danger' : 'panel-freeze-warning'; ?>">
+                    <div class="detail-freeze-head">
                         <i class="fa-solid <?= $is_freeze ? 'fa-lock' : 'fa-clock'; ?>"></i>
                         <span><?= htmlspecialchars($infoSewa['label_status'] ?? 'Status Akun Dibekukan (Freeze)'); ?></span>
                     </div>
                     <?php if (!empty($infoSewa)): ?>
-                        <p style="margin: 0 0 8px 0; font-size: 12px; line-height: 1.4;">
-                            Tunggakan: <strong><?= (int)$infoSewa['jumlah_bulan_nunggak']; ?> bulan</strong>
+                        <p class="detail-freeze-summary">
+                            <?php if (($infoSewa['jenis_tunggakan'] ?? 'sewa') === 'iuran'): ?>
+                                Tunggakan: <strong><?= htmlspecialchars($infoSewa['nama_iuran'] ?? 'Iuran'); ?></strong>
+                            <?php else: ?>
+                                Tunggakan: <strong><?= (int)$infoSewa['jumlah_bulan_nunggak']; ?> bulan</strong>
+                            <?php endif; ?>
                             (Total <strong>Rp <?= number_format((float)$infoSewa['total_tunggakan'], 0, ',', '.'); ?></strong>) &bull;
                             Batas akhir: <strong><?= htmlspecialchars($infoSewa['batas_freeze_fmt']); ?></strong>
                         </p>
                     <?php endif; ?>
 
                     <?php if (!empty($kamar_terpilih['tanggal_janji_bayar'])): ?>
-                        <p style="margin: 0 0 8px 0; font-size: 11.5px; background: rgba(255,255,255,0.7); padding: 5px 8px; border-radius: 8px;">
-                            <i class="fa-solid fa-handshake"></i> <strong>Janji Bayar:</strong> <?= date('d/m/Y', strtotime($kamar_terpilih['tanggal_janji_bayar'])); ?>
-                            <?= !empty($kamar_terpilih['catatan_tunggakan']) ? ' — ' . htmlspecialchars($kamar_terpilih['catatan_tunggakan']) : ''; ?>
+                        <p class="detail-janji-note">
+                            <i class="fa-solid fa-handshake"></i> <strong>Pengajuan Janji Bayar:</strong> <?= date('d/m/Y', strtotime($kamar_terpilih['tanggal_janji_bayar'])); ?>
+                            <?= $catatanInputVal !== '' ? ' — ' . htmlspecialchars($catatanInputVal) : ''; ?>
+                        </p>
+                    <?php elseif ($isDitolak): ?>
+                        <p class="detail-janji-note">
+                            <i class="fa-solid fa-circle-xmark"></i> <strong>Status Sebelumnya:</strong> <?= htmlspecialchars($catatanRaw); ?>
                         </p>
                     <?php endif; ?>
 
-                    <!-- Form Perpanjangan Janji Bayar / Buka Freeze -->
-                    <form action="?page=<?= htmlspecialchars($current_page); ?>" method="POST" style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px; padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.15);">
+                    <!-- Form Perpanjangan Janji Bayar / Buka Freeze / Tolak Pengajuan -->
+                    <form action="?page=<?= htmlspecialchars($current_page); ?>" method="POST" class="detail-freeze-form">
                         <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($kamar_terpilih['nomor']); ?>">
                         <input type="hidden" name="penghuni_id" value="<?= (int)($kamar_terpilih['penghuni_id'] ?? 0); ?>">
 
                         <div class="row-input-dual">
                             <div class="detail-form-group flex-1">
-                                <label style="font-size: 11px; font-weight: 800;">Tanggal Janji Bayar</label>
+                                <label class="detail-freeze-label">Tanggal Janji Bayar</label>
                                 <input type="date" name="tanggal_janji_bayar"
                                        min="<?= date('Y-m-d'); ?>"
                                        value="<?= htmlspecialchars($kamar_terpilih['tanggal_janji_bayar'] ?? date('Y-m-d', strtotime('+3 days'))); ?>"
-                                       style="width: 100%; border: 1px solid #cbd5e1; border-radius: 999px; padding: 6px 10px; font-size: 12px; font-weight: 700;" required>
+                                       class="detail-freeze-date-input">
                             </div>
                             <div class="detail-form-group flex-1">
-                                <label style="font-size: 11px; font-weight: 800;">Keterangan Tunggakan</label>
+                                <label class="detail-freeze-label">Keterangan Tunggakan</label>
                                 <input type="text" name="catatan_tunggakan"
-                                       value="<?= htmlspecialchars($kamar_terpilih['catatan_tunggakan'] ?? ''); ?>"
-                                       placeholder="Misal: Nunggak 1 bln"
-                                       style="width: 100%; border: 1px solid #cbd5e1; border-radius: 999px; padding: 6px 12px; font-size: 12px; font-weight: 600;">
+                                       value="<?= htmlspecialchars($catatanInputVal); ?>"
+                                       placeholder="Misal: Disetujui bayar tgl 21"
+                                       class="detail-freeze-text-input">
                             </div>
                         </div>
 
-                        <button type="submit" name="buka_freeze_penghuni"
-                                style="background-color: #059669; color: #ffffff; border: none; border-radius: 999px; padding: 8px 14px; font-size: 12px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px;">
+                        <button type="submit" name="buka_freeze_penghuni" class="btn-detail-unfreeze">
                             <i class="fa-solid fa-lock-open"></i>
-                            <?= $is_freeze ? 'Aktifkan Kembali Akun (Unfreeze)' : 'Simpan Perpanjangan Janji Bayar'; ?>
+                            <?= $is_freeze ? 'Setujui & Aktifkan Kembali Akun (Unfreeze)' : 'Simpan Perpanjangan Janji Bayar'; ?>
                         </button>
+
+                        <?php if ($is_freeze && !empty($kamar_terpilih['tanggal_janji_bayar'])): ?>
+                            <input type="text" name="alasan_tolak_janji"
+                                   placeholder="Alasan penolakan (contoh: Maksimal tanggal 19 Nov)..."
+                                   class="detail-freeze-text-input">
+                            <button type="submit" name="tolak_janji_bayar" value="1" class="btn-detail-pill btn-detail-hapus">
+                                <i class="fa-solid fa-xmark"></i> Tolak Pengajuan Janji Bayar
+                            </button>
+                        <?php endif; ?>
                     </form>
                 </div>
             <?php endif; ?>
@@ -269,7 +288,7 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                 <?php if ($ada_ktp): ?>
                     <img id="imgKtpFull" src="<?= $ktp_src_data; ?>" alt="Foto KTP Full" class="lightbox-img">
                 <?php else: ?>
-                    <p style="color: #ffffff; font-weight: 700; margin: 0;">File foto tidak ditemukan.</p>
+                    <p class="lightbox-empty-msg">File foto tidak ditemukan.</p>
                 <?php endif; ?>
             </div>
         </div>
@@ -321,9 +340,9 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
     </div>
 
     <!-- MODAL KONFIRMASI TRANSFER KETUA KOS -->
-    <div id="modalKonfirmasiKetua" class="modal-overlay" style="z-index: 1050;">
+    <div id="modalKonfirmasiKetua" class="modal-overlay modal-z-high">
         <div class="modal-card-konfirmasi-kamar">
-            <div class="konfirmasi-icon-wrapper" style="background-color: #fef3c7; color: #d97706;">
+            <div class="konfirmasi-icon-wrapper icon-ketua-warning">
                 <i class="fa-solid fa-user-shield"></i>
             </div>
             <h3 class="konfirmasi-title">Ganti Ketua Kost?</h3>

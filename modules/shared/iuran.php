@@ -1,5 +1,19 @@
 <?php
 require_once __DIR__ . '/handler/iuran_handler.php';
+
+// Filter default: Jika tidak sedang memfilter rentang tanggal, hanya tampilkan riwayat HARI INI
+if (!$is_filtered && !empty($daftar_transaksi)) {
+    $hari_ini = date('Y-m-d');
+    $daftar_transaksi = array_values(array_filter($daftar_transaksi, function ($tx) use ($hari_ini) {
+        return date('Y-m-d', strtotime($tx['tanggal'])) === $hari_ini;
+    }));
+}
+
+// Susun peta data freeze iuran per penghuni_id untuk kebutuhan form ACC/Tolak di dalam accordion
+$map_freeze_iuran_pid = [];
+foreach ($daftar_freeze_iuran as $frzItem) {
+    $map_freeze_iuran_pid[(int)$frzItem['penghuni_id']] = $frzItem;
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -10,11 +24,36 @@ require_once __DIR__ . '/handler/iuran_handler.php';
     <title>SITEMAN - KOS | <?= htmlspecialchars($judul_halaman); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 
 <body class="dashboard-body">
+
+    <!-- FLOATING TOAST NOTIFIKASI -->
+    <div class="toast-floating-container">
+        <?php if (!empty($pesan_sukses)): ?>
+        <div class="toast-alert toast-success" id="toastAlertBox">
+            <div class="toast-icon"><i class="fa-solid fa-check"></i></div>
+            <div class="toast-content">
+                <h5 class="toast-title">Berhasil</h5>
+                <p class="toast-message"><?= htmlspecialchars($pesan_sukses); ?></p>
+            </div>
+            <button type="button" class="toast-close" onclick="closeToastIuran()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <?php endif; ?>
+
+        <?php if (!empty($error_modal) && !$show_modal_pengeluaran && !$show_modal_set_iuran): ?>
+        <div class="toast-alert toast-error" id="toastAlertBox">
+            <div class="toast-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div class="toast-content">
+                <h5 class="toast-title">Perhatian</h5>
+                <p class="toast-message"><?= htmlspecialchars($error_modal); ?></p>
+            </div>
+            <button type="button" class="toast-close" onclick="closeToastIuran()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <?php endif; ?>
+    </div>
 
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
@@ -49,20 +88,107 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                     </div>
                 </div>
 
-                <!-- BANNER NOTIFIKASI PENGINGAT JATUH TEMPO (MOBILE) -->
-                <?php if (!empty($banner_notif)): ?>
-                <div class="iuran-notif-banner <?= $banner_notif['tipe'] === 'danger' ? 'notif-danger' : 'notif-warning'; ?>">
-                    <div class="iuran-notif-icon">
-                        <i class="fa-solid <?= $banner_notif['tipe'] === 'danger' ? 'fa-bell' : 'fa-triangle-exclamation'; ?>"></i>
+                <!-- ACCORDION RINGKASAN NOTIFIKASI & FREEZE IURAN (MOBILE) -->
+                <?php if (!empty($daftar_notif_iuran)): ?>
+                <div class="kamar-notif-accordion <?= $jumlah_freeze_iuran > 0 ? 'accordion-danger' : 'accordion-warning'; ?>">
+                    <button type="button" class="kamar-notif-accordion-header" onclick="toggleNotifIuran('listNotifIuranMob', 'iconNotifIuranMob')">
+                        <div class="kamar-notif-acc-left">
+                            <span class="kamar-notif-acc-icon">
+                                <i class="fa-solid <?= $jumlah_freeze_iuran > 0 ? 'fa-triangle-exclamation' : 'fa-bell'; ?>"></i>
+                            </span>
+                            <div class="kamar-notif-acc-text">
+                                <strong><?= count($daftar_notif_iuran); ?> Kamar Perlu Perhatian Iuran</strong>
+                                <span>
+                                    <?= $jumlah_freeze_iuran > 0 ? "{$jumlah_freeze_iuran} Akun Freeze" : ""; ?>
+                                    <?= ($jumlah_freeze_iuran > 0 && $jumlah_peringatan_iuran > 0) ? " &bull; " : ""; ?>
+                                    <?= $jumlah_peringatan_iuran > 0 ? "{$jumlah_peringatan_iuran} Jatuh Tempo / Tenggang" : ""; ?>
+                                </span>
+                            </div>
+                        </div>
+                        <span class="kamar-notif-acc-toggle">
+                            Rincian <i class="fa-solid fa-chevron-down" id="iconNotifIuranMob"></i>
+                        </span>
+                    </button>
+
+                    <div class="kamar-notif-accordion-body <?= $jumlah_freeze_iuran > 0 ? 'is-open' : ''; ?>" id="listNotifIuranMob">
+                        <?php foreach ($daftar_notif_iuran as $ni): ?>
+                        <?php
+                            $isFrz   = (($ni['fase'] ?? '') === 'freeze');
+                            $pidNi   = (int)($ni['penghuni_id'] ?? 0);
+                            $frzData = $map_freeze_iuran_pid[$pidNi] ?? null;
+                            $tglAj   = $ni['tanggal_janji_bayar'] ?? '';
+                            $catRaw  = trim((string)($ni['catatan_tunggakan'] ?? ''));
+                            $isDtlk  = str_starts_with($catRaw, '[Ditolak]');
+                        ?>
+                        <div class="kamar-notif-compact-item <?= $isFrz ? 'item-danger' : 'item-warning'; ?>">
+                            <div class="compact-item-top">
+                                <strong>
+                                    <i class="fa-solid <?= $isFrz ? 'fa-lock' : 'fa-clock'; ?>"></i>
+                                    Kamar <?= htmlspecialchars(sprintf('%02d', (int)$ni['no_kamar'])); ?> &bull; <?= htmlspecialchars($ni['nama_penghuni']); ?>
+                                </strong>
+                                <span class="compact-badge <?= $isFrz ? 'badge-text-danger' : 'badge-text-warning'; ?>">
+                                    <?= htmlspecialchars($ni['label_status']); ?>
+                                </span>
+                            </div>
+                            <p class="compact-item-desc">
+                                <?= htmlspecialchars($ni['pesan_ringkas']); ?> (<strong>Rp <?= number_format((float)$ni['total_tunggakan'], 0, ',', '.'); ?></strong>)
+                                <?php if ($tglAj !== ''): ?>
+                                    <br><i class="fa-solid fa-handshake"></i> <strong>Ajuan Janji Bayar:</strong> <?= date('d/m/Y', strtotime($tglAj)); ?>
+                                <?php elseif ($isDtlk): ?>
+                                    <br><i class="fa-solid fa-circle-xmark"></i> <?= htmlspecialchars($catRaw); ?>
+                                <?php endif; ?>
+                            </p>
+
+                            <?php if ($isFrz && $frzData): ?>
+                                <?php if ($frzData['bisa_di_acc']): ?>
+                                <form method="POST" action="<?= htmlspecialchars(urlIuran($current_page)); ?>" class="detail-freeze-form">
+                                    <input type="hidden" name="penghuni_id" value="<?= $pidNi; ?>">
+                                    <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($ni['no_kamar']); ?>">
+
+                                    <div class="row-input-dual">
+                                        <input type="date" name="tanggal_janji_bayar"
+                                               min="<?= date('Y-m-d'); ?>"
+                                               value="<?= htmlspecialchars($tglAj !== '' ? $tglAj : date('Y-m-d', strtotime('+3 days'))); ?>"
+                                               class="detail-freeze-date-input" required>
+                                        <input type="text" name="catatan_tunggakan"
+                                               value="<?= htmlspecialchars($isDtlk ? '' : $catRaw); ?>"
+                                               placeholder="Catatan persetujuan..."
+                                               class="detail-freeze-text-input">
+                                    </div>
+
+                                    <div class="kamar-notif-mob-actions">
+                                        <button type="submit" name="setujui_unfreeze_iuran" value="1"
+                                                onclick="ubahIkonKunci(this)"
+                                                class="btn-detail-unfreeze">
+                                            <i class="fa-solid fa-lock-open"></i>
+                                            <span>Setujui &amp; Unfreeze</span>
+                                        </button>
+                                        <?php if ($tglAj !== ''): ?>
+                                        <button type="submit" name="tolak_unfreeze_iuran" value="1" class="kamar-notif-btn-kelola">
+                                            <i class="fa-solid fa-xmark"></i> Tolak
+                                        </button>
+                                        <?php endif; ?>
+                                    </div>
+                                </form>
+                                <?php else: ?>
+                                <p class="compact-item-desc"><em>Akun Anda sendiri sedang ter-freeze. Hubungi Pemilik Kos untuk membuka akses.</em></p>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <div class="kamar-notif-mob-actions">
+                                    <?php if (!empty($ni['wa_pengingat_url'])): ?>
+                                    <a href="<?= htmlspecialchars($ni['wa_pengingat_url']); ?>" target="_blank" class="kamar-notif-btn-wa">
+                                        <i class="fa-brands fa-whatsapp"></i> Ingatkan WA
+                                    </a>
+                                    <?php endif; ?>
+                                    <a href="<?= urlIuran($current_page, ['filter' => 'belum_bayar', 'date_range' => $date_range]); ?>"
+                                       onclick="filterTabPenghuni(event, 'belum_bayar')" class="kamar-notif-btn-kelola">
+                                        Lihat Daftar
+                                    </a>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                        <?php endforeach; ?>
                     </div>
-                    <div class="iuran-notif-body">
-                        <strong><?= htmlspecialchars($banner_notif['judul']); ?></strong>
-                        <p><?= htmlspecialchars($banner_notif['pesan']); ?></p>
-                    </div>
-                    <a href="<?= urlIuran($current_page, ['filter' => 'belum_bayar', 'date_range' => $date_range]); ?>"
-                       onclick="filterTabPenghuni(event, 'belum_bayar')" class="iuran-notif-btn">
-                        Lihat Belum Bayar
-                    </a>
                 </div>
                 <?php endif; ?>
 
@@ -92,7 +218,9 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                         <i class="fa-solid fa-file-pdf"></i> Cetak PDF Rekap Iuran
                     </button>
                 </div>
-                <h3 class="section-title-white iuran-subtitle-mobile">Riwayat Transaksi Iuran</h3>
+                <h3 class="section-title-white iuran-subtitle-mobile">
+                    <?= $is_filtered ? 'Riwayat Transaksi Iuran' : 'Transaksi Iuran Hari Ini'; ?>
+                </h3>
                 <?php endif; ?>
 
                 <!-- Filter tanggal Mobile -->
@@ -104,9 +232,9 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                     <div class="flatpickr-box-wrapper">
                         <i class="fa-regular fa-calendar date-icon"></i>
                         <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
-                            placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                            placeholder="Filter Riwayat Tanggal..." class="flatpickr-range-input" readonly>
                         <?php if ($is_filtered): ?>
-                        <a href="<?= urlIuran($current_page, ['filter' => $filter_status]); ?>" class="btn-reset-range" title="Reset">
+                        <a href="<?= urlIuran($current_page, ['filter' => $filter_status]); ?>" class="btn-reset-range" title="Reset ke Hari Ini">
                             <i class="fa-solid fa-rotate-left"></i>
                         </a>
                         <?php endif; ?>
@@ -118,7 +246,7 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                     <?php if (empty($daftar_transaksi)): ?>
                     <div class="empty-state-card">
                         <i class="fa-solid fa-folder-open"></i>
-                        <span><?= $is_filtered ? 'Tidak ada riwayat transaksi' : 'Belum ada riwayat transaksi iuran'; ?></span>
+                        <span><?= $is_filtered ? 'Tidak ada riwayat transaksi pada tanggal tersebut' : 'Belum ada transaksi iuran hari ini. Gunakan filter tanggal untuk riwayat sebelumnya.'; ?></span>
                     </div>
                     <?php else: ?>
                     <?php foreach ($daftar_transaksi as $tx): ?>
@@ -174,9 +302,18 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                                 <i class="fa-solid fa-clock-rotate-left"></i> Verifikasi
                             </a>
                             <?php endif; ?>
-                            <a href="<?= htmlspecialchars(buatLinkWaIuran($p, $nama_iuran_saat_ini, $tgl_selesai_iuran, $selisih_hari)); ?>"
-                                target="_blank" class="btn-chat-wa">
-                                <i class="fa-brands fa-whatsapp"></i> Chat
+
+                            <?php if (!$p['is_lunas'] && !empty($p['sudah_diingatkan'])): ?>
+                            <span class="badge-kamar-putih" title="Sudah diwakilkan pada fase <?= htmlspecialchars($fase_reminder_sekarang); ?>">
+                                <i class="fa-solid fa-check-double"></i> Diingatkan <?= htmlspecialchars($p['reminder_sent_by']); ?> (<?= $p['reminder_jam']; ?>)
+                            </span>
+                            <?php endif; ?>
+
+                            <a href="<?= htmlspecialchars(buatLinkWaIuran($p, $nama_iuran_saat_ini, $tgl_selesai_iuran, $selisih_hari, $tgl_batas_freeze_iuran, $pengirim_tag)); ?>"
+                               target="_blank"
+                               onclick="catatKlikWaIuran(<?= (int)$p['penghuni_kamar_id']; ?>, this)"
+                               class="btn-chat-wa">
+                                <i class="fa-brands fa-whatsapp"></i> <?= !empty($p['sudah_diingatkan']) ? 'Chat Ulang' : 'Chat'; ?>
                             </a>
                         </div>
                     </div>
@@ -217,20 +354,114 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                 </div>
             </div>
 
-            <!-- BANNER NOTIFIKASI PENGINGAT JATUH TEMPO (DESKTOP) -->
-            <?php if (!empty($banner_notif)): ?>
-            <div class="iuran-notif-banner <?= $banner_notif['tipe'] === 'danger' ? 'notif-danger' : 'notif-warning'; ?>">
-                <div class="iuran-notif-icon">
-                    <i class="fa-solid <?= $banner_notif['tipe'] === 'danger' ? 'fa-bell' : 'fa-triangle-exclamation'; ?>"></i>
+            <!-- ACCORDION RINGKASAN NOTIFIKASI & FREEZE IURAN (DESKTOP) -->
+            <?php if (!empty($daftar_notif_iuran)): ?>
+            <div class="kamar-notif-accordion kamar-notif-acc-desktop <?= $jumlah_freeze_iuran > 0 ? 'accordion-danger' : 'accordion-warning'; ?>">
+                <button type="button" class="kamar-notif-accordion-header" onclick="toggleNotifIuran('listNotifIuranDesk', 'iconNotifIuranDesk')">
+                    <div class="kamar-notif-acc-left">
+                        <span class="kamar-notif-acc-icon">
+                            <i class="fa-solid <?= $jumlah_freeze_iuran > 0 ? 'fa-triangle-exclamation' : 'fa-bell'; ?>"></i>
+                        </span>
+                        <div class="kamar-notif-acc-text">
+                            <strong><?= count($daftar_notif_iuran); ?> Kamar Perlu Perhatian Tagihan Iuran</strong>
+                            <span>
+                                <?= $jumlah_freeze_iuran > 0 ? "{$jumlah_freeze_iuran} Akun Freeze" : ""; ?>
+                                <?= ($jumlah_freeze_iuran > 0 && $jumlah_peringatan_iuran > 0) ? " &bull; " : ""; ?>
+                                <?= $jumlah_peringatan_iuran > 0 ? "{$jumlah_peringatan_iuran} Jatuh Tempo / Masa Tenggang" : ""; ?>
+                            </span>
+                        </div>
+                    </div>
+                    <span class="kamar-notif-acc-toggle">
+                        Lihat Rincian <i class="fa-solid fa-chevron-down" id="iconNotifIuranDesk"></i>
+                    </span>
+                </button>
+
+                <div class="kamar-notif-accordion-body <?= $jumlah_freeze_iuran > 0 ? 'is-open' : ''; ?>" id="listNotifIuranDesk">
+                    <?php foreach ($daftar_notif_iuran as $ni): ?>
+                    <?php
+                        $isFrz   = (($ni['fase'] ?? '') === 'freeze');
+                        $pidNi   = (int)($ni['penghuni_id'] ?? 0);
+                        $frzData = $map_freeze_iuran_pid[$pidNi] ?? null;
+                        $tglAj   = $ni['tanggal_janji_bayar'] ?? '';
+                        $catRaw  = trim((string)($ni['catatan_tunggakan'] ?? ''));
+                        $isDtlk  = str_starts_with($catRaw, '[Ditolak]');
+                    ?>
+                    <div class="kamar-notif-compact-item <?= $isFrz ? 'item-danger' : 'item-warning'; ?>">
+                        <div class="kamar-notif-compact-row">
+                            <div class="compact-row-info">
+                                <i class="fa-solid <?= $isFrz ? 'fa-lock' : 'fa-bell'; ?>"></i>
+                                <div>
+                                    <strong>
+                                        Kamar <?= htmlspecialchars(sprintf('%02d', (int)$ni['no_kamar'])); ?> &mdash; <?= htmlspecialchars($ni['nama_penghuni']); ?>
+                                        <span class="compact-badge <?= $isFrz ? 'badge-text-danger' : 'badge-text-warning'; ?>">
+                                            <?= htmlspecialchars($ni['label_status']); ?>
+                                        </span>
+                                    </strong>
+                                    <span>
+                                        <?= htmlspecialchars($ni['pesan_ringkas']); ?> Total: <strong>Rp <?= number_format((float)$ni['total_tunggakan'], 0, ',', '.'); ?></strong>
+                                        <?php if ($tglAj !== ''): ?>
+                                            &bull; Ajuan Janji Bayar: <strong><?= date('d/m/Y', strtotime($tglAj)); ?></strong>
+                                        <?php elseif ($isDtlk): ?>
+                                            &bull; <strong><?= htmlspecialchars($catRaw); ?></strong>
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <?php if (!$isFrz): ?>
+                            <div class="kamar-notif-desk-actions">
+                                <?php if (!empty($ni['wa_pengingat_url'])): ?>
+                                <a href="<?= htmlspecialchars($ni['wa_pengingat_url']); ?>" target="_blank" class="kamar-notif-desk-wa">
+                                    <i class="fa-brands fa-whatsapp"></i> Ingatkan WA
+                                </a>
+                                <?php endif; ?>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <?php if ($isFrz && $frzData): ?>
+                            <?php if ($frzData['bisa_di_acc']): ?>
+                            <form method="POST" action="<?= htmlspecialchars(urlIuran($current_page)); ?>" class="detail-freeze-form">
+                                <input type="hidden" name="penghuni_id" value="<?= $pidNi; ?>">
+                                <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($ni['no_kamar']); ?>">
+
+                                <div class="row-input-dual">
+                                    <input type="date" name="tanggal_janji_bayar"
+                                           min="<?= date('Y-m-d'); ?>"
+                                           value="<?= htmlspecialchars($tglAj !== '' ? $tglAj : date('Y-m-d', strtotime('+3 days'))); ?>"
+                                           class="detail-freeze-date-input" required>
+                                    <input type="text" name="catatan_tunggakan"
+                                           value="<?= htmlspecialchars($isDtlk ? '' : $catRaw); ?>"
+                                           placeholder="Catatan persetujuan (opsional)..."
+                                           class="detail-freeze-text-input">
+                                    <?php if ($tglAj !== ''): ?>
+                                    <input type="text" name="alasan_tolak_janji"
+                                           placeholder="Alasan penolakan (jika ditolak)..."
+                                           class="detail-freeze-text-input">
+                                    <?php endif; ?>
+                                </div>
+
+                                <div class="kamar-notif-desk-actions">
+                                    <button type="submit" name="setujui_unfreeze_iuran" value="1"
+                                            onclick="ubahIkonKunci(this)"
+                                            class="btn-detail-unfreeze">
+                                        <i class="fa-solid fa-lock-open"></i>
+                                        <span>Setujui &amp; Aktifkan Kembali Akun (Unfreeze)</span>
+                                    </button>
+                                    <?php if ($tglAj !== ''): ?>
+                                    <button type="submit" name="tolak_unfreeze_iuran" value="1" class="kamar-notif-desk-kelola">
+                                        <i class="fa-solid fa-xmark"></i> Tolak Pengajuan
+                                    </button>
+                                    <?php endif; ?>
+                                </div>
+                            </form>
+                            <?php else: ?>
+                            <p class="compact-item-desc"><em>Akun Anda sendiri sedang ter-freeze. Hubungi Pemilik Kos untuk membuka akses akun.</em></p>
+                            <?php endif; ?>
+                        <?php endif; ?>
+                    </div>
+                    <?php endforeach; ?>
                 </div>
-                <div class="iuran-notif-body">
-                    <strong><?= htmlspecialchars($banner_notif['judul']); ?></strong>
-                    <p><?= htmlspecialchars($banner_notif['pesan']); ?></p>
-                </div>
-                <a href="<?= urlIuran($current_page, ['filter' => 'belum_bayar', 'date_range' => $date_range]); ?>"
-                   onclick="filterTabPenghuni(event, 'belum_bayar')" class="iuran-notif-btn">
-                    Lihat Belum Bayar
-                </a>
             </div>
             <?php endif; ?>
 
@@ -259,9 +490,9 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                     <div class="flatpickr-box-wrapper iuran-flatpickr-full">
                         <i class="fa-regular fa-calendar date-icon"></i>
                         <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
-                            placeholder="Rentang Tanggal..." class="flatpickr-range-input iuran-input-full" readonly>
+                            placeholder="Filter Riwayat Tanggal..." class="flatpickr-range-input iuran-input-full" readonly>
                         <?php if ($is_filtered): ?>
-                        <a href="<?= urlIuran($current_page, ['filter' => $filter_status]); ?>" class="btn-reset-range" title="Reset Filter">
+                        <a href="<?= urlIuran($current_page, ['filter' => $filter_status]); ?>" class="btn-reset-range" title="Reset ke Hari Ini">
                             <i class="fa-solid fa-rotate-left"></i>
                         </a>
                         <?php endif; ?>
@@ -273,7 +504,7 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                 <?php if (empty($daftar_transaksi)): ?>
                 <div class="empty-state-card">
                     <i class="fa-solid fa-folder-open"></i>
-                    <span><?= $is_filtered ? 'Tidak ada riwayat transaksi pada rentang tanggal yang dipilih' : 'Belum ada riwayat transaksi iuran'; ?></span>
+                    <span><?= $is_filtered ? 'Tidak ada riwayat transaksi pada rentang tanggal yang dipilih' : 'Belum ada transaksi iuran hari ini. Pilih rentang tanggal di atas untuk melihat riwayat sebelumnya.'; ?></span>
                 </div>
                 <?php else: ?>
                 <?php foreach ($daftar_transaksi as $tx): ?>
@@ -329,9 +560,18 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                             <i class="fa-solid fa-clock-rotate-left"></i> Verifikasi
                         </a>
                         <?php endif; ?>
-                        <a href="<?= htmlspecialchars(buatLinkWaIuran($p, $nama_iuran_saat_ini, $tgl_selesai_iuran, $selisih_hari)); ?>"
-                            target="_blank" class="iuran-btn-chat-pill">
-                            <i class="fa-brands fa-whatsapp"></i> Chat
+
+                        <?php if (!$p['is_lunas'] && !empty($p['sudah_diingatkan'])): ?>
+                        <span class="badge-kamar-putih" title="Sudah diwakilkan pada fase <?= htmlspecialchars($fase_reminder_sekarang); ?>">
+                            <i class="fa-solid fa-check-double"></i> Diingatkan <?= htmlspecialchars($p['reminder_sent_by']); ?> (<?= $p['reminder_jam']; ?>)
+                        </span>
+                        <?php endif; ?>
+
+                        <a href="<?= htmlspecialchars(buatLinkWaIuran($p, $nama_iuran_saat_ini, $tgl_selesai_iuran, $selisih_hari, $tgl_batas_freeze_iuran, $pengirim_tag)); ?>"
+                           target="_blank"
+                           onclick="catatKlikWaIuran(<?= (int)$p['penghuni_kamar_id']; ?>, this)"
+                           class="iuran-btn-chat-pill">
+                            <i class="fa-brands fa-whatsapp"></i> <?= !empty($p['sudah_diingatkan']) ? 'Chat Ulang' : 'Chat'; ?>
                         </a>
                     </div>
                 </div>
@@ -348,7 +588,9 @@ require_once __DIR__ . '/handler/iuran_handler.php';
 
             <div class="iuran-header-row iuran-header-penghuni-desktop">
                 <div class="iuran-header-left-group">
-                    <h3 class="desktop-section-title iuran-no-margin">Riwayat Transaksi Iuran</h3>
+                    <h3 class="desktop-section-title iuran-no-margin">
+                        <?= $is_filtered ? 'Riwayat Transaksi Iuran' : 'Transaksi Iuran Hari Ini'; ?>
+                    </h3>
                     <button type="button" onclick="bukaModalCetakIuran()" class="btn-cetak-pdf">
                         <i class="fa-solid fa-file-pdf"></i> Cetak Rekap Iuran
                     </button>
@@ -359,10 +601,10 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                     <div class="flatpickr-box-wrapper iuran-no-margin">
                         <i class="fa-regular fa-calendar date-icon"></i>
                         <input type="text" name="date_range" value="<?= htmlspecialchars($date_range); ?>"
-                            placeholder="Pilih Rentang Tanggal..." class="flatpickr-range-input" readonly>
+                            placeholder="Filter Riwayat Tanggal..." class="flatpickr-range-input" readonly>
                         <?php if ($is_filtered): ?>
-                        <a href="<?= urlIuran($current_page); ?>" class="btn-reset-range" title="Reset Filter">
-                            <i class="fa-solid fa-rotate-left"></i> Reset
+                        <a href="<?= urlIuran($current_page); ?>" class="btn-reset-range" title="Reset ke Hari Ini">
+                            <i class="fa-solid fa-rotate-left"></i> Hari Ini
                         </a>
                         <?php endif; ?>
                     </div>
@@ -373,7 +615,7 @@ require_once __DIR__ . '/handler/iuran_handler.php';
                 <?php if (empty($daftar_transaksi)): ?>
                 <div class="empty-state-card">
                     <i class="fa-solid fa-folder-open"></i>
-                    <span><?= $is_filtered ? 'Tidak ada riwayat transaksi' : 'Belum ada riwayat transaksi iuran'; ?></span>
+                    <span><?= $is_filtered ? 'Tidak ada riwayat transaksi pada tanggal tersebut' : 'Belum ada transaksi iuran hari ini. Gunakan filter tanggal di atas untuk riwayat sebelumnya.'; ?></span>
                 </div>
                 <?php else: ?>
                 <?php foreach ($daftar_transaksi as $tx): ?>
@@ -429,7 +671,7 @@ require_once __DIR__ . '/handler/iuran_handler.php';
     <?php if ($can_manage && $show_modal_set_iuran): ?>
     <div class="modal-overlay active">
         <div class="modal-card">
-            <h3 class="modal-title">Atur Nominal & Periode Iuran</h3>
+            <h3 class="modal-title">Atur Nominal &amp; Periode Iuran</h3>
             <p class="modal-subtitle-text">Tentukan nama iuran, besaran nominal, dan rentang tanggal berlakunya.</p>
             <?php if (!empty($error_modal)): ?>
             <p class="modal-error-text"><?= htmlspecialchars($error_modal); ?></p>
@@ -531,6 +773,44 @@ require_once __DIR__ . '/handler/iuran_handler.php';
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
+    function closeToastIuran() {
+        const toast = document.getElementById('toastAlertBox');
+        if (toast) {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-15px) scale(0.95)';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }
+
+    function toggleNotifIuran(bodyId, iconId) {
+        const body = document.getElementById(bodyId);
+        const icon = document.getElementById(iconId);
+        if (!body) return;
+        const isOpen = body.classList.toggle('is-open');
+        if (icon) {
+            icon.style.transform = isOpen ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+    }
+
+    function ubahIkonKunci(btn) {
+        const form = btn.closest('form');
+        if (form && !form.checkValidity()) return;
+
+        const icon = btn.querySelector('i');
+        const textSpan = btn.querySelector('span');
+
+        if (icon) {
+            icon.classList.remove('fa-lock-open');
+            icon.classList.add('fa-lock');
+        }
+        if (textSpan) {
+            textSpan.textContent = 'Memproses...';
+        }
+
+        btn.style.opacity = '0.85';
+        btn.style.pointerEvents = 'none';
+    }
+
     document.querySelectorAll('.flatpickr-range-input').forEach(function(input) {
         flatpickr(input, {
             mode: "range",
@@ -561,6 +841,25 @@ require_once __DIR__ . '/handler/iuran_handler.php';
             this.value = angka.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
         });
     });
+
+    function catatKlikWaIuran(pkId, el) {
+        fetch('/?page=iuran&action=catat_reminder&pk_id=' + encodeURIComponent(pkId))
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data && data.ok) {
+                    const parent = el.parentElement;
+                    let badge = parent.querySelector('.badge-reminder-sent');
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.className = 'badge-kamar-putih badge-reminder-sent';
+                        parent.insertBefore(badge, el);
+                    }
+                    badge.innerHTML = '<i class="fa-solid fa-check-double"></i> Diingatkan ' + data.by + ' (' + data.jam + ')';
+                    el.innerHTML = '<i class="fa-brands fa-whatsapp"></i> Chat Ulang';
+                }
+            })
+            .catch(function() {});
+    }
 
     function filterTabPenghuni(e, kategori) {
         if (e) e.preventDefault();
@@ -599,6 +898,9 @@ require_once __DIR__ . '/handler/iuran_handler.php';
     }
 
     document.addEventListener('DOMContentLoaded', function () {
+        const toast = document.getElementById('toastAlertBox');
+        if (toast) setTimeout(closeToastIuran, 5000);
+
         const initialFilter = <?= json_encode($filter_status); ?>;
         if (initialFilter !== 'semua') {
             filterTabPenghuni(null, initialFilter);

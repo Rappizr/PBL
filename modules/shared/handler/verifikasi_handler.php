@@ -23,6 +23,8 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
     }
 }
 
+require_once __DIR__ . '/sewa_reminder_helper.php';
+
 $currentUser = $_SESSION['user'] ?? [];
 $is_pemilik  = ($currentUser['role'] ?? '') === 'pemilik';
 $is_ketua    = !empty($currentUser['is_pj']) || !empty($currentUser['is_ketua_kos']) || ($currentUser['role'] ?? '') === 'pj';
@@ -52,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                     pk.penghuni_id,
                     pen.nama AS nama_penghuni,
                     pen.no_wa AS no_wa_penghuni,
+                    LOWER(TRIM(COALESCE(pen.status_akun, 'aktif'))) AS status_akun,
                     k.no_kamar
                 FROM pembayaran p
                 JOIN tagihan t ON p.tagihan_id = t.id
@@ -74,6 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
             $nama_pen     = $bayar['nama_penghuni'] ?? 'Penghuni';
             $no_wa_pen    = preg_replace('/[^0-9]/', '', (string)($bayar['no_wa_penghuni'] ?? ''));
             $kamar_pen    = $bayar['no_kamar'] ?? '-';
+            $status_akun  = $bayar['status_akun'] ?? 'aktif';
             $tipe_label   = $is_sewa ? 'Sewa Kamar' : 'Iuran Kos';
 
             // Proteksi Hak Akses: Ketua kos dilarang memverifikasi sewa kamar
@@ -91,10 +95,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 ");
                 $stmtUpdBayar->execute([':id' => $pembayaran_id]);
 
-                // 2. Update status tagihan menjadi 'lunas'
+                // 2. Update status tagihan menjadi 'lunas' dan bersihkan log reminder
                 $stmtUpdTagihan = $pdo->prepare("
                     UPDATE tagihan 
-                    SET status_tagihan = 'lunas' 
+                    SET status_tagihan = 'lunas',
+                        reminder_sent_by = NULL,
+                        reminder_sent_at = NULL,
+                        reminder_fase = NULL
                     WHERE id = :tagihan_id
                 ");
                 $stmtUpdTagihan->execute([':tagihan_id' => $tagihan_id]);
@@ -119,10 +126,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                     }
                 }
 
+                // 4. Auto-Unfreeze jika akun penghuni berstatus 'freeze' dan tidak ada tunggakan melewati tenggang
+                $infoUnfreeze = '';
+                if ($penghuni_id > 0 && $status_akun === 'freeze') {
+                    // Cek apakah masih ada tagihan sewa yang melewati tenggang +7 hari (atau tanggal janji bayar di tagihan)
+                    $stmtCekSewa = $pdo->prepare("
+                        SELECT COUNT(t.id)
+                        FROM tagihan t
+                        JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
+                        WHERE pk.penghuni_id = :pid
+                          AND t.kategori_iuran_id IS NULL
+                          AND LOWER(TRIM(t.status_tagihan)) != 'lunas'
+                          AND CURRENT_DATE > GREATEST(
+                              (t.tanggal_jatuh_tempo + INTERVAL '7 days')::date,
+                              COALESCE(t.tanggal_janji_bayar, '1970-01-01'::date)
+                          )
+                    ");
+                    $stmtCekSewa->execute([':pid' => $penghuni_id]);
+                    $masihNunggakSewa = ((int)$stmtCekSewa->fetchColumn() > 0);
+
+                    // Cek apakah masih ada tagihan iuran aktif yang melewati tenggang +7 hari
+                    $stmtCekIuran = $pdo->prepare("
+                        SELECT COUNT(t.id)
+                        FROM tagihan t
+                        JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
+                        JOIN kategori_iuran ki ON t.kategori_iuran_id = ki.id
+                        WHERE pk.penghuni_id = :pid
+                          AND LOWER(TRIM(t.status_tagihan)) != 'lunas'
+                          AND CURRENT_DATE > GREATEST(
+                              (ki.tanggal_selesai + INTERVAL '7 days')::date,
+                              COALESCE(t.tanggal_janji_bayar, '1970-01-01'::date)
+                          )
+                    ");
+                    $stmtCekIuran->execute([':pid' => $penghuni_id]);
+                    $masihNunggakIuran = ((int)$stmtCekIuran->fetchColumn() > 0);
+
+                    if (!$masihNunggakSewa && !$masihNunggakIuran) {
+                        $stmtAktifkan = $pdo->prepare("
+                            UPDATE penghuni 
+                            SET status_akun = 'aktif', 
+                                freeze_reason = NULL
+                            WHERE id = :pid
+                        ");
+                        $stmtAktifkan->execute([':pid' => $penghuni_id]);
+                        $infoUnfreeze = " Akun {$nama_pen} otomatis diaktifkan kembali (Unfreeze).";
+                    }
+                }
+
                 $pdo->commit();
-                $_SESSION['pesan_sukses'] = $is_sewa 
-                    ? "Pembayaran sewa berhasil diterima (tercatat di Analisis Kas)." 
-                    : "Pembayaran iuran berhasil diterima dan dicatat ke kas bersama.";
+                $_SESSION['pesan_sukses'] = ($is_sewa
+                    ? "Pembayaran sewa berhasil diterima (tercatat di Analisis Kas)."
+                    : "Pembayaran iuran berhasil diterima dan dicatat ke kas bersama.") . $infoUnfreeze;
                 header("Location: /?page=verifikasi_bayar");
                 exit;
 

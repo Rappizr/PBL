@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../shared/handler/sewa_reminder_helper.php';
+require_once __DIR__ . '/../shared/handler/iuran_reminder_helper.php';
 
 $currentUser = $_SESSION['user'] ?? [];
 $penghuniId  = (int)($currentUser['id'] ?? 0);
@@ -14,18 +15,45 @@ if ($penghuniId <= 0) {
     exit;
 }
 
-$infoFreeze = evaluasiStatusSewaPenghuni($pdo, $penghuniId) ?? [
-    'nama_penghuni'        => $currentUser['nama'] ?? 'Penghuni',
-    'no_kamar'             => $currentUser['no_kamar'] ?? '-',
-    'jumlah_bulan_nunggak' => 1,
-    'total_tunggakan'      => 0,
-    'batas_freeze_fmt'     => '-',
-];
+$stmtReason = $pdo->prepare("SELECT LOWER(TRIM(COALESCE(freeze_reason, ''))) FROM penghuni WHERE id = :pid");
+$stmtReason->execute([':pid' => $penghuniId]);
+$dbFreezeReason = (string)$stmtReason->fetchColumn();
 
-$defaultJanji = date('Y-m-d', strtotime('+3 days'));
-$waUrlAwal    = buatLinkWaPermohonanUnfreeze($pdo, $infoFreeze, $defaultJanji);
+$evalSewa  = evaluasiStatusSewaPenghuni($pdo, $penghuniId);
+$evalIuran = evaluasiStatusIuranPenghuni($pdo, $penghuniId);
 
-// Ambil nomor WA pemilik untuk pembaruan link dinamis di JS saat tanggal diubah
+if ($dbFreezeReason === 'iuran' && $evalIuran) {
+    $infoFreeze = $evalIuran;
+} elseif ($evalSewa && ($evalSewa['fase'] ?? '') === 'freeze') {
+    $infoFreeze = $evalSewa;
+} elseif ($evalIuran && ($evalIuran['fase'] ?? '') === 'freeze') {
+    $infoFreeze = $evalIuran;
+} else {
+    $infoFreeze = $evalSewa ?? $evalIuran ?? [
+        'jenis_tunggakan'      => ($dbFreezeReason === 'iuran') ? 'iuran' : 'sewa',
+        'nama_penghuni'        => $currentUser['nama'] ?? 'Penghuni',
+        'no_kamar'             => $currentUser['no_kamar'] ?? '-',
+        'nama_iuran'           => 'Iuran Kas Bersama',
+        'jumlah_bulan_nunggak' => 1,
+        'total_tunggakan'      => 0,
+        'jatuh_tempo_fmt'      => '-',
+        'batas_freeze_fmt'     => '-',
+        'tanggal_janji_bayar'  => '',
+        'catatan_tunggakan'    => '',
+    ];
+}
+
+$isFreezeIuran    = (($infoFreeze['jenis_tunggakan'] ?? 'sewa') === 'iuran');
+$namaIuran        = $infoFreeze['nama_iuran'] ?? 'Iuran Kas Bersama';
+$tglJanjiDiajukan = $infoFreeze['tanggal_janji_bayar'] ?? '';
+$catatanTunggakan = trim((string)($infoFreeze['catatan_tunggakan'] ?? ''));
+$isJanjiDitolak   = str_starts_with($catatanTunggakan, '[Ditolak]');
+$alasanDitolakTxt = $isJanjiDitolak ? trim(substr($catatanTunggakan, strlen('[Ditolak]'))) : '';
+
+$defaultJanji = ($tglJanjiDiajukan !== '' && !$isJanjiDitolak)
+    ? $tglJanjiDiajukan
+    : date('Y-m-d', strtotime('+3 days'));
+
 $noWaPemilik = '';
 try {
     $rawWa = (string)$pdo->query("SELECT no_wa FROM pemilik ORDER BY id ASC LIMIT 1")->fetchColumn();
@@ -36,6 +64,10 @@ try {
 } catch (Throwable $e) {
     $noWaPemilik = '';
 }
+
+$waUrlAwal = $isFreezeIuran
+    ? buatLinkWaPermohonanUnfreezeIuran($pdo, $infoFreeze, $defaultJanji)
+    : buatLinkWaPermohonanUnfreeze($pdo, $infoFreeze, $defaultJanji);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -53,51 +85,85 @@ try {
 
     <div class="auth-spacer"></div>
 
-    <div class="login-card" style="max-width: 420px; border-top: 6px solid #dc2626;">
-        <div style="width: 64px; height: 64px; border-radius: 50%; background-color: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 14px;">
+    <div class="login-card freeze-card">
+        <div class="freeze-icon-circle">
             <i class="fa-solid fa-lock"></i>
         </div>
 
-        <h1 class="brand-title" style="color: #dc2626;">AKUN DIBEKUKAN (FREEZE)</h1>
-        <p class="brand-subtitle" style="color: #475569; font-size: 13.5px; margin-bottom: 16px;">
-            Halo <strong><?= htmlspecialchars($infoFreeze['nama_penghuni']); ?></strong> (Kamar <strong><?= htmlspecialchars($infoFreeze['no_kamar']); ?></strong>), akses akun Anda sementara dibatasi karena tagihan sewa telah melewati masa tenggang.
+        <h1 class="brand-title freeze-title">AKUN DIBEKUKAN (FREEZE)</h1>
+        <p class="brand-subtitle freeze-subtitle">
+            Halo <strong><?= htmlspecialchars($infoFreeze['nama_penghuni']); ?></strong> (Kamar <strong><?= htmlspecialchars($infoFreeze['no_kamar']); ?></strong>),
+            <?php if ($isFreezeIuran): ?>
+                akses akun Anda sementara dibatasi karena pembayaran <strong><?= htmlspecialchars($namaIuran); ?></strong> telah melewati masa tenggang +7 hari.
+            <?php else: ?>
+                akses akun Anda sementara dibatasi karena tagihan sewa telah melewati masa tenggang.
+            <?php endif; ?>
         </p>
 
         <!-- Ringkasan Tunggakan -->
-        <div style="background-color: #fef2f2; border: 1.5px solid #fecaca; border-radius: 14px; padding: 14px 16px; text-align: left; margin-bottom: 18px;">
-            <div style="display: flex; justify-content: space-between; font-size: 13px; color: #7f1d1d; margin-bottom: 6px;">
-                <span>Durasi Tunggakan</span>
-                <strong><?= (int)$infoFreeze['jumlah_bulan_nunggak']; ?> Bulan</strong>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 14px; color: #991b1b; padding-top: 6px; border-top: 1px dashed #fca5a5;">
-                <span>Total Tagihan Sewa</span>
-                <strong>Rp <?= number_format((float)$infoFreeze['total_tunggakan'], 0, ',', '.'); ?></strong>
-            </div>
+        <div class="freeze-summary-box">
+            <?php if ($isFreezeIuran): ?>
+                <div class="freeze-summary-row">
+                    <span>Jenis Tagihan</span>
+                    <strong><?= htmlspecialchars($namaIuran); ?></strong>
+                </div>
+                <div class="freeze-summary-row">
+                    <span>Batas Tenggang (+7 Hari)</span>
+                    <strong><?= htmlspecialchars($infoFreeze['batas_freeze_fmt'] ?? '-'); ?></strong>
+                </div>
+                <div class="freeze-summary-total">
+                    <span>Total Tagihan Iuran</span>
+                    <strong>Rp <?= number_format((float)$infoFreeze['total_tunggakan'], 0, ',', '.'); ?></strong>
+                </div>
+            <?php else: ?>
+                <div class="freeze-summary-row">
+                    <span>Durasi Tunggakan</span>
+                    <strong><?= (int)$infoFreeze['jumlah_bulan_nunggak']; ?> Bulan</strong>
+                </div>
+                <div class="freeze-summary-total">
+                    <span>Total Tagihan Sewa</span>
+                    <strong>Rp <?= number_format((float)$infoFreeze['total_tunggakan'], 0, ',', '.'); ?></strong>
+                </div>
+            <?php endif; ?>
         </div>
 
-        <!-- Input Tanggal Rencana Bayar untuk Otomatis Terisi di Pesan WA -->
-        <div style="text-align: left; margin-bottom: 16px;">
-            <label for="inputTglJanjiFreeze" style="display: block; font-size: 12.5px; font-weight: 800; color: #1a4d55; margin-bottom: 6px;">
+        <!-- Status Pengajuan / Penolakan -->
+        <div id="boxStatusPengajuan">
+            <?php if ($isJanjiDitolak): ?>
+                <div class="alert-error">
+                    <strong><i class="fa-solid fa-circle-xmark"></i> Pengajuan Sebelumnya Ditolak</strong><br>
+                    <?= htmlspecialchars($alasanDitolakTxt); ?>
+                </div>
+            <?php elseif ($tglJanjiDiajukan !== ''): ?>
+                <div class="alert-success">
+                    <i class="fa-solid fa-clock"></i> Pengajuan tanggal <strong><?= date('d/m/Y', strtotime($tglJanjiDiajukan)); ?></strong> telah terkirim dan menunggu persetujuan Pemilik Kos.
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Input Tanggal Rencana Bayar -->
+        <div class="freeze-date-group">
+            <label for="inputTglJanjiFreeze" class="freeze-date-label">
                 Pilih Tanggal Rencana Pelunasan:
             </label>
             <input type="date" id="inputTglJanjiFreeze"
                    min="<?= date('Y-m-d'); ?>"
-                   value="<?= $defaultJanji; ?>"
+                   value="<?= htmlspecialchars($defaultJanji); ?>"
                    onchange="perbaruiLinkWaFreeze()"
-                   style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1.5px solid #4ca5b0; font-size: 13.5px; font-weight: 700; color: #1a4d55; box-sizing: border-box;">
-            <small style="display: block; font-size: 11px; color: #64748b; margin-top: 5px;">
-                Tanggal ini akan otomatis dicantumkan ke dalam pesan WhatsApp kepada Pemilik Kos.
+                   class="freeze-date-input">
+            <small class="freeze-date-hint">
+                Tanggal ini akan otomatis tersimpan dan dicantumkan ke dalam pesan WhatsApp kepada Pemilik Kos.
             </small>
         </div>
 
         <a href="<?= htmlspecialchars($waUrlAwal); ?>" target="_blank" id="btnWaUnfreeze"
-           class="btn-submit btn-as-link"
-           style="background-color: #25D366; display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 12px;">
-            <i class="fa-brands fa-whatsapp" style="font-size: 18px;"></i>
-            <span>Hubungi Pemilik Kos via WA</span>
+           onclick="kirimPermohonanUnfreeze()"
+           class="btn-submit btn-as-link freeze-btn-wa">
+            <i class="fa-brands fa-whatsapp freeze-btn-wa-icon"></i>
+            <span><?= $isJanjiDitolak ? 'Ajukan Ulang via WA' : 'Hubungi Pemilik Kos via WA'; ?></span>
         </a>
 
-        <a href="/?page=logout" class="link-kembali" style="color: #64748b;">
+        <a href="/?page=logout" class="link-kembali freeze-btn-logout">
             <i class="fa-solid fa-right-from-bracket"></i> Keluar dari Akun
         </a>
     </div>
@@ -108,9 +174,10 @@ try {
 
     <script>
         function perbaruiLinkWaFreeze() {
-            const noWaPemilik = <?= json_encode($noWaPemilik); ?>;
-            const btnWa       = document.getElementById('btnWaUnfreeze');
-            const inputTgl    = document.getElementById('inputTglJanjiFreeze');
+            const noWaPemilik   = <?= json_encode($noWaPemilik); ?>;
+            const isFreezeIuran = <?= json_encode($isFreezeIuran); ?>;
+            const btnWa         = document.getElementById('btnWaUnfreeze');
+            const inputTgl      = document.getElementById('inputTglJanjiFreeze');
             if (!noWaPemilik || !btnWa || !inputTgl) return;
 
             let tglFmt = '[Isi Tanggal Bayar]';
@@ -123,15 +190,51 @@ try {
 
             const nama       = <?= json_encode($infoFreeze['nama_penghuni']); ?>;
             const kamar      = <?= json_encode($infoFreeze['no_kamar']); ?>;
+            const namaIuran  = <?= json_encode($namaIuran); ?>;
             const jmlBulan   = <?= (int)$infoFreeze['jumlah_bulan_nunggak']; ?>;
             const nominalFmt = <?= json_encode('Rp ' . number_format((float)$infoFreeze['total_tunggakan'], 0, ',', '.')); ?>;
 
-            const pesan = `Halo Bapak/Ibu Pemilik Kos,\n\n`
-                        + `Saya *${nama}* penghuni *Kamar ${kamar}*. Akun SITEMAN - KOS saya saat ini ter-freeze karena menunggak sewa selama *${jmlBulan} bulan* dengan total *${nominalFmt}*.\n\n`
-                        + `Saya memohon kebijaksanaannya untuk membuka akses akun saya sementara, dan saya berjanji akan melunasi tunggakan tersebut pada tanggal *${tglFmt}*.\n\n`
-                        + `Terima kasih banyak atas pengertiannya. 🙏`;
+            let pesan = '';
+            if (isFreezeIuran) {
+                pesan = `Halo Bapak/Ibu Pemilik Kos,\n\n`
+                      + `Saya *${nama}* penghuni *Kamar ${kamar}*. Akun SITEMAN - KOS saya saat ini ter-freeze karena tunggakan *${namaIuran}* sebesar *${nominalFmt}*.\n\n`
+                      + `Saya memohon kebijaksanaannya untuk membuka akses akun saya sementara, dan saya berjanji akan melunasi iuran tersebut pada tanggal *${tglFmt}*.\n\n`
+                      + `Terima kasih banyak atas pengertiannya. 🙏`;
+            } else {
+                pesan = `Halo Bapak/Ibu Pemilik Kos,\n\n`
+                      + `Saya *${nama}* penghuni *Kamar ${kamar}*. Akun SITEMAN - KOS saya saat ini ter-freeze karena menunggak sewa selama *${jmlBulan} bulan* dengan total *${nominalFmt}*.\n\n`
+                      + `Saya memohon kebijaksanaannya untuk membuka akses akun saya sementara, dan saya berjanji akan melunasi tunggakan tersebut pada tanggal *${tglFmt}*.\n\n`
+                      + `Terima kasih banyak atas pengertiannya. 🙏`;
+            }
 
             btnWa.href = `https://wa.me/${noWaPemilik}?text=${encodeURIComponent(pesan)}`;
+        }
+
+        function kirimPermohonanUnfreeze() {
+            const inputTgl      = document.getElementById('inputTglJanjiFreeze');
+            const isFreezeIuran = <?= json_encode($isFreezeIuran); ?>;
+            const statusBox     = document.getElementById('boxStatusPengajuan');
+            if (!inputTgl || !inputTgl.value) return;
+
+            const formData = new FormData();
+            formData.append('tanggal_janji_bayar', inputTgl.value);
+            formData.append('jenis_tunggakan', isFreezeIuran ? 'iuran' : 'sewa');
+
+            if (navigator.sendBeacon) {
+                navigator.sendBeacon('/api/ajukan_janji_bayar.php', formData);
+            } else {
+                fetch('/api/ajukan_janji_bayar.php', {
+                    method: 'POST',
+                    body: formData,
+                    keepalive: true
+                });
+            }
+
+            if (statusBox) {
+                const parts = inputTgl.value.split('-');
+                const tglFmt = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : inputTgl.value;
+                statusBox.innerHTML = `<div class="alert-success"><i class="fa-solid fa-clock"></i> Pengajuan tanggal <strong>${tglFmt}</strong> telah terkirim dan menunggu persetujuan Pemilik Kos.</div>`;
+            }
         }
     </script>
 </body>

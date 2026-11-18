@@ -20,7 +20,7 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
     }
 }
 
-// 2. Load File Handler & Helper Pengingat Sewa
+// 2. Load File Handler & Helper Pengingat Sewa / Iuran
 $handler_paths = [
     __DIR__ . '/handler/tagihan_handler.php',
     __DIR__ . '/handler/tagihan_riwayat_handlers.php',
@@ -40,7 +40,9 @@ $nama_penghuni = $_SESSION['user']['nama'] ?? ($_SESSION['nama'] ?? 'Penghuni');
 $penghuniId    = (int)($_SESSION['user']['id'] ?? 0);
 $pk_id         = function_exists('resolvePenghuniKamarId') ? resolvePenghuniKamarId($pdo, $_SESSION['user'] ?? []) : (int)($_SESSION['user']['penghuni_kamar_id'] ?? 0);
 
-$peringatanSewa = ($penghuniId > 0 && isset($pdo)) ? evaluasiStatusSewaPenghuni($pdo, $penghuniId) : null;
+$peringatanTagihan = ($penghuniId > 0 && isset($pdo)) ? evaluasiStatusSewaPenghuni($pdo, $penghuniId) : null;
+$isPeringatanIuran = (($peringatanTagihan['jenis_tunggakan'] ?? 'sewa') === 'iuran');
+$judulPeringatan   = $isPeringatanIuran ? 'Pengingat Iuran Kas' : 'Pengingat Sewa Kamar';
 
 $post_res      = function_exists('handleUploadBuktiBayar') ? handleUploadBuktiBayar($pdo) : ['sukses' => '', 'error' => ''];
 $sukses_pesan  = $post_res['sukses'] ?? ($sukses_pesan ?? ($_SESSION['pesan_sukses'] ?? ''));
@@ -85,7 +87,7 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
 
 $query_tanggal = $is_filtered ? '&date_range=' . urlencode($date_range) : '';
 
-// 5. Handling Initial Modal Data (Jika dibuka langsung via URL)
+// 5. Handling Initial Modal Data
 $tagihan_dipilih = null;
 if (isset($_GET['bayar_id'])) {
     $bid = (int)$_GET['bayar_id'];
@@ -169,15 +171,15 @@ if (isset($_GET['invoice_id'])) {
                     </a>
                 </div>
 
-                <?php if (!empty($peringatanSewa)): ?>
-                <?php $isTenggang = ($peringatanSewa['fase'] === 'tenggang'); ?>
+                <?php if (!empty($peringatanTagihan)): ?>
+                <?php $isTenggang = ($peringatanTagihan['fase'] === 'tenggang'); ?>
                 <div class="iuran-notif-banner <?= $isTenggang ? 'notif-danger' : 'notif-warning'; ?>">
                     <div class="iuran-notif-icon">
                         <i class="fa-solid <?= $isTenggang ? 'fa-triangle-exclamation' : 'fa-bell'; ?>"></i>
                     </div>
                     <div class="iuran-notif-body">
-                        <strong><?= htmlspecialchars($peringatanSewa['label_status']); ?></strong>
-                        <p><?= htmlspecialchars($peringatanSewa['pesan_ringkas']); ?></p>
+                        <strong><?= htmlspecialchars($judulPeringatan); ?>: <?= htmlspecialchars($peringatanTagihan['label_status']); ?></strong>
+                        <p><?= htmlspecialchars($peringatanTagihan['pesan_ringkas']); ?></p>
                     </div>
                 </div>
                 <?php endif; ?>
@@ -284,9 +286,8 @@ if (isset($_GET['invoice_id'])) {
                             'nominal_fmt'    => $nominalFmt
                         ]), ENT_QUOTES, 'UTF-8');
                     ?>
-                    <div class="item-tagihan-card riwayat-item-mobile"
-                         data-page-m="<?= $page_m; ?>"
-                         style="<?= $page_m !== $page_mobile ? 'display: none;' : ''; ?>">
+                    <div class="item-tagihan-card riwayat-item-mobile <?= $page_m !== $page_mobile ? 'verif-hidden-item' : ''; ?>"
+                         data-page-m="<?= $page_m; ?>">
                         <div class="item-tagihan-header">
                             <h4 class="item-tagihan-name"><?= htmlspecialchars($r['judul']); ?></h4>
                             <div class="riwayat-status-actions">
@@ -335,15 +336,15 @@ if (isset($_GET['invoice_id'])) {
             <h2 class="desktop-header-title">Tagihan &amp; Riwayat</h2>
             <p class="tagihan-desktop-subtitle">Ringkasan tagihan dan riwayat pembayaran</p>
 
-            <?php if (!empty($peringatanSewa)): ?>
-            <?php $isTenggang = ($peringatanSewa['fase'] === 'tenggang'); ?>
-            <div class="iuran-notif-banner <?= $isTenggang ? 'notif-danger' : 'notif-warning'; ?>" style="max-width: 784px;">
+            <?php if (!empty($peringatanTagihan)): ?>
+            <?php $isTenggang = ($peringatanTagihan['fase'] === 'tenggang'); ?>
+            <div class="iuran-notif-banner tagihan-banner-max <?= $isTenggang ? 'notif-danger' : 'notif-warning'; ?>">
                 <div class="iuran-notif-icon">
                     <i class="fa-solid <?= $isTenggang ? 'fa-triangle-exclamation' : 'fa-bell'; ?>"></i>
                 </div>
                 <div class="iuran-notif-body">
-                    <strong>Pengingat Sewa Kamar: <?= htmlspecialchars($peringatanSewa['label_status']); ?></strong>
-                    <p><?= htmlspecialchars($peringatanSewa['pesan_ringkas']); ?> Total tagihan: <strong>Rp <?= number_format((float)$peringatanSewa['total_tunggakan'], 0, ',', '.'); ?></strong></p>
+                    <strong><?= htmlspecialchars($judulPeringatan); ?>: <?= htmlspecialchars($peringatanTagihan['label_status']); ?></strong>
+                    <p><?= htmlspecialchars($peringatanTagihan['pesan_ringkas']); ?> Total tagihan: <strong>Rp <?= number_format((float)$peringatanTagihan['total_tunggakan'], 0, ',', '.'); ?></strong></p>
                 </div>
             </div>
             <?php endif; ?>
@@ -351,7 +352,7 @@ if (isset($_GET['invoice_id'])) {
             <h3 class="tagihan-section-title">Tagihan Saya</h3>
             <div class="desktop-tagihan-grid">
                 <?php if (empty($daftar_tagihan_saya)): ?>
-                <div class="empty-state-card" style="grid-column: 1 / -1;">
+                <div class="empty-state-card tagihan-empty-full">
                     <i class="fa-solid fa-circle-check empty-icon"></i>
                     <span>Tidak ada tagihan yang belum dibayar saat ini.</span>
                 </div>
@@ -452,9 +453,8 @@ if (isset($_GET['invoice_id'])) {
                         'nominal_fmt'    => $nominalFmt
                     ]), ENT_QUOTES, 'UTF-8');
                 ?>
-                <div class="desktop-riwayat-card riwayat-item-desktop"
-                     data-page-d="<?= $page_d; ?>"
-                     style="<?= $page_d !== $page_desktop ? 'display: none;' : ''; ?>">
+                <div class="desktop-riwayat-card riwayat-item-desktop <?= $page_d !== $page_desktop ? 'verif-hidden-item' : ''; ?>"
+                     data-page-d="<?= $page_d; ?>">
                     <div class="desktop-riwayat-info">
                         <h4 class="desktop-riwayat-title"><?= htmlspecialchars($r['judul']); ?></h4>
                         <span class="desktop-riwayat-date"><?= htmlspecialchars($r['tanggal']); ?></span>
@@ -476,7 +476,7 @@ if (isset($_GET['invoice_id'])) {
             </div>
 
             <?php if ($total_hal_desk > 1): ?>
-            <div class="verif-pagination-wrapper" style="max-width: 784px;">
+            <div class="verif-pagination-wrapper tagihan-banner-max">
                 <div class="verif-page-controls">
                     <button type="button" class="verif-page-btn" id="btnPrevRiwayatDesk" onclick="gantiHalRiwayatDesktop(currentHalRiwayatDesk - 1)" title="Sebelumnya" <?= $page_desktop <= 1 ? 'disabled' : ''; ?>>
                         <i class="fa-solid fa-chevron-left"></i>
@@ -742,7 +742,7 @@ if (isset($_GET['invoice_id'])) {
         currentHalRiwayatDesk = target;
 
         document.querySelectorAll('.riwayat-item-desktop').forEach(card => {
-            card.style.display = (parseInt(card.getAttribute('data-page-d')) === currentHalRiwayatDesk) ? '' : 'none';
+            card.classList.toggle('verif-hidden-item', parseInt(card.getAttribute('data-page-d')) !== currentHalRiwayatDesk);
         });
 
         document.querySelectorAll('[data-riwayat-page-btn]').forEach(btn => {
@@ -769,7 +769,7 @@ if (isset($_GET['invoice_id'])) {
         currentHalRiwayatMob = target;
 
         document.querySelectorAll('.riwayat-item-mobile').forEach(card => {
-            card.style.display = (parseInt(card.getAttribute('data-page-m')) === currentHalRiwayatMob) ? '' : 'none';
+            card.classList.toggle('verif-hidden-item', parseInt(card.getAttribute('data-page-m')) !== currentHalRiwayatMob);
         });
 
         const badge = document.getElementById('badgeRiwayatMob');

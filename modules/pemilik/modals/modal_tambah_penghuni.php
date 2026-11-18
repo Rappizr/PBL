@@ -10,9 +10,8 @@ $ketuaAktif          = $ketuaAktif ?? null;
         <h3 class="modal-penghuni-title">Tambah Penghuni</h3>
 
         <!-- POP-UP ALERT ERROR DINAMIS AJAX -->
-        <div id="modalAlertError"
-            style="display: none; background-color: #fee2e2; border: 1px solid #f87171; color: #991b1b; padding: 12px 16px; border-radius: 10px; margin-bottom: 18px; font-size: 14px; font-weight: 500; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgba(248, 113, 113, 0.15);">
-            <i class="fa-solid fa-circle-exclamation" style="font-size: 18px; color: #dc2626;"></i>
+        <div id="modalAlertError" class="modal-ajax-error-box">
+            <i class="fa-solid fa-circle-exclamation modal-ajax-error-icon"></i>
             <span id="modalAlertText"></span>
         </div>
 
@@ -22,8 +21,8 @@ $ketuaAktif          = $ketuaAktif ?? null;
             <!-- Nama Lengkap -->
             <div class="field-group-custom">
                 <label class="label-custom" for="namaLengkap">Nama Lengkap</label>
-                <input type="text" id="namaLengkap" name="nama" class="input-custom-pill"
-                    placeholder="Masukkan nama lengkap" style="text-transform: capitalize;" pattern="[a-zA-Z\s'\.]+"
+                <input type="text" id="namaLengkap" name="nama" class="input-custom-pill input-capitalize"
+                    placeholder="Masukkan nama lengkap" pattern="[a-zA-Z\s'\.]+"
                     title="Nama hanya boleh berupa huruf dan spasi" required>
             </div>
 
@@ -77,7 +76,7 @@ $ketuaAktif          = $ketuaAktif ?? null;
                 <select id="isKetuaKos" name="is_ketua_kos" class="select-custom-pill">
                     <option value="0" selected>Penghuni Biasa</option>
                     <?php if ($ketuaAktif): ?>
-                    <option value="1" disabled style="color: #9ca3af; background-color: #f3f4f6;">
+                    <option value="1" disabled class="option-disabled-muted">
                         Ketua Kost (Dijabat oleh: <?= htmlspecialchars($ketuaAktif['nama']); ?>)
                     </option>
                     <?php else: ?>
@@ -85,7 +84,7 @@ $ketuaAktif          = $ketuaAktif ?? null;
                     <?php endif; ?>
                 </select>
                 <?php if ($ketuaAktif): ?>
-                <small style="color: #6b7280; font-size: 12px; margin-top: 4px; display: block;">
+                <small class="ketua-hint-muted">
                     * Pergantian Ketua Kost dilakukan lewat menu edit detail penghuni.
                 </small>
                 <?php endif; ?>
@@ -211,19 +210,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!formTambah.checkValidity()) return;
 
-            if (alertBox) alertBox.style.display = 'none';
+            if (alertBox) alertBox.classList.remove('show-flex');
 
             if (btnSimpan) {
                 btnSimpan.disabled = true;
-                btnSimpan.style.opacity = '0.75';
-                btnSimpan.style.cursor = 'not-allowed';
+                btnSimpan.classList.add('kamar-btn-disabled');
             }
             if (btnBatal) {
                 btnBatal.disabled = true;
-                btnBatal.style.opacity = '0.5';
+                btnBatal.classList.add('kamar-btn-disabled');
             }
             if (btnSimpanText) {
-                btnSimpanText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 8px;"></i>Menyimpan...';
+                btnSimpanText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin spinner-gap-right"></i>Menyimpan...';
             }
 
             const formData = new FormData(formTambah);
@@ -241,16 +239,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         if (alertText && alertBox) {
                             alertText.textContent = data.message || 'Terjadi kesalahan sistem.';
-                            alertBox.style.display = 'flex';
+                            alertBox.classList.add('show-flex');
                         }
                         if (btnSimpan) {
                             btnSimpan.disabled = false;
-                            btnSimpan.style.opacity = '1';
-                            btnSimpan.style.cursor = 'pointer';
+                            btnSimpan.classList.remove('kamar-btn-disabled');
                         }
                         if (btnBatal) {
                             btnBatal.disabled = false;
-                            btnBatal.style.opacity = '1';
+                            btnBatal.classList.remove('kamar-btn-disabled');
                         }
                         if (btnSimpanText) btnSimpanText.textContent = 'Simpan';
                     }
@@ -258,16 +255,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 .catch(err => {
                     if (alertText && alertBox) {
                         alertText.textContent = 'Gagal terhubung ke server. Silakan coba lagi.';
-                        alertBox.style.display = 'flex';
+                        alertBox.classList.add('show-flex');
                     }
                     if (btnSimpan) {
                         btnSimpan.disabled = false;
-                        btnSimpan.style.opacity = '1';
-                        btnSimpan.style.cursor = 'pointer';
+                        btnSimpan.classList.remove('kamar-btn-disabled');
                     }
                     if (btnBatal) {
                         btnBatal.disabled = false;
-                        btnBatal.style.opacity = '1';
+                        btnBatal.classList.remove('kamar-btn-disabled');
                     }
                     if (btnSimpanText) btnSimpanText.textContent = 'Simpan';
                 });

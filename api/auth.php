@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../modules/shared/handler/sewa_reminder_helper.php';
+require_once __DIR__ . '/../modules/shared/handler/iuran_reminder_helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /?page=login');
@@ -104,9 +105,13 @@ if ($selected_role === 'pemilik') {
                 $_SESSION['login_error'] = 'Nomor Kamar atau PIN tidak sesuai!';
             } else {
                 $penghuniId = (int)$penghuni['penghuni_id'];
-                // Evaluasi status jatuh tempo sewa terbaru sebelum menentukan akses
-                $evalSewa   = evaluasiStatusSewaPenghuni($pdo, $penghuniId);
-                $statusAkun = $evalSewa['status_akun'] ?? strtolower(trim((string)($penghuni['status_akun'] ?? 'aktif')));
+
+                evaluasiStatusSewaPenghuni($pdo, $penghuniId);
+                evaluasiStatusIuranPenghuni($pdo, $penghuniId);
+
+                $stmtStatus = $pdo->prepare("SELECT LOWER(TRIM(COALESCE(status_akun, 'aktif'))) FROM penghuni WHERE id = :pid");
+                $stmtStatus->execute([':pid' => $penghuniId]);
+                $statusAkun = $stmtStatus->fetchColumn() ?: 'aktif';
 
                 if (!in_array($statusAkun, ['aktif', 'freeze'], true)) {
                     $_SESSION['login_error'] = 'Akun penghuni sedang tidak aktif!';

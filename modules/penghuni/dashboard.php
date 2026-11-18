@@ -20,33 +20,40 @@ if (!isset($pdo) || !($pdo instanceof PDO)) {
     }
 }
 
-// 2. Load Handler Tagihan & Helper Pengingat Sewa
+// 2. Load Handler Tagihan & Helper Pengingat Sewa / Iuran
 $handler_path = __DIR__ . '/handler/tagihan_handler.php';
 if (file_exists($handler_path)) {
     require_once $handler_path;
 }
 require_once __DIR__ . '/../shared/handler/sewa_reminder_helper.php';
+require_once __DIR__ . '/../shared/handler/iuran_reminder_helper.php';
 
 // 3. Identifikasi Akun & Resolusi ID Kamar via Handler Resmi
 $currentUser = $_SESSION['user'] ?? [];
 $is_pj       = !empty($currentUser['is_pj']) || !empty($currentUser['is_ketua_kos']) || ($currentUser['role'] ?? '') === 'pj';
 $penghuniId  = (int)($currentUser['id'] ?? 0);
 
-// Evaluasi status jatuh tempo sewa (H-2, H-1, Hari H, Masa Tenggang 7 Hari)
-$peringatanSewa = ($penghuniId > 0 && isset($pdo)) ? evaluasiStatusSewaPenghuni($pdo, $penghuniId) : null;
-if ($peringatanSewa && ($peringatanSewa['status_akun'] ?? '') === 'freeze') {
+// Evaluasi status jatuh tempo sewa & iuran (+7 hari masa tenggang)
+$evalSewa  = ($penghuniId > 0 && isset($pdo)) ? evaluasiStatusSewaPenghuni($pdo, $penghuniId) : null;
+$evalIuran = ($penghuniId > 0 && isset($pdo)) ? evaluasiStatusIuranPenghuni($pdo, $penghuniId) : null;
+
+$peringatanTagihan = $evalSewa ?? $evalIuran;
+if (($evalSewa['status_akun'] ?? '') === 'freeze' || ($evalIuran['status_akun'] ?? '') === 'freeze') {
     $_SESSION['user']['status_akun'] = 'freeze';
     header('Location: /?page=akun_freeze');
     exit;
 }
 
-$pk_id = function_exists('resolvePenghuniKamarId') 
-    ? resolvePenghuniKamarId($pdo, $currentUser) 
+$isPeringatanIuran = (($peringatanTagihan['jenis_tunggakan'] ?? 'sewa') === 'iuran');
+$judulPeringatan   = $isPeringatanIuran ? 'Pengingat Iuran' : 'Pengingat Sewa';
+
+$pk_id = function_exists('resolvePenghuniKamarId')
+    ? resolvePenghuniKamarId($pdo, $currentUser)
     : (int)($currentUser['penghuni_kamar_id'] ?? 0);
 
 // 4. Ambil Daftar Tagihan Riil dari Handler
-$daftar_tagihan = function_exists('fetchDaftarTagihan') 
-    ? fetchDaftarTagihan($pdo, $pk_id) 
+$daftar_tagihan = function_exists('fetchDaftarTagihan')
+    ? fetchDaftarTagihan($pdo, $pk_id)
     : [];
 
 // Susun Ringkasan Dinamis
@@ -54,7 +61,7 @@ $ringkasan = [
     'sewa' => [
         'id'            => null,
         'status_label'  => 'Belum Ada Tagihan',
-        'badge_style'   => 'background-color: #cbd5e1; color: #475569; font-weight: 800;',
+        'badge_class'   => 'pill-neutral',
         'tenggat'       => '-',
         'action_label'  => 'Bayar Sekarang',
         'is_actionable' => false
@@ -62,7 +69,7 @@ $ringkasan = [
     'iuran' => [
         'id'            => null,
         'status_label'  => 'Belum Ada Tagihan',
-        'badge_style'   => 'background-color: #cbd5e1; color: #475569; font-weight: 800;',
+        'badge_class'   => 'pill-neutral',
         'tenggat'       => '-',
         'action_label'  => 'Bayar Sekarang',
         'is_actionable' => false
@@ -78,22 +85,22 @@ foreach ($daftar_tagihan as $t) {
 
     if ($is_lunas) {
         $status_txt    = 'Lunas';
-        $badge_style   = 'background-color: #8ce3b9; color: #065f46; font-weight: 800;';
+        $badge_class   = 'pill-lunas';
         $action_label  = 'Lunas';
         $is_actionable = false;
     } elseif ($is_pending) {
         $status_txt    = 'Menunggu Verifikasi';
-        $badge_style   = 'background-color: #e0f2fe; color: #0369a1; font-weight: 800;';
+        $badge_class   = 'pill-pending';
         $action_label  = 'Sedang Diproses';
         $is_actionable = false;
     } elseif ($is_ditolak) {
         $status_txt    = 'Ditolak';
-        $badge_style   = 'background-color: #fee2e2; color: #dc2626; font-weight: 800;';
+        $badge_class   = 'pill-ditolak';
         $action_label  = 'Upload Ulang Bukti';
         $is_actionable = true;
     } else {
         $status_txt    = 'Belum Lunas';
-        $badge_style   = 'background-color: #fce1b8; color: #7c4103; font-weight: 800;';
+        $badge_class   = 'pill-belum';
         $action_label  = 'Upload Bukti Pembayaran';
         $is_actionable = true;
     }
@@ -101,12 +108,15 @@ foreach ($daftar_tagihan as $t) {
     $ringkasan[$key] = [
         'id'            => (int)$t['id'],
         'status_label'  => $status_txt,
-        'badge_style'   => $badge_style,
+        'badge_class'   => $badge_class,
         'tenggat'       => $t['jatuh_tempo'] ?? '-',
         'action_label'  => $action_label,
         'is_actionable' => $is_actionable
     ];
 }
+
+$targetBayarIdBanner = $isPeringatanIuran ? $ringkasan['iuran']['id'] : $ringkasan['sewa']['id'];
+$labelBtnBanner      = $isPeringatanIuran ? 'Bayar Iuran' : 'Bayar Sewa';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -127,19 +137,19 @@ foreach ($daftar_tagihan as $t) {
         <div>
             <?php require_once __DIR__ . '/../components/header.php'; ?>
 
-            <!-- BANNER PENGINGAT SEWA (H-2, H-1, HARI H, MASA TENGGANG 7 HARI) -->
-            <?php if (!empty($peringatanSewa)): ?>
-            <?php $isTenggang = ($peringatanSewa['fase'] === 'tenggang'); ?>
+            <!-- BANNER PENGINGAT SEWA / IURAN -->
+            <?php if (!empty($peringatanTagihan)): ?>
+            <?php $isTenggang = ($peringatanTagihan['fase'] === 'tenggang'); ?>
             <div class="iuran-notif-banner <?= $isTenggang ? 'notif-danger' : 'notif-warning'; ?>">
                 <div class="iuran-notif-icon">
                     <i class="fa-solid <?= $isTenggang ? 'fa-triangle-exclamation' : 'fa-bell'; ?>"></i>
                 </div>
                 <div class="iuran-notif-body">
-                    <strong>Pengingat Sewa: <?= htmlspecialchars($peringatanSewa['label_status']); ?></strong>
-                    <p><?= htmlspecialchars($peringatanSewa['pesan_ringkas']); ?></p>
+                    <strong><?= htmlspecialchars($judulPeringatan); ?>: <?= htmlspecialchars($peringatanTagihan['label_status']); ?></strong>
+                    <p><?= htmlspecialchars($peringatanTagihan['pesan_ringkas']); ?></p>
                 </div>
-                <a href="/?page=tagihan_riwayat<?= $ringkasan['sewa']['id'] ? '&bayar_id=' . $ringkasan['sewa']['id'] : ''; ?>" class="iuran-notif-btn">
-                    Bayar Sewa
+                <a href="/?page=tagihan_riwayat<?= $targetBayarIdBanner ? '&bayar_id=' . $targetBayarIdBanner : ''; ?>" class="iuran-notif-btn">
+                    <?= htmlspecialchars($labelBtnBanner); ?>
                 </a>
             </div>
             <?php endif; ?>
@@ -153,7 +163,7 @@ foreach ($daftar_tagihan as $t) {
                         <div class="tagihan-info-row">
                             <span class="info-label">Status Pembayaran</span>
                             <span class="info-colon">:</span>
-                            <span class="badge-status-pill" style="<?= $ringkasan['sewa']['badge_style']; ?>">
+                            <span class="badge-status-pill <?= $ringkasan['sewa']['badge_class']; ?>">
                                 <?= htmlspecialchars($ringkasan['sewa']['status_label']); ?>
                             </span>
                         </div>
@@ -172,7 +182,7 @@ foreach ($daftar_tagihan as $t) {
                         <div class="tagihan-info-row">
                             <span class="info-label">Status Pembayaran</span>
                             <span class="info-colon">:</span>
-                            <span class="badge-status-pill" style="<?= $ringkasan['iuran']['badge_style']; ?>">
+                            <span class="badge-status-pill <?= $ringkasan['iuran']['badge_class']; ?>">
                                 <?= htmlspecialchars($ringkasan['iuran']['status_label']); ?>
                             </span>
                         </div>
@@ -234,19 +244,19 @@ foreach ($daftar_tagihan as $t) {
             <h2 class="desktop-header-title">Dashboard</h2>
             <p class="desktop-header-subtitle">Ringkasan tagihan dan akses cepat untukmu</p>
 
-            <!-- BANNER PENGINGAT SEWA DESKTOP -->
-            <?php if (!empty($peringatanSewa)): ?>
-            <?php $isTenggang = ($peringatanSewa['fase'] === 'tenggang'); ?>
-            <div class="iuran-notif-banner <?= $isTenggang ? 'notif-danger' : 'notif-warning'; ?>" style="max-width: 900px;">
+            <!-- BANNER PENGINGAT SEWA / IURAN DESKTOP -->
+            <?php if (!empty($peringatanTagihan)): ?>
+            <?php $isTenggang = ($peringatanTagihan['fase'] === 'tenggang'); ?>
+            <div class="iuran-notif-banner dash-banner-max <?= $isTenggang ? 'notif-danger' : 'notif-warning'; ?>">
                 <div class="iuran-notif-icon">
                     <i class="fa-solid <?= $isTenggang ? 'fa-triangle-exclamation' : 'fa-bell'; ?>"></i>
                 </div>
                 <div class="iuran-notif-body">
-                    <strong>Pengingat Sewa Kamar: <?= htmlspecialchars($peringatanSewa['label_status']); ?></strong>
-                    <p><?= htmlspecialchars($peringatanSewa['pesan_ringkas']); ?> Total tagihan: <strong>Rp <?= number_format((float)$peringatanSewa['total_tunggakan'], 0, ',', '.'); ?></strong></p>
+                    <strong><?= htmlspecialchars($judulPeringatan); ?>: <?= htmlspecialchars($peringatanTagihan['label_status']); ?></strong>
+                    <p><?= htmlspecialchars($peringatanTagihan['pesan_ringkas']); ?> Total tagihan: <strong>Rp <?= number_format((float)$peringatanTagihan['total_tunggakan'], 0, ',', '.'); ?></strong></p>
                 </div>
-                <a href="/?page=tagihan_riwayat<?= $ringkasan['sewa']['id'] ? '&bayar_id=' . $ringkasan['sewa']['id'] : ''; ?>" class="iuran-notif-btn">
-                    Bayar Sewa Sekarang
+                <a href="/?page=tagihan_riwayat<?= $targetBayarIdBanner ? '&bayar_id=' . $targetBayarIdBanner : ''; ?>" class="iuran-notif-btn">
+                    <?= htmlspecialchars($labelBtnBanner); ?> Sekarang
                 </a>
             </div>
             <?php endif; ?>
@@ -258,7 +268,7 @@ foreach ($daftar_tagihan as $t) {
                     <div class="tagihan-details">
                         <div class="tagihan-detail-row">
                             <span class="lbl">Status Pembayaran</span><span class="colon">:</span>
-                            <span style="<?= $ringkasan['sewa']['badge_style']; ?> padding: 2px 10px; border-radius: 999px; font-size: 11px;">
+                            <span class="dash-pill-desktop <?= $ringkasan['sewa']['badge_class']; ?>">
                                 <?= htmlspecialchars($ringkasan['sewa']['status_label']); ?>
                             </span>
                         </div>
@@ -272,7 +282,7 @@ foreach ($daftar_tagihan as $t) {
                         <?= htmlspecialchars($ringkasan['sewa']['action_label']); ?>
                     </a>
                     <?php else: ?>
-                    <a href="/?page=tagihan_riwayat" class="btn-upload-bukti quick-nav-link" style="opacity: 0.85;">
+                    <a href="/?page=tagihan_riwayat" class="btn-upload-bukti dash-btn-muted quick-nav-link">
                         <?= htmlspecialchars($ringkasan['sewa']['action_label']); ?>
                     </a>
                     <?php endif; ?>
@@ -284,7 +294,7 @@ foreach ($daftar_tagihan as $t) {
                     <div class="tagihan-details">
                         <div class="tagihan-detail-row">
                             <span class="lbl">Status Pembayaran</span><span class="colon">:</span>
-                            <span style="<?= $ringkasan['iuran']['badge_style']; ?> padding: 2px 10px; border-radius: 999px; font-size: 11px;">
+                            <span class="dash-pill-desktop <?= $ringkasan['iuran']['badge_class']; ?>">
                                 <?= htmlspecialchars($ringkasan['iuran']['status_label']); ?>
                             </span>
                         </div>
@@ -298,7 +308,7 @@ foreach ($daftar_tagihan as $t) {
                         <?= htmlspecialchars($ringkasan['iuran']['action_label']); ?>
                     </a>
                     <?php else: ?>
-                    <a href="/?page=tagihan_riwayat" class="btn-upload-bukti quick-nav-link" style="opacity: 0.85;">
+                    <a href="/?page=tagihan_riwayat" class="btn-upload-bukti dash-btn-muted quick-nav-link">
                         <?= htmlspecialchars($ringkasan['iuran']['action_label']); ?>
                     </a>
                     <?php endif; ?>

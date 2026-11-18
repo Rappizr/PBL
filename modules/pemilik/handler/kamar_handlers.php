@@ -5,14 +5,14 @@ $error_simpan = $error_simpan ?? '';
 
 // 1. HANDLER: TAMBAH / UPDATE SKEMA SEWA DINAMIS
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_skema_baru'])) {
-    $id_skema      = (int) ($_POST['id_skema'] ?? 0);
-    $nama_skema    = trim($_POST['nama_skema'] ?? '');
-    $tipe_periode  = trim($_POST['tipe_periode'] ?? 'bulan');
-    $durasi_nilai  = (int) ($_POST['durasi_nilai'] ?? 1);
+    $id_skema     = (int) ($_POST['id_skema'] ?? 0);
+    $nama_skema   = trim($_POST['nama_skema'] ?? '');
+    $tipe_periode = trim($_POST['tipe_periode'] ?? 'bulan');
+    $durasi_nilai = (int) ($_POST['durasi_nilai'] ?? 1);
 
-    $harga_raw     = trim($_POST['nominal'] ?? ($_POST['harga_default'] ?? '0'));
-    $harga_bersih  = str_replace('.', '', $harga_raw);
-    $nominal       = (float) $harga_bersih;
+    $harga_raw    = trim($_POST['nominal'] ?? ($_POST['harga_default'] ?? '0'));
+    $harga_bersih = str_replace('.', '', $harga_raw);
+    $nominal      = (float) $harga_bersih;
 
     if ($nama_skema !== '' && $durasi_nilai > 0) {
         try {
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_kamar'])) {
     }
 }
 
-// 4. HANDLER: TAMBAH PENGHUNI (DENGAN VALIDASI STRICT KETUA KOS)
+// 4. HANDLER: TAMBAH PENGHUNI
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
     $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
@@ -234,9 +234,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
             ':tgl_tempo' => $tgl_jatuh_tempo
         ]);
 
-        $stmtIuran = $pdo->query("SELECT id FROM kategori_iuran ORDER BY id ASC LIMIT 1");
+        $stmtIuran = $pdo->query("SELECT id, tanggal_mulai, tanggal_selesai FROM kategori_iuran ORDER BY id ASC LIMIT 1");
         $masterIuran = $stmtIuran ? $stmtIuran->fetch(PDO::FETCH_ASSOC) : null;
         $iuran_id = $masterIuran ? (int)$masterIuran['id'] : 1;
+        $tgl_awal_iuran = !empty($masterIuran['tanggal_mulai']) ? $masterIuran['tanggal_mulai'] : $tgl_mulai;
+        $tgl_tempo_iuran = !empty($masterIuran['tanggal_selesai']) ? $masterIuran['tanggal_selesai'] : $tgl_jatuh_tempo;
 
         $stmtTagihanIuran = $pdo->prepare("
             INSERT INTO tagihan (penghuni_kamar_id, kategori_iuran_id, tanggal_awal_tagihan, tanggal_jatuh_tempo, status_tagihan)
@@ -245,8 +247,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
         $stmtTagihanIuran->execute([
             ':pk_id'     => $penghuni_kamar_id,
             ':iuran_id'  => $iuran_id,
-            ':tgl_awal'  => $tgl_mulai,
-            ':tgl_tempo' => $tgl_jatuh_tempo
+            ':tgl_awal'  => $tgl_awal_iuran,
+            ':tgl_tempo' => $tgl_tempo_iuran
         ]);
 
         $pdo->prepare("UPDATE kamar SET status_kamar = 'terisi' WHERE id = :kamar_id")->execute([':kamar_id' => $kamar['id']]);
@@ -310,6 +312,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
 
         if ($data) {
             $penghuni_id = $data['penghuni_id'];
+            $pk_id       = $data['penghuni_kamar_id'];
 
             if ($is_ketua_kos === 'true') {
                 $stmtCopot = $pdo->prepare("UPDATE penghuni SET is_ketua_kos = false WHERE is_ketua_kos = true AND id != :id");
@@ -352,7 +355,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
                 ':skema_id'    => $skema_id,
                 ':tgl_masuk'   => $tgl_mulai,
                 ':tgl_selesai' => $tgl_selesai,
-                ':pk_id'       => $data['penghuni_kamar_id']
+                ':pk_id'       => $pk_id
             ]);
 
             $stmtTagihan = $pdo->prepare("
@@ -361,17 +364,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
                 WHERE id = (
                     SELECT id FROM tagihan 
                     WHERE penghuni_kamar_id = :pk_id 
+                      AND kategori_iuran_id IS NULL
                     ORDER BY tanggal_jatuh_tempo DESC LIMIT 1
                 )
             ");
             $stmtTagihan->execute([
                 ':status_bayar' => $status_simpan,
-                ':pk_id'        => $data['penghuni_kamar_id']
+                ':pk_id'        => $pk_id
             ]);
 
-            // Jika diubah menjadi lunas, pastikan akun aktif kembali & janji bayar dibersihkan
             if ($status_simpan === 'lunas') {
-                $pdo->prepare("UPDATE penghuni SET status_akun = 'aktif', tanggal_janji_bayar = NULL, catatan_tunggakan = NULL WHERE id = :id")
+                $pdo->prepare("UPDATE penghuni SET status_akun = 'aktif', freeze_reason = NULL WHERE id = :id")
                     ->execute([':id' => $penghuni_id]);
             }
         }
@@ -386,36 +389,101 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
     }
 }
 
-// 5B. HANDLER: BUKA FREEZE & SIMPAN TANGGAL JANJI BAYAR PENGHUNI
+// 5B. HANDLER: BUKA FREEZE & SIMPAN TANGGAL JANJI BAYAR PADA TABEL TAGIHAN
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['buka_freeze_penghuni'])) {
-    $nomor_kamar        = trim($_POST['nomor_kamar'] ?? '');
-    $penghuni_id        = (int)($_POST['penghuni_id'] ?? 0);
-    $tanggal_janji      = trim($_POST['tanggal_janji_bayar'] ?? '');
-    $catatan_tunggakan  = trim($_POST['catatan_tunggakan'] ?? '');
+    $nomor_kamar       = trim($_POST['nomor_kamar'] ?? '');
+    $penghuni_id       = (int)($_POST['penghuni_id'] ?? 0);
+    $tanggal_janji     = trim($_POST['tanggal_janji_bayar'] ?? '');
+    $catatan_tunggakan = trim($_POST['catatan_tunggakan'] ?? '');
 
     if ($penghuni_id > 0 && $tanggal_janji !== '') {
         try {
+            $pdo->beginTransaction();
+
+            $stmtReason = $pdo->prepare("SELECT LOWER(TRIM(COALESCE(freeze_reason, 'sewa'))) FROM penghuni WHERE id = :pid");
+            $stmtReason->execute([':pid' => $penghuni_id]);
+            $reason = $stmtReason->fetchColumn() ?: 'sewa';
+
+            $filterJenis = ($reason === 'iuran')
+                ? "AND kategori_iuran_id IS NOT NULL"
+                : "AND kategori_iuran_id IS NULL";
+
+            $stmtUpdTagihan = $pdo->prepare("
+                UPDATE tagihan
+                SET tanggal_janji_bayar = :tgl_janji,
+                    catatan_tunggakan = :catatan
+                WHERE penghuni_kamar_id IN (
+                    SELECT id FROM penghuni_kamar WHERE penghuni_id = :pid
+                )
+                AND LOWER(TRIM(status_tagihan)) != 'lunas'
+                {$filterJenis}
+            ");
+            $stmtUpdTagihan->execute([
+                ':tgl_janji' => $tanggal_janji,
+                ':catatan'   => ($catatan_tunggakan !== '') ? $catatan_tunggakan : null,
+                ':pid'       => $penghuni_id
+            ]);
+
             $stmtUnfreeze = $pdo->prepare("
                 UPDATE penghuni 
                 SET status_akun = 'aktif',
-                    tanggal_janji_bayar = :tgl_janji,
-                    catatan_tunggakan = :catatan
+                    freeze_reason = NULL
                 WHERE id = :id
             ");
-            $stmtUnfreeze->execute([
-                ':tgl_janji' => $tanggal_janji,
-                ':catatan'   => ($catatan_tunggakan !== '') ? $catatan_tunggakan : null,
-                ':id'        => $penghuni_id
-            ]);
+            $stmtUnfreeze->execute([':id' => $penghuni_id]);
 
+            $pdo->commit();
             $_SESSION['pesan_sukses'] = "Akun penghuni Kamar {$nomor_kamar} diaktifkan kembali hingga janji bayar " . date('d/m/Y', strtotime($tanggal_janji)) . ".";
             header("Location: /?page=" . urlencode($current_page));
             exit;
         } catch (PDOException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
             $error_simpan = "Gagal membuka freeze akun: " . $e->getMessage();
         }
     } else {
         $error_simpan = "Tanggal janji bayar wajib diisi untuk membuka freeze akun.";
+    }
+}
+
+// 5C. HANDLER: TOLAK PENGAJUAN JANJI BAYAR (AKUN TETAP FREEZE)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['tolak_janji_bayar'])) {
+    $nomor_kamar  = trim($_POST['nomor_kamar'] ?? '');
+    $penghuni_id  = (int)($_POST['penghuni_id'] ?? 0);
+    $alasan_tolak = trim($_POST['alasan_tolak_janji'] ?? '');
+
+    if ($penghuni_id > 0) {
+        try {
+            $stmtReason = $pdo->prepare("SELECT LOWER(TRIM(COALESCE(freeze_reason, 'sewa'))) FROM penghuni WHERE id = :pid");
+            $stmtReason->execute([':pid' => $penghuni_id]);
+            $reason = $stmtReason->fetchColumn() ?: 'sewa';
+
+            $filterJenis = ($reason === 'iuran')
+                ? "AND kategori_iuran_id IS NOT NULL"
+                : "AND kategori_iuran_id IS NULL";
+
+            $catatanSimpan = '[Ditolak] ' . ($alasan_tolak !== '' ? $alasan_tolak : 'Tanggal pelunasan tidak disetujui. Silakan ajukan tanggal lebih awal.');
+
+            $stmtTolak = $pdo->prepare("
+                UPDATE tagihan
+                SET tanggal_janji_bayar = NULL,
+                    catatan_tunggakan = :catatan
+                WHERE penghuni_kamar_id IN (
+                    SELECT id FROM penghuni_kamar WHERE penghuni_id = :pid
+                )
+                AND LOWER(TRIM(status_tagihan)) != 'lunas'
+                {$filterJenis}
+            ");
+            $stmtTolak->execute([
+                ':catatan' => $catatanSimpan,
+                ':pid'     => $penghuni_id
+            ]);
+
+            $_SESSION['pesan_sukses'] = "Pengajuan janji bayar Kamar {$nomor_kamar} ditolak. Akun penghuni tetap dalam status Freeze.";
+            header("Location: /?page=" . urlencode($current_page));
+            exit;
+        } catch (PDOException $e) {
+            $error_simpan = "Gagal menolak pengajuan janji bayar: " . $e->getMessage();
+        }
     }
 }
 
