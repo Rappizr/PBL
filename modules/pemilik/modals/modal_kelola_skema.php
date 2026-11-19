@@ -2,9 +2,6 @@
 $modal_aktif  = $modal_aktif ?? ($_GET['modal'] ?? '');
 $current_page = $current_page ?? ($_GET['page'] ?? 'manajemen_kamar');
 $list_skema   = $list_skema ?? [];
-
-$pesan_sukses = $_SESSION['pesan_sukses'] ?? '';
-unset($_SESSION['pesan_sukses']);
 ?>
 <div id="modalKelolaSkema" class="modal-overlay <?= $modal_aktif === 'kelola_skema' ? 'active' : ''; ?>" onclick="tutupSemuaModalInstan(event)">
     <div class="modal-card-penghuni-custom modal-skema-container" onclick="event.stopPropagation()">
@@ -12,13 +9,6 @@ unset($_SESSION['pesan_sukses']);
         <p class="modal-skema-sub">
             Tambahkan atau ubah format sewa kost Anda (misal: Bulanan, Harian, 3 Bulan, atau Tahunan).
         </p>
-
-        <?php if (!empty($pesan_sukses)): ?>
-            <div class="notif-sukses-kamar">
-                <i class="fa-solid fa-circle-check"></i>
-                <span><?= htmlspecialchars($pesan_sukses); ?></span>
-            </div>
-        <?php endif; ?>
 
         <form action="?page=<?= htmlspecialchars($current_page) ?>" method="POST" class="skema-form-card" id="formKelolaSkema">
             <input type="hidden" name="id_skema" id="skemaFormId" value="0">

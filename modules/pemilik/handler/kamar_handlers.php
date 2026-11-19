@@ -32,7 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_skema_baru']))
                     ':nominal' => $nominal,
                     ':id'      => $id_skema
                 ]);
-                $_SESSION['pesan_sukses'] = "Skema sewa berhasil diperbarui!";
+                $_SESSION['pesan_sukses'] = "Skema sewa '{$nama_skema}' berhasil diperbarui!";
             } else {
                 $stmt = $pdo->prepare("
                     INSERT INTO skema_sewa (nama_skema, tipe_periode, durasi_nilai, nominal)
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_skema_baru']))
                     ':durasi'  => $durasi_nilai,
                     ':nominal' => $nominal
                 ]);
-                $_SESSION['pesan_sukses'] = "Skema sewa baru berhasil disimpan!";
+                $_SESSION['pesan_sukses'] = "Skema sewa '{$nama_skema}' berhasil ditambahkan!";
             }
 
             header("Location: /?page=" . urlencode($current_page) . "&modal=kelola_skema");
@@ -92,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_kamar'])) {
             } else {
                 $stmt = $pdo->prepare("INSERT INTO kamar (no_kamar, status_kamar) VALUES (:no_kamar, 'kosong')");
                 $stmt->execute([':no_kamar' => $no_kamar]);
+                $_SESSION['pesan_sukses'] = "Kamar {$no_kamar} berhasil ditambahkan!";
             }
             header("Location: /?page=" . urlencode($current_page));
             exit;
@@ -255,13 +256,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
 
         $pdo->commit();
 
+        $pesan_sukses_tambah = "Penghuni {$nama} berhasil ditambahkan di Kamar {$kamar_nomor}!";
+        $_SESSION['pesan_sukses'] = $pesan_sukses_tambah;
+
         if ($isAjax) {
             header('Content-Type: application/json');
-            echo json_encode(['status' => 'success', 'message' => 'Penghuni berhasil ditambahkan!']);
+            echo json_encode(['status' => 'success', 'message' => $pesan_sukses_tambah]);
             exit;
         }
 
-        $_SESSION['pesan_sukses'] = "Penghuni berhasil ditambahkan!";
         header("Location: /?page=" . urlencode($current_page));
         exit;
     } catch (Exception $e) {
@@ -577,6 +580,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proses_pindah_kamar']
             $pdo->prepare("UPDATE kamar SET status_kamar = 'terisi' WHERE id = :id")->execute([':id' => $tujuan['id']]);
 
             $pdo->commit();
+            $_SESSION['pesan_sukses'] = "Penghuni berhasil dipindahkan ke Kamar {$nomor_kamar_tujuan}!";
             header("Location: /?page=" . urlencode($current_page) . "&modal=detail_kamar&nomor=" . urlencode($nomor_kamar_tujuan));
             exit;
         } catch (Exception $e) {
@@ -602,6 +606,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_kamar'])) {
             $pdo->prepare("DELETE FROM kamar WHERE id = :id")->execute([':id' => $kamar_id]);
 
             $pdo->commit();
+            $_SESSION['pesan_sukses'] = "Kamar {$nomor_kamar} berhasil dihapus!";
             header("Location: /?page=" . urlencode($current_page));
             exit;
         }

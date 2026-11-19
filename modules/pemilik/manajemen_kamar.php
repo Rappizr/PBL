@@ -27,12 +27,9 @@ unset($_SESSION['error_simpan']);
 // Jalankan handler POST (Tambah/Edit/Hapus Kamar, Penghuni, Skema, & Freeze)
 require_once __DIR__ . '/handler/kamar_handlers.php';
 
-// Ambil pesan sukses dari session (kecuali jika sedang membuka modal kelola_skema)
-$pesan_sukses = '';
-if ($modal_aktif !== 'kelola_skema' && !empty($_SESSION['pesan_sukses'])) {
-    $pesan_sukses = $_SESSION['pesan_sukses'];
-    unset($_SESSION['pesan_sukses']);
-}
+// Ambil pesan sukses dari session untuk semua aksi (Tambah Kamar, Penghuni, & Skema)
+$pesan_sukses = $_SESSION['pesan_sukses'] ?? '';
+unset($_SESSION['pesan_sukses']);
 
 // Status jatuh tempo sewa & freeze
 $daftar_notif_sewa = [];
