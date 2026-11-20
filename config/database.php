@@ -1,41 +1,53 @@
 <?php
-// Set default timezone PHP ke WIB
 date_default_timezone_set('Asia/Jakarta');
 
-// Opsional: load .env hanya kalau sedang di local
 require_once __DIR__ . '/../misc/loadenv.php';
 
-// Hindari koneksi ulang jika $pdo sudah tersedia di request yang sama
+global $pdo;
+
 if (isset($pdo) && ($pdo instanceof PDO)) {
     return;
 }
 
-// Ambil dari environment (berfungsi di Vercel + local)
+$appEnv = strtolower(getenv('APP_ENV') ?: ($_ENV['APP_ENV'] ?? 'production'));
+if ($appEnv === 'production') {
+    ini_set('display_errors', '0');
+    error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT);
+}
+
 $host     = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? null);
-$port     = getenv('DB_PORT') ?: ($_ENV['DB_PORT'] ?? '5432');
-$dbname   = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? null);
+$port     = getenv('DB_PORT') ?: ($_ENV['DB_PORT'] ?? '6543');
+$dbname   = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? 'postgres');
 $username = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? null);
 $password = getenv('DB_PASSWORD') ?: ($_ENV['DB_PASSWORD'] ?? null);
 
-// Cek apakah variabel penting sudah terisi
 if (!$host || !$dbname || !$username) {
-    die('Environment variables DB_HOST / DB_NAME / DB_USER belum di-set. Pastikan sudah ditambahkan di Vercel Dashboard dan sudah re-deploy.');
+    http_response_code(500);
+    die('Konfigurasi database server belum lengkap.');
 }
 
 try {
+    $dsn = "pgsql:host={$host};port={$port};dbname={$dbname};sslmode=require";
     $pdo = new PDO(
-        "pgsql:host=$host;port=$port;dbname=$dbname",
+        $dsn,
         $username,
         $password,
         [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-            PDO::ATTR_EMULATE_PREPARES   => false,
-            PDO::ATTR_PERSISTENT         => true, // Reuse koneksi PostgreSQL agar pindah menu cepat
+            PDO::ATTR_EMULATE_PREPARES   => true,
+            PDO::ATTR_PERSISTENT         => true,
+            PDO::ATTR_TIMEOUT            => 5,
         ]
     );
-    // Sinkronisasi timezone koneksi PostgreSQL
-    $pdo->exec("SET TIME ZONE 'Asia/Jakarta';");
+
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
+
+    $pdo->exec("SET TIME ZONE 'Asia/Jakarta'");
 } catch (PDOException $e) {
-    die("Koneksi ke database gagal: " . $e->getMessage());
+    error_log('[SITEMAN-KOS DB ERROR] ' . $e->getMessage());
+    http_response_code(503);
+    die('Layanan database sedang sibuk. Silakan muat ulang halaman beberapa saat lagi.');
 }

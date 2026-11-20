@@ -1,6 +1,11 @@
 <?php
 ob_start();
 
+// Security Headers untuk Production
+header('X-Frame-Options: SAMEORIGIN');
+header('X-Content-Type-Options: nosniff');
+header('Referrer-Policy: strict-origin-when-cross-origin');
+
 $uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
 
 // Cegah eksekusi ganda akibat request otomatis /favicon.ico dari browser
@@ -9,10 +14,16 @@ if ($uriPath === '/favicon.ico') {
     exit;
 }
 
-// Endpoint API Notifikasi Sidebar Real-Time (Vercel)
+// Endpoint API Internal (Kompatibel Vercel & Apache Front-Controller)
 if ($uriPath === '/api/notif_sidebar' || $uriPath === '/api/notif_sidebar.php') {
     if (ob_get_length()) ob_clean();
     require_once __DIR__ . '/notif_sidebar.php';
+    exit;
+}
+
+if ($uriPath === '/api/ajukan_janji_bayar' || $uriPath === '/api/ajukan_janji_bayar.php') {
+    if (ob_get_length()) ob_clean();
+    require_once __DIR__ . '/ajukan_janji_bayar.php';
     exit;
 }
 
@@ -20,7 +31,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-$page = $_GET['page'] ?? 'login';
+$page = trim((string)($_GET['page'] ?? 'login'));
 
 // 1. Jika logout, langsung proses dan keluar
 if ($page === 'logout') {
@@ -39,23 +50,27 @@ $userRole   = $_SESSION['user']['role'] ?? 'penghuni';
 $is_pj      = !empty($_SESSION['user']['is_pj']) || !empty($_SESSION['user']['is_ketua_kos']) || $userRole === 'pj';
 $statusAkun = strtolower(trim((string)($_SESSION['user']['status_akun'] ?? 'aktif')));
 
-// Sinkronisasi realtime status_akun penghuni jika sedang login
+// Sinkronisasi status_akun penghuni dengan cache 30 detik (langsung cek DB jika POST atau di halaman akun_freeze)
 if (!empty($_SESSION['user']) && $userRole !== 'pemilik') {
-    require_once __DIR__ . '/../config/database.php';
-    require_once __DIR__ . '/../modules/shared/handler/sewa_reminder_helper.php';
+    $penghuniId   = (int)($_SESSION['user']['id'] ?? 0);
+    $isPost       = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST');
+    $lastSync     = (int)($_SESSION['user']['_status_synced_at'] ?? 0);
+    $perluSyncDb  = $isPost || ($page === 'akun_freeze') || ((time() - $lastSync) >= 30);
 
-    $penghuniId = (int)($_SESSION['user']['id'] ?? 0);
-    if ($penghuniId > 0 && isset($pdo)) {
-        $eval = evaluasiStatusSewaPenghuni($pdo, $penghuniId);
-        if ($eval && isset($eval['status_akun'])) {
-            $statusAkun = $eval['status_akun'];
-        } else {
+    if ($penghuniId > 0 && $perluSyncDb) {
+        require_once __DIR__ . '/../config/database.php';
+
+        if (isset($pdo) && ($pdo instanceof PDO)) {
             $stmtSt = $pdo->prepare("SELECT LOWER(TRIM(COALESCE(status_akun, 'aktif'))) FROM penghuni WHERE id = :id LIMIT 1");
             $stmtSt->execute([':id' => $penghuniId]);
             $dbSt = $stmtSt->fetchColumn();
-            if ($dbSt) $statusAkun = $dbSt;
+
+            if ($dbSt) {
+                $statusAkun = $dbSt;
+                $_SESSION['user']['status_akun']       = $statusAkun;
+                $_SESSION['user']['_status_synced_at'] = time();
+            }
         }
-        $_SESSION['user']['status_akun'] = $statusAkun;
     }
 }
 
@@ -140,9 +155,16 @@ if (!in_array('*', $allowedRoles, true)) {
     }
 }
 
+$targetFile = __DIR__ . $targetRoute['file'];
+if (!file_exists($targetFile)) {
+    http_response_code(500);
+    if (ob_get_length()) ob_clean();
+    die('Halaman tidak tersedia.');
+}
+
 // Bersihkan spasi/BOM tersembunyi sebelum merender HTML halaman
 if (ob_get_length()) {
     ob_clean();
 }
 
-require_once __DIR__ . $targetRoute['file'];
+require_once $targetFile;

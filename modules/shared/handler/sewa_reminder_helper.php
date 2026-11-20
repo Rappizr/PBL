@@ -1,13 +1,27 @@
 <?php
 /**
  * HELPER PENGINGAT JATUH TEMPO SEWA, MASA TENGGANG (+7 HARI), & AUTO-FREEZE SEWA
- * Mendukung perhitungan sisa tunggakan setelah cicilan diterima.
+ * Mendukung perhitungan sisa tunggakan setelah cicilan diterima serta cache session 30 detik.
  * Lokasi: modules/shared/handler/sewa_reminder_helper.php
  */
 
 if (!function_exists('evaluasiStatusSewaSemuaKamar')) {
     function evaluasiStatusSewaSemuaKamar(PDO $pdo): array
     {
+        static $memo = null;
+        if ($memo !== null) {
+            return $memo;
+        }
+
+        $isGetRequest = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET');
+        if ($isGetRequest
+            && isset($_SESSION['cache_sewa_all'], $_SESSION['cache_sewa_all_ts'])
+            && (time() - (int)$_SESSION['cache_sewa_all_ts']) < 30
+        ) {
+            $memo = $_SESSION['cache_sewa_all'];
+            return $memo;
+        }
+
         date_default_timezone_set('Asia/Jakarta');
         $today = new DateTimeImmutable('today');
 
@@ -36,7 +50,7 @@ if (!function_exists('evaluasiStatusSewaSemuaKamar')) {
             LEFT JOIN (
                 SELECT tagihan_id, SUM(jumlah_bayar) AS total_diterima
                 FROM pembayaran
-                WHERE LOWER(TRIM(status_verifikasi)) = 'diterima'
+                WHERE LOWER(TRIM(status_verifikasi)) IN ('diterima', 'terverifikasi', 'lunas')
                 GROUP BY tagihan_id
             ) bayar_ok ON bayar_ok.tagihan_id = t.id
             WHERE LOWER(TRIM(k.status_kamar)) = 'terisi'
@@ -122,6 +136,12 @@ if (!function_exists('evaluasiStatusSewaSemuaKamar')) {
             }
         }
 
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            $_SESSION['cache_sewa_all']    = $hasil;
+            $_SESSION['cache_sewa_all_ts'] = time();
+        }
+
+        $memo = $hasil;
         return $hasil;
     }
 }

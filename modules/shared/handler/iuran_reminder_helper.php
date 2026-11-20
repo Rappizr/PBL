@@ -1,7 +1,7 @@
 <?php
 /**
  * HELPER PENGINGAT JATUH TEMPO IURAN, MASA TENGGANG (+7 HARI), & AUTO-FREEZE IURAN
- * Mendukung akumulasi tunggakan lintas periode, cicilan, dan prioritas pengajuan janji bayar.
+ * Mendukung akumulasi tunggakan lintas periode, cicilan, cache session 30 detik, dan prioritas pengajuan janji bayar.
  * Lokasi: modules/shared/handler/iuran_reminder_helper.php
  */
 
@@ -44,6 +44,20 @@ if (!function_exists('sinkronTagihanIuranPeriodeAktif')) {
 if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
     function evaluasiStatusIuranSemuaKamar(PDO $pdo): array
     {
+        static $memo = null;
+        if ($memo !== null) {
+            return $memo;
+        }
+
+        $isGetRequest = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET');
+        if ($isGetRequest
+            && isset($_SESSION['cache_iuran_all'], $_SESSION['cache_iuran_all_ts'])
+            && (time() - (int)$_SESSION['cache_iuran_all_ts']) < 30
+        ) {
+            $memo = $_SESSION['cache_iuran_all'];
+            return $memo;
+        }
+
         date_default_timezone_set('Asia/Jakarta');
         $today = new DateTimeImmutable('today');
 
@@ -56,6 +70,7 @@ if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
             ")->fetch(PDO::FETCH_ASSOC);
 
             if (!$ki || empty($ki['tanggal_selesai'])) {
+                $memo = [];
                 return [];
             }
 
@@ -89,7 +104,7 @@ if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
                 LEFT JOIN (
                     SELECT tagihan_id, SUM(jumlah_bayar) AS total_diterima
                     FROM pembayaran
-                    WHERE LOWER(TRIM(status_verifikasi)) = 'diterima'
+                    WHERE LOWER(TRIM(status_verifikasi)) IN ('diterima', 'terverifikasi', 'lunas')
                     GROUP BY tagihan_id
                 ) bayar_ok ON bayar_ok.tagihan_id = t.id
                 LEFT JOIN (
@@ -192,6 +207,12 @@ if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
                 }
             }
 
+            if (session_status() === PHP_SESSION_ACTIVE) {
+                $_SESSION['cache_iuran_all']    = $hasil;
+                $_SESSION['cache_iuran_all_ts'] = time();
+            }
+
+            $memo = $hasil;
             return $hasil;
         } catch (Throwable $e) {
             return [];
