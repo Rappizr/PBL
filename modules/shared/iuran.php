@@ -775,7 +775,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
     </div>
     <?php endif; ?>
 
-    <!-- MODAL 3: PILIH PERIODE CETAK BUKU KAS IURAN (SEMUA ROLE) -->
+<!-- MODAL 3: PILIH PERIODE CETAK BUKU KAS IURAN (SEMUA ROLE) -->
     <div id="modalFilterCetakIuran" class="modal-overlay" onclick="tutupModalCetakIuran()">
         <div class="modal-card modal-cetak-kas-card" onclick="event.stopPropagation()">
             <h3 class="modal-title"><i class="fa-solid fa-file-pdf icon-pdf-red"></i> Cetak Laporan Iuran</h3>
@@ -784,7 +784,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
             <form action="/" method="GET" target="_blank" onsubmit="tutupModalCetakIuran()">
                 <input type="hidden" name="page" value="cetak_iuran">
 
-                <div class="modal-field">
+                <div class="modal-field modal-cetak-field">
                     <label class="modal-label">Cakupan Periode</label>
                     <div class="periode-radio-grid">
                         <label class="alasan-option-label periode-radio-option">
@@ -802,9 +802,9 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                     </div>
                 </div>
 
-                <div class="modal-field" id="boxIuranBulan">
+                <div class="modal-field modal-cetak-field modal-cetak-field-bulan" id="boxIuranBulan">
                     <label class="modal-label" for="selectBulanIuran">Pilih Bulan</label>
-                    <select name="bulan" id="selectBulanIuran" class="modal-input">
+                    <select name="bulan" id="selectBulanIuran" class="modal-input modal-cetak-select">
                         <?php
                         $bulan_list = [
                             1=>'Januari', 2=>'Februari', 3=>'Maret', 4=>'April',
@@ -818,9 +818,9 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                     </select>
                 </div>
 
-                <div class="modal-field" id="boxIuranTahun">
+                <div class="modal-field modal-cetak-field modal-cetak-field-tahun" id="boxIuranTahun">
                     <label class="modal-label" for="selectTahunIuran">Pilih Tahun</label>
-                    <select name="tahun" id="selectTahunIuran" class="modal-input">
+                    <select name="tahun" id="selectTahunIuran" class="modal-input modal-cetak-select">
                         <?php
                         $tahun_skrg = (int)date('Y');
                         for ($y = $tahun_skrg; $y >= $tahun_skrg - 5; $y--): ?>
@@ -986,15 +986,24 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
     function toggleFormCetakIuran(tipe) {
         const boxBulan = document.getElementById('boxIuranBulan');
         const boxTahun = document.getElementById('boxIuranTahun');
+        const selBulan = document.getElementById('selectBulanIuran');
+        const selTahun = document.getElementById('selectTahunIuran');
+
         if (tipe === 'bulanan') {
             boxBulan.style.display = 'block';
             boxTahun.style.display = 'block';
+            if (selBulan) selBulan.disabled = false;
+            if (selTahun) selTahun.disabled = false;
         } else if (tipe === 'tahunan') {
             boxBulan.style.display = 'none';
             boxTahun.style.display = 'block';
+            if (selBulan) selBulan.disabled = true;
+            if (selTahun) selTahun.disabled = false;
         } else {
             boxBulan.style.display = 'none';
             boxTahun.style.display = 'none';
+            if (selBulan) selBulan.disabled = true;
+            if (selTahun) selTahun.disabled = true;
         }
     }
     </script>

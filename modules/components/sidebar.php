@@ -39,12 +39,19 @@ if (empty($GLOBALS['siteman_user_synced']) && isset($pdo) && ($pdo instanceof PD
     } catch (Exception $e) {}
 }
 
-$role_user   = $_SESSION['user']['role'] ?? 'penghuni';
-$is_pj       = !empty($_SESSION['user']['is_pj']) || !empty($_SESSION['user']['is_ketua_kos']);
-$nama_user   = $_SESSION['user']['nama'] ?? ($role_user === 'pemilik' ? 'Bapak Kos' : 'Penghuni');
-$currentPage = $_GET['page'] ?? 'dashboard';
+$role_user = $_SESSION['user']['role'] ?? 'penghuni';
+$is_pj     = !empty($_SESSION['user']['is_pj']) || !empty($_SESSION['user']['is_ketua_kos']);
+$nama_user = $_SESSION['user']['nama'] ?? ($role_user === 'pemilik' ? 'Bapak Kos' : 'Penghuni');
 
-// Hitung angka awal notifikasi sidebar secara server-side agar langsung tampil tanpa kedip
+// Ambil parameter page secara akurat dari $_GET maupun REQUEST_URI
+$rawQuery = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY) ?? '';
+parse_str($rawQuery, $parsedQuery);
+$currentPage = trim((string)($_GET['page'] ?? ($parsedQuery['page'] ?? ($current_page ?? 'dashboard'))));
+if ($currentPage === '') {
+    $currentPage = 'dashboard';
+}
+
+// Hitung angka awal notifikasi sidebar dengan cache session 5 detik
 $initNotif = [
     'verifikasi' => 0,
     'tagihan'    => 0,
@@ -53,52 +60,64 @@ $initNotif = [
 ];
 
 if (isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user'])) {
-    $isPemilikInit  = ($role_user === 'pemilik');
-    $isKetuaInit    = $is_pj || ($role_user === 'pj');
-    $penghuniIdInit = (int)($_SESSION['user']['id'] ?? 0);
+    $cacheKey = 'sidebar_notif_' . $role_user . '_' . ((int)($_SESSION['user']['id'] ?? 0));
+    $isGet    = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET');
 
-    try {
-        if ($isPemilikInit || $isKetuaInit) {
-            $initNotif['verifikasi'] = (int)$pdo->query("
-                SELECT COUNT(*) FROM pembayaran
-                WHERE LOWER(TRIM(COALESCE(status_verifikasi, 'pending'))) = 'pending'
-            ")->fetchColumn();
+    if ($isGet && isset($_SESSION[$cacheKey], $_SESSION[$cacheKey . '_ts']) && (time() - (int)$_SESSION[$cacheKey . '_ts']) < 5) {
+        $initNotif = $_SESSION[$cacheKey];
+    } else {
+        $isPemilikInit  = ($role_user === 'pemilik');
+        $isKetuaInit    = $is_pj || ($role_user === 'pj');
+        $penghuniIdInit = (int)($_SESSION['user']['id'] ?? 0);
 
-            $initNotif['iuran'] = (int)$pdo->query("
-                SELECT COUNT(*) FROM tagihan t
-                JOIN penghuni_kamar pk ON pk.id = t.penghuni_kamar_id
-                JOIN kamar k ON k.id = pk.kamar_id
-                WHERE t.kategori_iuran_id IS NOT NULL
-                  AND LOWER(TRIM(COALESCE(k.status_kamar, 'kosong'))) = 'terisi'
-                  AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
-            ")->fetchColumn();
-        }
+        try {
+            if ($isPemilikInit || $isKetuaInit) {
+                $initNotif['verifikasi'] = (int)$pdo->query("
+                    SELECT COUNT(*) FROM pembayaran
+                    WHERE LOWER(TRIM(COALESCE(status_verifikasi, 'pending'))) = 'pending'
+                ")->fetchColumn();
 
-        if ($isPemilikInit) {
-            $initNotif['kamar'] = (int)$pdo->query("
-                SELECT COUNT(*) FROM tagihan t
-                JOIN penghuni_kamar pk ON pk.id = t.penghuni_kamar_id
-                JOIN kamar k ON k.id = pk.kamar_id
-                WHERE t.kategori_iuran_id IS NULL
-                  AND LOWER(TRIM(COALESCE(k.status_kamar, 'kosong'))) = 'terisi'
-                  AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
-                  AND t.tanggal_jatuh_tempo <= CURRENT_DATE
-            ")->fetchColumn();
-        } elseif ($penghuniIdInit > 0) {
-            $stmtInitTag = $pdo->prepare("
-                SELECT COUNT(*) FROM tagihan t
-                JOIN penghuni_kamar pk ON pk.id = t.penghuni_kamar_id
-                WHERE pk.penghuni_id = :pid
-                  AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
-            ");
-            $stmtInitTag->execute([':pid' => $penghuniIdInit]);
-            $initNotif['tagihan'] = (int)$stmtInitTag->fetchColumn();
-        }
-    } catch (Throwable $e) {}
+                $initNotif['iuran'] = (int)$pdo->query("
+                    SELECT COUNT(*) FROM tagihan t
+                    JOIN penghuni_kamar pk ON pk.id = t.penghuni_kamar_id
+                    JOIN kamar k ON k.id = pk.kamar_id
+                    WHERE t.kategori_iuran_id IS NOT NULL
+                      AND LOWER(TRIM(COALESCE(k.status_kamar, 'kosong'))) = 'terisi'
+                      AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
+                ")->fetchColumn();
+            }
+
+            if ($isPemilikInit) {
+                $initNotif['kamar'] = (int)$pdo->query("
+                    SELECT COUNT(*) FROM tagihan t
+                    JOIN penghuni_kamar pk ON pk.id = t.penghuni_kamar_id
+                    JOIN kamar k ON k.id = pk.kamar_id
+                    WHERE t.kategori_iuran_id IS NULL
+                      AND LOWER(TRIM(COALESCE(k.status_kamar, 'kosong'))) = 'terisi'
+                      AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
+                      AND t.tanggal_jatuh_tempo <= CURRENT_DATE
+                ")->fetchColumn();
+            } elseif ($penghuniIdInit > 0) {
+                $stmtInitTag = $pdo->prepare("
+                    SELECT COUNT(*) FROM tagihan t
+                    JOIN penghuni_kamar pk ON pk.id = t.penghuni_kamar_id
+                    WHERE pk.penghuni_id = :pid
+                      AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
+                ");
+                $stmtInitTag->execute([':pid' => $penghuniIdInit]);
+                $initNotif['tagihan'] = (int)$stmtInitTag->fetchColumn();
+            }
+
+            $_SESSION[$cacheKey]         = $initNotif;
+            $_SESSION[$cacheKey . '_ts'] = time();
+        } catch (Throwable $e) {}
+    }
 }
 
-function formatBadgeCount(int $n): string {
-    return $n > 99 ? '99+' : (string)$n;
+if (!function_exists('formatBadgeCount')) {
+    function formatBadgeCount(int $n): string {
+        return $n > 99 ? '99+' : (string)$n;
+    }
 }
 ?>
 <aside class="desktop-sidebar">
@@ -120,7 +139,7 @@ function formatBadgeCount(int $n): string {
                         <?= formatBadgeCount($initNotif['kamar']); ?>
                     </span>
                 </a>
-                <a href="/?page=analisis_kas" class="nav-item <?= $currentPage === 'analisis_kas' ? 'active' : '' ?>">
+                <a href="/?page=analisis_kas" class="nav-item <?= in_array($currentPage, ['analisis_kas', 'arus_kas']) ? 'active' : '' ?>">
                     <i class="fa-solid fa-wallet"></i><span>Analisis Kas</span>
                 </a>
                 <a href="/?page=edit_tatib" class="nav-item <?= $currentPage === 'edit_tatib' ? 'active' : '' ?>">
@@ -152,7 +171,7 @@ function formatBadgeCount(int $n): string {
                         <?= formatBadgeCount($initNotif['iuran']); ?>
                     </span>
                 </a>
-                <a href="/?page=verifikasi_bayar" class="nav-item <?= $currentPage === 'verifikasi_bayar' ? 'active' : '' ?>">
+                <a href="/?page=verifikasi_bayar" class="nav-item <?= in_array($currentPage, ['verifikasi_bayar', 'verifikasi_pembayaran']) ? 'active' : '' ?>">
                     <i class="fa-solid fa-list-check"></i><span>Verifikasi Bayar</span>
                     <span id="badge-sidebar-verifikasi" class="sidebar-notif-badge <?= $initNotif['verifikasi'] > 0 ? '' : 'is-hidden' ?>">
                         <?= formatBadgeCount($initNotif['verifikasi']); ?>
@@ -235,7 +254,7 @@ function formatBadgeCount(int $n): string {
         if (e.key === 'Escape') tutupModalLogoutSidebar();
     });
 
-    // Real-Time Notification Polling untuk Semua Role di Sidebar
+    // Real-Time Notification Polling (tiap 5 detik)
     window.refreshSidebarNotif = async function () {
         function applyBadge(elId, count) {
             const el = document.getElementById(elId);
@@ -270,26 +289,41 @@ function formatBadgeCount(int $n): string {
             applyBadge('badge-sidebar-kamar', data.kamar);
             applyBadge('badge-sidebar-iuran', data.iuran);
         } catch (err) {
-            // Abaikan error sementara
+            // Abaikan error jaringan sementara
         }
     };
 
-    // Navigasi Cepat: Prefetch saat hover + Indikator Loading & Active Instan saat klik
+    // Sinkronisasi Active Menu & Indikator Loading Navigasi
     document.addEventListener('DOMContentLoaded', function () {
         const loader = document.getElementById('topNavLoader');
         const navLinks = document.querySelectorAll('.desktop-sidebar a[href^="/?page="]');
+        const allPageLinks = document.querySelectorAll('a[href^="/?page="]');
 
-        navLinks.forEach(function (link) {
-            link.addEventListener('mouseenter', function () {
-                const url = this.getAttribute('href');
-                if (!document.querySelector('link[rel="prefetch"][href="' + url + '"]')) {
-                    const prefetch = document.createElement('link');
-                    prefetch.rel = 'prefetch';
-                    prefetch.href = url;
-                    document.head.appendChild(prefetch);
-                }
+        const aliasMap = {
+            'kelola_iuran': 'iuran',
+            'monitoring_iuran': 'iuran',
+            'arus_kas': 'analisis_kas',
+            'verifikasi_pembayaran': 'verifikasi_bayar'
+        };
+
+        function setSidebarActiveByPage(rawPage) {
+            const normalizedTarget = aliasMap[rawPage] || rawPage || 'dashboard';
+            navLinks.forEach(function (item) {
+                const itemUrl = new URL(item.getAttribute('href'), window.location.origin);
+                const itemPage = itemUrl.searchParams.get('page') || '';
+                const normalizedItem = aliasMap[itemPage] || itemPage;
+
+                const isMatch = (normalizedItem === normalizedTarget) ||
+                    (normalizedTarget === 'dashboard' && (normalizedItem === 'dashboard_pemilik' || normalizedItem === 'dashboard_penghuni'));
+
+                item.classList.toggle('active', isMatch);
             });
+        }
 
+        const currentParams = new URLSearchParams(window.location.search);
+        setSidebarActiveByPage(currentParams.get('page') || 'dashboard');
+
+        allPageLinks.forEach(function (link) {
             link.addEventListener('click', function (e) {
                 if (e.ctrlKey || e.metaKey || this.target === '_blank') return;
 
@@ -298,14 +332,18 @@ function formatBadgeCount(int $n): string {
                     loader.style.width = '75%';
                 }
 
-                navLinks.forEach(function (item) {
-                    item.classList.remove('active');
-                });
-                this.classList.add('active');
+                const targetUrl = new URL(this.getAttribute('href'), window.location.origin);
+                const targetPage = targetUrl.searchParams.get('page');
+                if (targetPage) {
+                    setSidebarActiveByPage(targetPage);
+                }
             });
         });
 
         window.addEventListener('pageshow', function () {
+            const params = new URLSearchParams(window.location.search);
+            setSidebarActiveByPage(params.get('page') || 'dashboard');
+
             if (loader) {
                 loader.style.width = '100%';
                 setTimeout(function () {
@@ -316,8 +354,7 @@ function formatBadgeCount(int $n): string {
             window.refreshSidebarNotif();
         });
 
-        // Cek ulang tiap 8 detik dan saat tab kembali aktif
-        setInterval(window.refreshSidebarNotif, 8000);
+        setInterval(window.refreshSidebarNotif, 5000);
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) {
                 window.refreshSidebarNotif();

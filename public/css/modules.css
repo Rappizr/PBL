@@ -3497,6 +3497,50 @@ a.kotak-kapsul-pemilik:active {
   color: #94a3b8;
 }
 
+.upload-area-custom {
+  transition: height 0.2s ease;
+}
+
+.upload-area-custom.has-preview {
+  height: 165px;
+}
+
+.upload-area-custom .preview-bukti-img {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.detail-ktp-upload-btn {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  background-color: #ffffff;
+  border: 1.5px dashed #4ca5b0;
+  color: #1a4d55;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.detail-ktp-upload-btn:hover {
+  background-color: #f0fdfa;
+  border-color: #0f766e;
+}
+
+.detail-ktp-upload-btn input[type="file"] {
+  display: none;
+}
+
 /* ==========================================================================
    18. LIGHTBOX MODAL POPUP (KTP & BUKTI TRANSFER FULLSCREEN)
    ========================================================================== */
@@ -4574,45 +4618,12 @@ a.kotak-kapsul-pemilik:active {
 /* ==========================================================================
    21. ANALISIS KAS & MODAL CETAK PDF
    ========================================================================== */
-.kas-cetak-mobile-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-}
-
-.kas-btn-cetak-full {
-  flex: 1;
-}
-
-.kas-filter-form-mobile {
-  margin-top: 6px;
-}
-
-.kas-empty-penghuni-mobile {
-  background-color: #ffffff;
-  padding: 24px;
-  border-radius: 16px;
-  text-align: center;
-  color: #4a5568;
-  margin-top: 12px;
-  box-shadow: 2px 3px 0px #c8924b;
-}
-
-.kas-empty-penghuni-mobile i {
-  font-size: 28px;
-  margin-bottom: 8px;
-  color: #4ca5b0;
-}
-
-.kas-empty-penghuni-mobile p {
-  margin: 0;
-  font-size: 13.5px;
-  font-weight: 700;
-}
-
 .modal-cetak-kas-card {
   max-width: 440px !important;
+  width: 92%;
+  padding: 24px;
+  border-radius: 20px;
+  box-sizing: border-box;
 }
 
 .icon-pdf-red {
@@ -4622,26 +4633,89 @@ a.kotak-kapsul-pemilik:active {
 .modal-cetak-kas-sub {
   font-size: 12.5px;
   color: #64748b;
-  margin: 4px 0 16px 0;
+  margin: 4px 0 18px 0;
+  line-height: 1.45;
+}
+
+.modal-cetak-field {
+  margin-bottom: 16px;
+}
+
+.modal-cetak-field .modal-label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.modal-cetak-field-bulan {
+  position: relative;
+  z-index: 2;
+}
+
+.modal-cetak-field-tahun {
+  margin-bottom: 22px;
+  position: relative;
+  z-index: 1;
 }
 
 .periode-radio-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
 }
 
 .periode-radio-option {
-  padding: 8px;
-  font-size: 11.5px;
-  justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: 13px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.modal-cetak-select,
+.modal-cetak-kas-card select.modal-input {
+  display: block !important;
+  width: 100% !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 8px 16px !important;
+  border-radius: 22px !important;
+  border: 1.5px solid #2b7a88 !important;
+  background-color: #ffffff !important;
+  color: #1f2d30 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+  appearance: auto !important;
+  -webkit-appearance: menulist !important;
+  -moz-appearance: menulist !important;
+  box-sizing: border-box !important;
+  cursor: pointer;
+}
+
+.modal-cetak-select:focus,
+.modal-cetak-kas-card select.modal-input:focus {
+  outline: none !important;
+  border-color: #0f766e !important;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16) !important;
 }
 
 .modal-cetak-actions {
-  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.modal-cetak-actions .btn-modal-cancel {
+  flex: 1;
 }
 
 .btn-cetak-submit-teal {
+  flex: 1.25;
   background-color: #0f766e !important;
 }
 

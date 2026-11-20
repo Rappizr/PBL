@@ -6,13 +6,14 @@ $daftar_kamar_kosong = $daftar_kamar_kosong ?? [];
 $list_skema          = $list_skema ?? [];
 $ketuaAktif          = $ketuaAktif ?? null;
 
-$foto_ktp_file = trim($kamar_terpilih['foto_ktp'] ?? '');
+$foto_ktp_raw  = trim((string)($kamar_terpilih['foto_ktp'] ?? ''));
+$foto_ktp_file = $foto_ktp_raw !== '' ? basename($foto_ktp_raw) : '';
 $ktp_src_data  = '';
 $ada_ktp       = false;
 
 if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower($foto_ktp_file) !== 'null') {
     $lokasi_file = __DIR__ . '/../../../public/uploads/ktp/' . $foto_ktp_file;
-    if (file_exists($lokasi_file)) {
+    if (is_file($lokasi_file)) {
         $ext = strtolower(pathinfo($lokasi_file, PATHINFO_EXTENSION));
         $mime_type = ($ext === 'png') ? 'image/png' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg');
         $file_content = file_get_contents($lokasi_file);
@@ -85,7 +86,7 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                                 <label class="detail-freeze-label">Tanggal Janji Bayar</label>
                                 <input type="date" name="tanggal_janji_bayar"
                                        min="<?= date('Y-m-d'); ?>"
-                                       value="<?= htmlspecialchars($kamar_terpilih['tanggal_janji_bayar'] ?? ''); ?>" required
+                                       value="<?= htmlspecialchars($kamar_terpilih['tanggal_janji_bayar'] ?? ''); ?>"
                                        class="detail-freeze-date-input" required>
                             </div>
                             <div class="detail-form-group flex-1">
@@ -119,7 +120,7 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                 </div>
             <?php endif; ?>
 
-            <form action="?page=<?= htmlspecialchars($current_page); ?>" method="POST" class="detail-kamar-form" id="formDetailPenghuni">
+            <form action="?page=<?= htmlspecialchars($current_page); ?>" method="POST" enctype="multipart/form-data" class="detail-kamar-form" id="formDetailPenghuni">
                 <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($kamar_terpilih['nomor']); ?>">
 
                 <?php if ($is_kosong): ?>
@@ -168,9 +169,9 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                     <!-- Kontak Wali & PIN Akun -->
                     <div class="row-input-dual">
                         <div class="detail-form-group flex-1">
-                            <label class="detail-label" for="detailWali">No. Kontak Wali</label>
+                            <label class="detail-label" for="detailWali">No. Kontak Wali (Opsional)</label>
                             <input type="tel" id="detailWali" name="kontak_wali" class="detail-input-pill" 
-                                   value="<?= htmlspecialchars($kamar_terpilih['kontak_wali'] ?? ''); ?>" placeholder="08xxxxxxxxxx" required>
+                                   value="<?= htmlspecialchars($kamar_terpilih['kontak_wali'] ?? ''); ?>" placeholder="08xxxxxxxxxx (Opsional)">
                         </div>
                         <div class="detail-form-group flex-1">
                             <label class="detail-label" for="detailPin">PIN Akun (Login)</label>
@@ -191,23 +192,28 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                     <!-- Dokumen Foto KTP -->
                     <div class="detail-form-group">
                         <label class="detail-label">Dokumen Identitas (KTP)</label>
-                        <?php if ($ada_ktp): ?>
-                            <div class="ktp-preview-box" id="btnPreviewKtpTrigger" onclick="bukaPopupKtpDirect()">
+                        <div class="ktp-preview-box <?= $ada_ktp ? '' : 'ktp-empty-state'; ?>" id="btnPreviewKtpTrigger"
+                             <?php if ($ada_ktp): ?>onclick="bukaPopupKtpDirect()"<?php endif; ?>>
+                            <?php if ($ada_ktp): ?>
                                 <div class="ktp-thumbnail-wrapper">
-                                    <img src="<?= $ktp_src_data; ?>" alt="KTP Thumbnail" class="ktp-thumbnail-img">
+                                    <img src="<?= $ktp_src_data; ?>" alt="KTP Thumbnail" class="ktp-thumbnail-img" id="detailKtpThumb">
                                 </div>
                                 <div class="ktp-preview-info">
                                     <span class="ktp-preview-title"><i class="fa-solid fa-id-card"></i> Foto KTP Tersedia</span>
                                     <span class="ktp-preview-hint">Ketuk untuk memperbesar foto</span>
                                 </div>
                                 <i class="fa-solid fa-magnifying-glass-plus ktp-zoom-icon"></i>
-                            </div>
-                        <?php else: ?>
-                            <div class="ktp-preview-box ktp-empty-state">
+                            <?php else: ?>
                                 <i class="fa-solid fa-id-card ktp-empty-icon"></i>
                                 <span>Belum ada foto KTP yang diunggah.</span>
-                            </div>
-                        <?php endif; ?>
+                            <?php endif; ?>
+                        </div>
+
+                        <label class="detail-ktp-upload-btn" for="detailFotoKtpInput">
+                            <i class="fa-solid fa-camera"></i>
+                            <span id="detailKtpFileName"><?= $ada_ktp ? 'Ganti Foto KTP' : 'Unggah Foto KTP'; ?></span>
+                            <input type="file" id="detailFotoKtpInput" name="foto_ktp_baru" accept="image/jpeg,image/png,image/webp" onchange="previewDetailKtp(this)">
+                        </label>
                     </div>
 
                     <!-- Skema Sewa Terpilih -->
@@ -289,11 +295,11 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
-            <div class="lightbox-body">
+            <div class="lightbox-body" id="lightboxKtpBody">
                 <?php if ($ada_ktp): ?>
                     <img id="imgKtpFull" src="<?= $ktp_src_data; ?>" alt="Foto KTP Full" class="lightbox-img">
                 <?php else: ?>
-                    <p class="lightbox-empty-msg">File foto tidak ditemukan.</p>
+                    <p class="lightbox-empty-msg" id="lightboxEmptyMsg">File foto tidak ditemukan.</p>
                 <?php endif; ?>
             </div>
         </div>
@@ -495,6 +501,45 @@ if ($foto_ktp_file !== '' && $foto_ktp_file !== 'ktp_default.jpg' && strtolower(
         const y = startDate.getFullYear();
 
         tglSelesaiInput.value = `${d} / ${m} / ${y}`;
+    }
+
+    function previewDetailKtp(input) {
+        const labelText  = document.getElementById('detailKtpFileName');
+        const previewBox = document.getElementById('btnPreviewKtpTrigger');
+        const lbBody     = document.getElementById('lightboxKtpBody');
+
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            if (!file.type.startsWith('image/')) {
+                alert('File harus berupa gambar (JPG, PNG, atau WEBP).');
+                input.value = '';
+                return;
+            }
+
+            if (labelText) labelText.textContent = 'File dipilih: ' + file.name;
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                if (previewBox) {
+                    previewBox.classList.remove('ktp-empty-state');
+                    previewBox.setAttribute('onclick', 'bukaPopupKtpDirect()');
+                    previewBox.innerHTML =
+                        '<div class="ktp-thumbnail-wrapper">' +
+                            '<img src="' + e.target.result + '" alt="KTP Thumbnail" class="ktp-thumbnail-img" id="detailKtpThumb">' +
+                        '</div>' +
+                        '<div class="ktp-preview-info">' +
+                            '<span class="ktp-preview-title"><i class="fa-solid fa-id-card"></i> Pratinjau KTP Baru</span>' +
+                            '<span class="ktp-preview-hint">Klik Simpan Perubahan untuk menyimpan</span>' +
+                        '</div>' +
+                        '<i class="fa-solid fa-magnifying-glass-plus ktp-zoom-icon"></i>';
+                }
+
+                if (lbBody) {
+                    lbBody.innerHTML = '<img id="imgKtpFull" src="' + e.target.result + '" alt="Foto KTP Full" class="lightbox-img">';
+                }
+            };
+            reader.readAsDataURL(file);
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function() {

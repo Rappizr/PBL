@@ -18,20 +18,27 @@ if (empty($_SESSION['user'])) {
     exit;
 }
 
-require_once __DIR__ . '/../config/database.php';
-
-global $pdo;
-$db = ($pdo instanceof PDO) ? $pdo : ($conn ?? null);
-
 $user       = $_SESSION['user'];
 $role       = strtolower(trim((string)($user['role'] ?? 'penghuni')));
 $isPemilik  = ($role === 'pemilik');
 $isKetua    = !empty($user['is_ketua_kos']) || !empty($user['is_pj']) || ($role === 'pj');
 $penghuniId = (int)($user['id'] ?? 0);
 
+// Pakai cache session yang sama (5 detik) agar tidak menembak DB ganda saat baru pindah halaman
+$cacheKey = 'sidebar_notif_' . ($user['role'] ?? 'penghuni') . '_' . $penghuniId;
+if (isset($_SESSION[$cacheKey], $_SESSION[$cacheKey . '_ts']) && (time() - (int)$_SESSION[$cacheKey . '_ts']) < 5) {
+    echo json_encode($_SESSION[$cacheKey]);
+    exit;
+}
+
+require_once __DIR__ . '/../config/database.php';
+
+global $pdo;
+$db = ($pdo instanceof PDO) ? $pdo : ($conn ?? null);
+
 try {
     if ($db instanceof PDO) {
-        // 1. Pemilik & Ketua Kos: Jumlah bukti pembayaran berstatus 'pending' (Menu: Verifikasi Bayar)
+        // 1. Pemilik & Ketua Kos: Jumlah bukti pembayaran berstatus 'pending'
         if ($isPemilik || $isKetua) {
             $stmtVerif = $db->query("
                 SELECT COUNT(*)
@@ -41,7 +48,7 @@ try {
             $response['verifikasi'] = (int)$stmtVerif->fetchColumn();
         }
 
-        // 2. Pemilik Kos: Jumlah tagihan sewa jatuh tempo / belum lunas atau akun freeze (Menu: Manajemen Kamar)
+        // 2. Pemilik Kos: Jumlah tagihan sewa jatuh tempo / belum lunas
         if ($isPemilik) {
             $stmtKamar = $db->query("
                 SELECT COUNT(*)
@@ -56,7 +63,7 @@ try {
             $response['kamar'] = (int)$stmtKamar->fetchColumn();
         }
 
-        // 3. Pemilik & Ketua Kos: Jumlah tagihan iuran bersama yang belum lunas (Menu: Kelola Iuran)
+        // 3. Pemilik & Ketua Kos: Jumlah tagihan iuran bersama yang belum lunas
         if ($isPemilik || $isKetua) {
             $stmtIuran = $db->query("
                 SELECT COUNT(*)
@@ -70,7 +77,7 @@ try {
             $response['iuran'] = (int)$stmtIuran->fetchColumn();
         }
 
-        // 4. Penghuni & Ketua Kos: Jumlah tagihan pribadi yang belum lunas (Menu: Tagihan & Riwayat)
+        // 4. Penghuni & Ketua Kos: Jumlah tagihan pribadi yang belum lunas
         if (!$isPemilik && $penghuniId > 0) {
             $stmtTagihan = $db->prepare("
                 SELECT COUNT(*)
@@ -82,6 +89,9 @@ try {
             $stmtTagihan->execute([':pid' => $penghuniId]);
             $response['tagihan'] = (int)$stmtTagihan->fetchColumn();
         }
+
+        $_SESSION[$cacheKey]         = $response;
+        $_SESSION[$cacheKey . '_ts'] = time();
     }
 } catch (Throwable $e) {
     // Kembalikan 0 jika koneksi terganggu sesaat

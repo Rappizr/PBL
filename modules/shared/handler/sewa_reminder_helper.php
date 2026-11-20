@@ -5,15 +5,36 @@
  * Lokasi: modules/shared/handler/sewa_reminder_helper.php
  */
 
+if (!function_exists('bersihkanCacheNotifSiteman')) {
+    function bersihkanCacheNotifSiteman(): void
+    {
+        if (session_status() !== PHP_SESSION_ACTIVE) {
+            return;
+        }
+        unset(
+            $_SESSION['cache_sewa_all'],
+            $_SESSION['cache_sewa_all_ts'],
+            $_SESSION['cache_iuran_all'],
+            $_SESSION['cache_iuran_all_ts']
+        );
+        foreach (array_keys($_SESSION) as $key) {
+            if (str_starts_with($key, 'sidebar_notif_')) {
+                unset($_SESSION[$key]);
+            }
+        }
+    }
+}
+
 if (!function_exists('evaluasiStatusSewaSemuaKamar')) {
     function evaluasiStatusSewaSemuaKamar(PDO $pdo): array
     {
         static $memo = null;
-        if ($memo !== null) {
+        $isGetRequest = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET');
+
+        if ($isGetRequest && $memo !== null) {
             return $memo;
         }
 
-        $isGetRequest = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET');
         if ($isGetRequest
             && isset($_SESSION['cache_sewa_all'], $_SESSION['cache_sewa_all_ts'])
             && (time() - (int)$_SESSION['cache_sewa_all_ts']) < 30

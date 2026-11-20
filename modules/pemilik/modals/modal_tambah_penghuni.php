@@ -58,10 +58,10 @@ $ketuaAktif          = $ketuaAktif ?? null;
             <!-- Kontak Wali & PIN Akun -->
             <div class="row-input-dual">
                 <div class="field-group-custom flex-1">
-                    <label class="label-custom" for="kontakWali">No. Kontak Wali</label>
+                    <label class="label-custom" for="kontakWali">No. Kontak Wali (Opsional)</label>
                     <input type="tel" id="kontakWali" name="kontak_wali" class="input-custom-pill"
-                        placeholder="08xxxxxxxxxx" pattern="08[0-9]{8,13}" maxlength="15"
-                        title="Kontak wali harus diawali 08 dan berjumlah 10-15 digit" required>
+                        placeholder="08xxxxxxxxxx (Opsional)" pattern="08[0-9]{8,13}" maxlength="15"
+                        title="Jika diisi, kontak wali harus diawali 08 dan berjumlah 10-15 digit">
                 </div>
                 <div class="field-group-custom flex-1">
                     <label class="label-custom" for="pinAkun">PIN Akun (Login)</label>
@@ -127,16 +127,19 @@ $ketuaAktif          = $ketuaAktif ?? null;
                 </div>
             </div>
 
-            <!-- Foto KTP -->
+            <!-- Foto KTP (Wajib) -->
             <div class="field-group-custom">
-                <label class="label-custom">Foto KTP</label>
-                <label class="upload-area-custom">
-                    <input type="file" name="foto_ktp" id="fotoKtpInput" accept="image/*" required
+                <label class="label-custom" for="fotoKtpInput">Foto KTP (Wajib)</label>
+                <label class="upload-area-custom" id="uploadAreaKtp">
+                    <input type="file" name="foto_ktp" id="fotoKtpInput" accept="image/jpeg,image/png,image/webp" required
                         onchange="previewUpload(this)">
-                    <div class="upload-icon-circle">
-                        <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                    <div id="placeholderKtpContent" class="placeholder-bukti-content">
+                        <div class="upload-icon-circle">
+                            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+                        </div>
+                        <p class="upload-text-custom" id="uploadStatusText">Ketuk untuk pilih foto KTP</p>
                     </div>
-                    <p class="upload-text-custom" id="uploadStatusText">Ketuk untuk pilih foto</p>
+                    <img id="previewKtpImg" src="" alt="Preview KTP" class="preview-bukti-img">
                 </label>
             </div>
 
@@ -181,11 +184,35 @@ function hitungTanggalSelesaiDinamis() {
 }
 
 function previewUpload(input) {
-    const text = document.getElementById('uploadStatusText');
+    const placeholder = document.getElementById('placeholderKtpContent');
+    const previewImg  = document.getElementById('previewKtpImg');
+    const uploadArea  = document.getElementById('uploadAreaKtp');
+
     if (input.files && input.files[0]) {
-        text.textContent = input.files[0].name;
+        const file = input.files[0];
+        if (!file.type.startsWith('image/')) {
+            alert('File harus berupa gambar (JPG, PNG, atau WEBP).');
+            input.value = '';
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            if (previewImg) {
+                previewImg.src = e.target.result;
+                previewImg.style.display = 'block';
+            }
+            if (placeholder) placeholder.style.display = 'none';
+            if (uploadArea) uploadArea.classList.add('has-preview');
+        };
+        reader.readAsDataURL(file);
     } else {
-        text.textContent = 'Ketuk untuk pilih foto';
+        if (previewImg) {
+            previewImg.src = '';
+            previewImg.style.display = 'none';
+        }
+        if (placeholder) placeholder.style.display = 'flex';
+        if (uploadArea) uploadArea.classList.remove('has-preview');
     }
 }
 
@@ -208,7 +235,19 @@ document.addEventListener('DOMContentLoaded', function() {
         formTambah.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            if (!formTambah.checkValidity()) return;
+            const fotoKtpInput = document.getElementById('fotoKtpInput');
+            if (!fotoKtpInput || !fotoKtpInput.files || fotoKtpInput.files.length === 0) {
+                if (alertText && alertBox) {
+                    alertText.textContent = 'Foto KTP wajib diunggah terlebih dahulu.';
+                    alertBox.classList.add('show-flex');
+                }
+                return;
+            }
+
+            if (!formTambah.checkValidity()) {
+                formTambah.reportValidity();
+                return;
+            }
 
             if (alertBox) alertBox.classList.remove('show-flex');
 
