@@ -3,9 +3,8 @@
  * LAPORAN BUKU KAS IURAN BERSAMA (BISA DIAKSES SEMUA ROLE)
  * Lokasi: modules/shared/cetak_iuran.php
  */
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
 $currentUser = $_SESSION['user'] ?? [];
 if (empty($currentUser)) {
@@ -13,20 +12,43 @@ if (empty($currentUser)) {
     exit;
 }
 
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_paths = [
-        __DIR__ . '/../../config/database.php',
-        __DIR__ . '/../../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
-    ];
-    foreach ($possible_paths as $p) {
-        if (file_exists($p)) {
-            require_once $p;
-            if (isset($pdo) && ($pdo instanceof PDO)) break;
+// Ambil Informasi Penanggung Jawab Kas Iuran & Rekening Aktif
+$rekening_kas_str  = '-';
+$nama_pengesah_kas = 'Pengelola Kas Iuran';
+$role_pengesah_kas = 'Ketua Kos / Pengelola Iuran';
+
+try {
+    $stmtKetua = $pdo->query("
+        SELECT nama, nama_bank, no_rekening
+        FROM penghuni
+        WHERE is_ketua_kos = true
+          AND LOWER(TRIM(COALESCE(status_akun, 'aktif'))) = 'aktif'
+        LIMIT 1
+    ");
+    $ketuaRow = $stmtKetua ? $stmtKetua->fetch(PDO::FETCH_ASSOC) : null;
+
+    if ($ketuaRow) {
+        $nama_pengesah_kas = trim((string)$ketuaRow['nama']);
+        $role_pengesah_kas = 'Ketua Kos (Pengelola Kas Iuran)';
+        if (!empty(trim((string)($ketuaRow['no_rekening'] ?? '')))) {
+            $bankKt = trim((string)($ketuaRow['nama_bank'] ?: 'Bank'));
+            $rekKt  = trim((string)$ketuaRow['no_rekening']);
+            $rekening_kas_str = "{$bankKt} {$rekKt} a.n. {$nama_pengesah_kas}";
+        }
+    } else {
+        $stmtPem = $pdo->query("SELECT nama, nama_bank, no_rekening FROM pemilik ORDER BY id ASC LIMIT 1");
+        $pemRow  = $stmtPem ? $stmtPem->fetch(PDO::FETCH_ASSOC) : null;
+        if ($pemRow) {
+            $nama_pengesah_kas = trim((string)$pemRow['nama']);
+            $role_pengesah_kas = 'Pemilik Kos (Pengelola Kas Iuran)';
+            if (!empty(trim((string)($pemRow['no_rekening'] ?? '')))) {
+                $bankPem = trim((string)($pemRow['nama_bank'] ?: 'Bank'));
+                $rekPem  = trim((string)$pemRow['no_rekening']);
+                $rekening_kas_str = "{$bankPem} {$rekPem} a.n. {$nama_pengesah_kas}";
+            }
         }
     }
-}
+} catch (PDOException $e) {}
 
 // Parameter Filter
 $periode = trim($_GET['periode'] ?? 'semua');
@@ -76,6 +98,10 @@ $sql .= " ORDER BY bk.tanggal_transaksi DESC";
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $data_transaksi = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+$rolePencetakLabel = (($currentUser['role'] ?? '') === 'pemilik')
+    ? 'Pemilik Kos'
+    : ((!empty($currentUser['is_ketua_kos']) || !empty($currentUser['is_pj'])) ? 'Ketua Kos' : 'Penghuni');
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -85,16 +111,6 @@ $data_transaksi = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
-    <style>
-        @media print {
-            body.laporan-print-body > .laporan-page-container {
-                display: block !important;
-            }
-            .no-print-bar {
-                display: none !important;
-            }
-        }
-    </style>
 </head>
 <body class="laporan-print-body">
 
@@ -124,9 +140,10 @@ $data_transaksi = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="laporan-meta-col">
                 <span><strong>Periode Laporan:</strong> <?= htmlspecialchars($label_periode); ?></span>
                 <span><strong>Total Transaksi:</strong> <?= count($data_transaksi); ?> baris data</span>
+                <span><strong>Rekening Kas Iuran:</strong> <?= htmlspecialchars($rekening_kas_str); ?></span>
             </div>
-            <div class="laporan-meta-col" style="text-align: right;">
-                <span><strong>Dicetak Oleh:</strong> <?= htmlspecialchars($currentUser['nama'] ?? 'Pengguna'); ?> (<?= ucfirst($currentUser['role'] ?? 'Penghuni'); ?>)</span>
+            <div class="laporan-meta-col laporan-meta-col-right">
+                <span><strong>Dicetak Oleh:</strong> <?= htmlspecialchars($currentUser['nama'] ?? 'Pengguna'); ?> (<?= htmlspecialchars($rolePencetakLabel); ?>)</span>
                 <span><strong>Waktu Cetak:</strong> <?= date('d/m/Y H:i'); ?> WIB</span>
             </div>
         </div>
@@ -135,12 +152,12 @@ $data_transaksi = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <table class="laporan-data-table">
             <thead>
                 <tr>
-                    <th class="text-center" style="width: 40px;">No</th>
+                    <th class="text-center col-lap-no">No</th>
                     <th>Keterangan Transaksi</th>
-                    <th class="text-center" style="width: 90px;">Jenis</th>
-                    <th style="width: 140px;">Waktu Transaksi</th>
-                    <th class="text-right" style="width: 130px;">Pemasukan</th>
-                    <th class="text-right" style="width: 130px;">Pengeluaran</th>
+                    <th class="text-center col-lap-jenis">Jenis</th>
+                    <th class="col-lap-waktu-iuran">Waktu Transaksi</th>
+                    <th class="text-right col-lap-nominal">Pemasukan</th>
+                    <th class="text-right col-lap-nominal">Pengeluaran</th>
                 </tr>
             </thead>
             <tbody>
@@ -193,8 +210,8 @@ $data_transaksi = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="laporan-ttd-wrapper">
             <div class="laporan-ttd-box">
                 <p>Malang, <?= date('d') . ' ' . ($nama_bulan_arr[(int)date('n')] ?? '') . ' ' . date('Y'); ?></p>
-                <p class="laporan-ttd-nama"><strong>( <?= htmlspecialchars($currentUser['nama'] ?? 'Penanggung Jawab'); ?> )</strong></p>
-                <p class="laporan-ttd-role">Pengurus Operasional Kos</p>
+                <p class="laporan-ttd-nama"><strong>( <?= htmlspecialchars($nama_pengesah_kas); ?> )</strong></p>
+                <p class="laporan-ttd-role"><?= htmlspecialchars($role_pengesah_kas); ?></p>
             </div>
         </div>
     </div>

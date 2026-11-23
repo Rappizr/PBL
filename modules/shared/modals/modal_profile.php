@@ -4,27 +4,38 @@
 /** @var string|null $email_user */
 /** @var string|null $no_wa */
 /** @var string|null $kontak_wali */
+/** @var string|null $nama_bank */
 /** @var string|null $no_rekening */
 /** @var string $pin_aktif */
 /** @var string $role_user */
+/** @var bool $is_pj */
 
-$show_modal  = $show_modal  ?? ($_GET['modal'] ?? null);
-$role_aktif  = $role_user   ?? ($_SESSION['user']['role'] ?? 'pemilik');
-$nama_user   = $nama_user   ?? ($_SESSION['user']['nama'] ?? '');
-$email_user  = $email_user  ?? ($_SESSION['user']['email'] ?? '');
-$no_wa       = $no_wa       ?? ($_SESSION['user']['no_wa'] ?? '');
-$kontak_wali = $kontak_wali ?? ($_SESSION['user']['kontak_wali'] ?? '');
-$no_rekening = $no_rekening ?? ($_SESSION['user']['no_rekening'] ?? '');
-$pin_aktif   = $pin_aktif   ?? ($_SESSION['user']['pin'] ?? '');
+$show_modal   = $show_modal   ?? ($_GET['modal'] ?? null);
+$role_aktif   = $role_user    ?? ($_SESSION['user']['role'] ?? 'pemilik');
+$is_pj_aktif  = ($role_aktif !== 'pemilik') && (
+    !empty($is_pj) ||
+    !empty($_SESSION['user']['is_ketua_kos']) ||
+    !empty($_SESSION['user']['is_pj']) ||
+    $role_aktif === 'pj'
+);
+$bisa_atur_rek = ($role_aktif === 'pemilik' || $is_pj_aktif);
+
+$nama_user    = $nama_user    ?? ($_SESSION['user']['nama'] ?? '');
+$email_user   = $email_user   ?? ($_SESSION['user']['email'] ?? '');
+$no_wa        = $no_wa        ?? ($_SESSION['user']['no_wa'] ?? '');
+$kontak_wali  = $kontak_wali  ?? ($_SESSION['user']['kontak_wali'] ?? '');
+$nama_bank    = $nama_bank    ?? ($_SESSION['user']['nama_bank'] ?? '');
+$no_rekening  = $no_rekening  ?? ($_SESSION['user']['no_rekening'] ?? '');
+$pin_aktif    = $pin_aktif    ?? ($_SESSION['user']['pin'] ?? '');
 ?>
 
 <!-- =========================================================================
-     MODAL 1: UBAH DATA PROFIL (INSTAN TANPA RELOAD)
+     MODAL 1: UBAH DATA PROFIL
      ========================================================================= -->
 <div id="modalUbahProfil" class="modal-overlay <?= $show_modal === 'ubah_profil' ? 'active' : ''; ?>" onclick="tutupModalProfileInstan(event)">
     <div class="modal-card" onclick="event.stopPropagation()">
         <h3 class="modal-title">Edit Data Profil</h3>
-        <form action="/?page=profile" method="POST" class="modal-form" id="formEditProfil">
+        <form action="/?page=profile" method="POST" class="modal-form" id="formEditProfil" onsubmit="return handleProfileSubmit(this)">
             <input type="hidden" name="action" value="ubah_profil">
             
             <div class="modal-field">
@@ -46,15 +57,7 @@ $pin_aktif   = $pin_aktif   ?? ($_SESSION['user']['pin'] ?? '');
                        value="<?= htmlspecialchars($no_wa ?? ''); ?>">
             </div>
 
-            <?php if ($role_aktif === 'pemilik'): ?>
-            <div class="modal-field">
-                <label class="modal-label" for="edit_rek">Nomor Rekening</label>
-                <input type="text" id="edit_rek" name="no_rekening"
-                       class="modal-input" placeholder="Contoh: 0000000000"
-                       inputmode="numeric" pattern="[0-9]*" maxlength="25"
-                       value="<?= htmlspecialchars($no_rekening ?? ''); ?>">
-            </div>
-            <?php else: ?>
+            <?php if ($role_aktif !== 'pemilik'): ?>
             <div class="modal-field">
                 <label class="modal-label" for="edit_wali">Kontak Wali</label>
                 <input type="tel" id="edit_wali" name="kontak_wali"
@@ -64,22 +67,49 @@ $pin_aktif   = $pin_aktif   ?? ($_SESSION['user']['pin'] ?? '');
             </div>
             <?php endif; ?>
 
+            <?php if ($bisa_atur_rek): ?>
+            <div class="modal-field">
+                <label class="modal-label" for="edit_bank">
+                    Nama Bank / E-Wallet <?= $is_pj_aktif ? '(Wajib Ketua Kos)' : ''; ?>
+                </label>
+                <input type="text" id="edit_bank" name="nama_bank"
+                       class="modal-input" placeholder="Contoh: BCA / BRI / Mandiri / DANA"
+                       maxlength="50"
+                       value="<?= htmlspecialchars($nama_bank ?? ''); ?>"
+                       <?= $is_pj_aktif ? 'required' : ''; ?>>
+            </div>
+
+            <div class="modal-field">
+                <label class="modal-label" for="edit_rek">
+                    Nomor Rekening <?= $is_pj_aktif ? '(Wajib Ketua Kos)' : ''; ?>
+                </label>
+                <input type="text" id="edit_rek" name="no_rekening"
+                       class="modal-input" placeholder="Contoh: 0000000000"
+                       inputmode="numeric" pattern="[0-9]*" maxlength="50"
+                       value="<?= htmlspecialchars($no_rekening ?? ''); ?>"
+                       <?= $is_pj_aktif ? 'required' : ''; ?>>
+            </div>
+            <?php endif; ?>
+
             <div class="modal-actions">
                 <button type="button" onclick="tutupModalProfileInstan(event)" class="btn-modal-cancel">Batal</button>
-                <button type="submit" class="btn-modal-submit">Simpan</button>
+                <button type="submit" class="btn-modal-submit">
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>Simpan</span>
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- =========================================================================
-     MODAL 2: UBAH PIN (INSTAN TANPA RELOAD)
+     MODAL 2: UBAH PIN
      ========================================================================= -->
 <div id="modalUbahPassword" class="modal-overlay <?= $show_modal === 'ubah_password' ? 'active' : ''; ?>" onclick="tutupModalProfileInstan(event)">
     <div class="modal-card modal-card-pin-custom" onclick="event.stopPropagation()">
         <h3 class="modal-title">Ubah Pin</h3>
         
-        <form action="/?page=profile" method="POST" class="modal-form" id="formUbahPin">
+        <form action="/?page=profile" method="POST" class="modal-form" id="formUbahPin" onsubmit="return handleProfileSubmit(this)">
             <input type="hidden" name="action" value="ubah_password">
             
             <div class="modal-field">
@@ -122,20 +152,23 @@ $pin_aktif   = $pin_aktif   ?? ($_SESSION['user']['pin'] ?? '');
 
             <div class="modal-actions">
                 <button type="button" onclick="tutupModalProfileInstan(event)" class="btn-modal-cancel">Batal</button>
-                <button type="submit" id="btnSubmitPin" class="btn-modal-submit btn-disabled" disabled>Simpan</button>
+                <button type="submit" id="btnSubmitPin" class="btn-modal-submit btn-disabled" disabled>
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>Simpan</span>
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- =========================================================================
-     MODAL 3: UBAH EMAIL (INSTAN TANPA RELOAD)
+     MODAL 3: UBAH EMAIL
      ========================================================================= -->
 <div id="modalUbahEmail" class="modal-overlay <?= $show_modal === 'ubah_email' ? 'active' : ''; ?>" onclick="tutupModalProfileInstan(event)">
     <div class="modal-card modal-card-pin-custom" onclick="event.stopPropagation()">
         <h3 class="modal-title">Ubah Email</h3>
         
-        <form action="/?page=profile" method="POST" class="modal-form" id="formUbahEmail">
+        <form action="/?page=profile" method="POST" class="modal-form" id="formUbahEmail" onsubmit="return handleProfileSubmit(this)">
             <input type="hidden" name="action" value="ubah_email">
             
             <div class="modal-field">
@@ -168,13 +201,51 @@ $pin_aktif   = $pin_aktif   ?? ($_SESSION['user']['pin'] ?? '');
 
             <div class="modal-actions">
                 <button type="button" onclick="tutupModalProfileInstan(event)" class="btn-modal-cancel">Batal</button>
-                <button type="submit" id="btnSubmitEmail" class="btn-modal-submit btn-disabled" disabled>Simpan</button>
+                <button type="submit" id="btnSubmitEmail" class="btn-modal-submit btn-disabled" disabled>
+                    <i class="fa-solid fa-floppy-disk"></i>
+                    <span>Simpan</span>
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <script>
+    let sedangSubmitProfile = false;
+
+    function closeToastProfile() {
+        const toast = document.getElementById('toastAlertBoxProfile');
+        if (toast) {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(-15px) scale(0.95)';
+            setTimeout(() => toast.remove(), 300);
+        }
+    }
+
+    function handleProfileSubmit(form) {
+        if (sedangSubmitProfile) return false;
+        if (typeof form.checkValidity === 'function' && !form.checkValidity()) return true;
+
+        sedangSubmitProfile = true;
+
+        const btnSubmit = form.querySelector('.btn-modal-submit');
+        const btnCancel = form.querySelector('.btn-modal-cancel');
+
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.style.opacity = '0.8';
+            btnSubmit.style.cursor = 'not-allowed';
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Menyimpan...</span>';
+        }
+        if (btnCancel) {
+            btnCancel.disabled = true;
+            btnCancel.style.opacity = '0.5';
+            btnCancel.style.cursor = 'not-allowed';
+        }
+
+        return true;
+    }
+
     function bukaModalProfileInstan(e, modalId, modalParam) {
         if (e) e.preventDefault();
         const modal = document.getElementById(modalId);
@@ -190,6 +261,7 @@ $pin_aktif   = $pin_aktif   ?? ($_SESSION['user']['pin'] ?? '');
     }
 
     function tutupModalProfileInstan(e) {
+        if (sedangSubmitProfile) return;
         if (e) e.preventDefault();
         document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
 
@@ -217,10 +289,16 @@ $pin_aktif   = $pin_aktif   ?? ($_SESSION['user']['pin'] ?? '');
     });
 
     document.addEventListener('DOMContentLoaded', function() {
+        const toast = document.getElementById('toastAlertBoxProfile');
+        if (toast) {
+            setTimeout(closeToastProfile, 4500);
+        }
+
         // --- Validasi Form Profil ---
         const namaInput = document.getElementById('edit_nama');
         const waInput   = document.getElementById('edit_wa');
         const waliInput = document.getElementById('edit_wali');
+        const bankInput = document.getElementById('edit_bank');
         const rekInput  = document.getElementById('edit_rek');
 
         function filterHanyaHuruf() {
@@ -235,6 +313,12 @@ $pin_aktif   = $pin_aktif   ?? ($_SESSION['user']['pin'] ?? '');
             namaInput.addEventListener('input', filterHanyaHuruf);
             namaInput.addEventListener('paste', function() {
                 setTimeout(() => { this.value = this.value.replace(/[^a-zA-Z\s'.]/g, ''); }, 10);
+            });
+        }
+
+        if (bankInput) {
+            bankInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^a-zA-Z0-9\s\-]/g, '');
             });
         }
 

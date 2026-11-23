@@ -1,10 +1,7 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 date_default_timezone_set('Asia/Jakarta');
-require_once __DIR__ . '/../../../config/database.php';
+require_once __DIR__ . '/../../../config/init.php';
+/** @var PDO $pdo */
 
 if (!function_exists('buatLinkWaSewa')) {
     function buatLinkWaSewa(array $p): string

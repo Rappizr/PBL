@@ -1,38 +1,35 @@
 <?php
 // modules/components/sidebar.php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_db = [
-        __DIR__ . '/../../config/database.php',
-        __DIR__ . '/../../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
-    ];
-    foreach ($possible_db as $p) {
-        if (file_exists($p)) {
-            require_once $p;
-            break;
-        }
-    }
-}
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
 if (empty($GLOBALS['siteman_user_synced']) && isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user']['id'])) {
     $uid  = (int)$_SESSION['user']['id'];
     $role = $_SESSION['user']['role'] ?? 'penghuni';
 
     try {
-        if ($role !== 'pemilik') {
-            $stmtSync = $pdo->prepare("SELECT nama, is_ketua_kos FROM penghuni WHERE id = :id LIMIT 1");
+        if ($role === 'pemilik') {
+            $stmtSync = $pdo->prepare("SELECT nama, nama_bank, no_rekening FROM pemilik WHERE id = :id LIMIT 1");
+            $stmtSync->execute([':id' => $uid]);
+            $freshPem = $stmtSync->fetch(PDO::FETCH_ASSOC);
+
+            if ($freshPem) {
+                $_SESSION['user']['nama']        = $freshPem['nama'];
+                $_SESSION['user']['nama_bank']   = $freshPem['nama_bank'] ?? null;
+                $_SESSION['user']['no_rekening'] = $freshPem['no_rekening'] ?? null;
+            }
+        } else {
+            $stmtSync = $pdo->prepare("SELECT nama, is_ketua_kos, nama_bank, no_rekening FROM penghuni WHERE id = :id LIMIT 1");
             $stmtSync->execute([':id' => $uid]);
             $freshUser = $stmtSync->fetch(PDO::FETCH_ASSOC);
 
             if ($freshUser) {
+                $isKetuaSync = (bool)$freshUser['is_ketua_kos'];
                 $_SESSION['user']['nama']         = $freshUser['nama'];
-                $_SESSION['user']['is_ketua_kos'] = (bool)$freshUser['is_ketua_kos'];
-                $_SESSION['user']['is_pj']        = (bool)$freshUser['is_ketua_kos'];
+                $_SESSION['user']['is_ketua_kos'] = $isKetuaSync;
+                $_SESSION['user']['is_pj']        = $isKetuaSync;
+                $_SESSION['user']['nama_bank']    = $isKetuaSync ? ($freshUser['nama_bank'] ?? null) : null;
+                $_SESSION['user']['no_rekening']  = $isKetuaSync ? ($freshUser['no_rekening'] ?? null) : null;
             }
         }
         $GLOBALS['siteman_user_synced'] = true;
@@ -50,6 +47,9 @@ $currentPage = trim((string)($_GET['page'] ?? ($parsedQuery['page'] ?? ($current
 if ($currentPage === '') {
     $currentPage = 'dashboard';
 }
+
+$ketuaWajibIsiRek = ($role_user !== 'pemilik' && $is_pj && $currentPage !== 'profile')
+    && (empty(trim((string)($_SESSION['user']['nama_bank'] ?? ''))) || empty(trim((string)($_SESSION['user']['no_rekening'] ?? ''))));
 
 // Hitung angka awal notifikasi sidebar dengan cache session 5 detik
 $initNotif = [
@@ -322,6 +322,25 @@ if (!function_exists('formatBadgeCount')) {
 
         const currentParams = new URLSearchParams(window.location.search);
         setSidebarActiveByPage(currentParams.get('page') || 'dashboard');
+
+        <?php if ($ketuaWajibIsiRek): ?>
+        const desktopContainer = document.querySelector('.desktop-content');
+        if (desktopContainer && !document.getElementById('bannerWajibRekKetua')) {
+            const banner = document.createElement('div');
+            banner.id = 'bannerWajibRekKetua';
+            banner.className = 'iuran-notif-banner notif-warning banner-wajib-rek';
+            banner.innerHTML = `
+                <div class="iuran-notif-icon">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <div class="iuran-notif-body">
+                    <strong>Wajib Lengkapi Rekening Kas Iuran</strong>
+                    <p>Anda menjabat sebagai Ketua Kos. Silakan lengkapi <b>Nama Bank</b> dan <b>Nomor Rekening</b> di halaman <a href="/?page=profile&modal=ubah_profil" class="link-wajib-rek">Profil Akun</a> agar penghuni dapat melakukan transfer iuran.</p>
+                </div>
+            `;
+            desktopContainer.insertBefore(banner, desktopContainer.firstChild);
+        }
+        <?php endif; ?>
 
         allPageLinks.forEach(function (link) {
             link.addEventListener('click', function (e) {

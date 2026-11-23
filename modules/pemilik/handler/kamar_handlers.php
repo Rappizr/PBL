@@ -138,7 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
     if (empty($kamar_nomor)) $responseError("Nomor kamar wajib dipilih.");
     if (strlen($no_wa) < 10 || strlen($no_wa) > 15 || !str_starts_with($no_wa, '08')) $responseError("Nomor WA tidak valid.");
 
-    // No. Kontak Wali tidak wajib: validasi format hanya jika diisi
     $kontak_wali_val = null;
     if ($kontak_wali !== '') {
         if (strlen($kontak_wali) < 10 || strlen($kontak_wali) > 15 || !str_starts_with($kontak_wali, '08')) {
@@ -149,7 +148,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
 
     if (strlen($pin) !== 6) $responseError("PIN Akun harus 6 digit angka.");
 
-    // Foto KTP wajib diunggah saat tambah penghuni baru
     if (empty($_FILES['foto_ktp']['name']) || ($_FILES['foto_ktp']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
         $responseError("Foto KTP wajib diunggah!");
     }
@@ -344,11 +342,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
             $pk_id       = $data['penghuni_kamar_id'];
 
             if ($is_ketua_kos === 'true') {
-                $stmtCopot = $pdo->prepare("UPDATE penghuni SET is_ketua_kos = false WHERE is_ketua_kos = true AND id != :id");
+                $stmtCopot = $pdo->prepare("
+                    UPDATE penghuni 
+                    SET is_ketua_kos = false,
+                        nama_bank = NULL,
+                        no_rekening = NULL
+                    WHERE is_ketua_kos = true AND id != :id
+                ");
                 $stmtCopot->execute([':id' => $penghuni_id]);
             }
 
-            // Cek unggahan / pembaruan foto KTP dari modal Detail Kamar
             $nama_foto_baru = null;
             if (!empty($_FILES['foto_ktp_baru']['name']) && ($_FILES['foto_ktp_baru']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
                 $ext = strtolower(pathinfo($_FILES['foto_ktp_baru']['name'], PATHINFO_EXTENSION));
@@ -371,6 +374,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
                 }
             }
 
+            $sqlResetRek = ($is_ketua_kos === 'false')
+                ? ", nama_bank = NULL, no_rekening = NULL"
+                : "";
+
             $sqlUP = "
                 UPDATE penghuni 
                 SET nama = :nama, 
@@ -378,6 +385,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
                     email = :email, 
                     kontak_wali = :kontak_wali, 
                     is_ketua_kos = {$is_ketua_kos}
+                    {$sqlResetRek}
             ";
             $paramsUP = [
                 ':nama'        => $nama,
@@ -439,7 +447,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
         if (function_exists('bersihkanCacheNotifSiteman')) {
             bersihkanCacheNotifSiteman();
         }
-        $_SESSION['pesan_sukses'] = "Detail penghuni berhasil diperbarui!";
+        $_SESSION['pesan_sukses'] = "Detail penghuni Kamar {$nomor_kamar} berhasil diperbarui!";
         header("Location: /?page=" . urlencode($current_page));
         exit;
     } catch (Exception $e) {
@@ -650,7 +658,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['proses_pindah_kamar']
                 bersihkanCacheNotifSiteman();
             }
             $_SESSION['pesan_sukses'] = "Penghuni berhasil dipindahkan ke Kamar {$nomor_kamar_tujuan}!";
-            header("Location: /?page=" . urlencode($current_page) . "&modal=detail_kamar&nomor=" . urlencode($nomor_kamar_tujuan));
+            header("Location: /?page=" . urlencode($current_page));
             exit;
         } catch (Exception $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
@@ -666,15 +674,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_kamar'])) {
     $nomor_kamar = trim($_POST['nomor_kamar'] ?? '');
     try {
         $pdo->beginTransaction();
-        $stmtCari = $pdo->prepare("SELECT id FROM kamar WHERE no_kamar = :no LIMIT 1");
+        $stmtCari = $pdo->prepare("SELECT id, status_kamar FROM kamar WHERE no_kamar = :no LIMIT 1 FOR UPDATE");
         $stmtCari->execute([':no' => $nomor_kamar]);
-        $kamar_id = $stmtCari->fetchColumn();
+        $kamarRow = $stmtCari->fetch(PDO::FETCH_ASSOC);
 
-        if ($kamar_id) {
+        if ($kamarRow) {
+            if (strtolower(trim($kamarRow['status_kamar'] ?? '')) === 'terisi') {
+                throw new Exception("Kamar {$nomor_kamar} masih berpenghuni. Keluarkan atau pindahkan penghuni terlebih dahulu.");
+            }
+
+            $kamar_id = (int)$kamarRow['id'];
             $pdo->prepare("DELETE FROM penghuni_kamar WHERE kamar_id = :id")->execute([':id' => $kamar_id]);
             $pdo->prepare("DELETE FROM kamar WHERE id = :id")->execute([':id' => $kamar_id]);
 
             $pdo->commit();
+            if (function_exists('bersihkanCacheNotifSiteman')) {
+                bersihkanCacheNotifSiteman();
+            }
             $_SESSION['pesan_sukses'] = "Kamar {$nomor_kamar} berhasil dihapus!";
             header("Location: /?page=" . urlencode($current_page));
             exit;

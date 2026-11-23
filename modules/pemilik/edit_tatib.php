@@ -3,7 +3,8 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-require_once __DIR__ . '/../../config/database.php';
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
 $role_user = $_SESSION['user']['role'] ?? 'penghuni';
 if ($role_user !== 'pemilik') {
@@ -110,6 +111,25 @@ if ($modal === 'tambah_peraturan') {
 
 <body class="dashboard-body">
 
+    <!-- FLOATING TOAST NOTIFIKASI (POP-UP MODERN) -->
+    <div class="toast-floating-container">
+        <?php if (!empty($pesan)): ?>
+        <?php $isSukses = ($pesan['tipe'] ?? '') === 'sukses'; ?>
+        <div class="toast-alert <?= $isSukses ? 'toast-success' : 'toast-error'; ?>" id="toastAlertBox">
+            <div class="toast-icon">
+                <i class="fa-solid <?= $isSukses ? 'fa-check' : 'fa-triangle-exclamation'; ?>"></i>
+            </div>
+            <div class="toast-content">
+                <h5 class="toast-title"><?= $isSukses ? 'Berhasil' : 'Perhatian'; ?></h5>
+                <p class="toast-message"><?= htmlspecialchars($pesan['teks']); ?></p>
+            </div>
+            <button type="button" class="toast-close" onclick="closeToastTatib()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <?php endif; ?>
+    </div>
+
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
         <div>
@@ -122,12 +142,6 @@ if ($modal === 'tambah_peraturan') {
                         <i class="fa-solid fa-arrow-left"></i> Kembali
                     </a>
                 </div>
-
-                <?php if ($pesan): ?>
-                <p class="peraturan-flash <?= $pesan['tipe'] === 'sukses' ? 'sukses' : 'gagal'; ?>">
-                    <?= htmlspecialchars($pesan['teks']); ?>
-                </p>
-                <?php endif; ?>
 
                 <div class="peraturan-toolbar">
                     <a href="/?page=edit_tatib&modal=tambah_peraturan" onclick="bukaModalTambahTatib(event)" class="btn-tambah-tatib-mobile">
@@ -181,12 +195,6 @@ if ($modal === 'tambah_peraturan') {
             <h2 class="desktop-header-title">Manajemen Peraturan Kos</h2>
             <p class="peraturan-desktop-subtitle">Mengatur Peraturan Kos</p>
 
-            <?php if ($pesan): ?>
-            <p class="peraturan-flash <?= $pesan['tipe'] === 'sukses' ? 'sukses' : 'gagal'; ?>">
-                <?= htmlspecialchars($pesan['teks']); ?>
-            </p>
-            <?php endif; ?>
-
             <div class="peraturan-toolbar">
                 <a href="/?page=edit_tatib&modal=tambah_peraturan" onclick="bukaModalTambahTatib(event)" class="btn-tambah-tatib-mobile">
                     <i class="fa-solid fa-plus"></i> Tambah Peraturan
@@ -236,30 +244,30 @@ if ($modal === 'tambah_peraturan') {
         </main>
     </div>
 
-    <!-- MODAL TAMBAH / EDIT (INSTAN TANPA RELOAD) -->
+    <!-- MODAL TAMBAH / EDIT -->
     <div id="modalFormTatib" class="modal-overlay <?= $mode_form ? 'active' : ''; ?>" onclick="tutupModalTatib(event)">
-        <div class="modal-card" onclick="event.stopPropagation()">
+        <div class="modal-card modal-tatib-card" onclick="event.stopPropagation()">
             <h3 class="modal-title" id="modalTatibTitle"><?= $mode_form === 'edit' ? 'Edit Peraturan' : 'Tambah Peraturan'; ?></h3>
 
-            <form action="/?page=edit_tatib" method="POST" class="modal-form">
+            <form action="/?page=edit_tatib" method="POST" class="modal-form" id="formTatibModal">
                 <input type="hidden" name="aksi" id="tatibAksi" value="<?= $mode_form ?? 'tambah'; ?>">
                 <input type="hidden" name="id" id="tatibId" value="<?= $mode_form === 'edit' ? (int) $peraturan_aktif['id'] : 0; ?>">
 
                 <div class="modal-field">
                     <label class="modal-label" for="judul">Judul</label>
-                    <input type="text" id="judul" name="judul" class="modal-input" maxlength="255" required
+                    <input type="text" id="judul" name="judul" class="modal-input" maxlength="255" placeholder="Contoh: Jam Malam Tamu" required
                         value="<?= $mode_form === 'edit' ? htmlspecialchars($peraturan_aktif['judul']) : ''; ?>">
                 </div>
 
                 <div class="modal-field">
                     <label class="modal-label" for="deskripsi">Deskripsi</label>
-                    <textarea id="deskripsi" name="deskripsi" class="modal-input" rows="4" maxlength="255"
+                    <textarea id="deskripsi" name="deskripsi" class="modal-input modal-tatib-textarea" rows="4" maxlength="255" placeholder="Tuliskan detail peraturan..."
                         required><?= $mode_form === 'edit' ? htmlspecialchars($peraturan_aktif['deskripsi']) : ''; ?></textarea>
                 </div>
 
-                <div class="modal-field">
+                <div class="modal-field modal-tatib-field-ikon">
                     <label class="modal-label" for="ikon">Ikon</label>
-                    <select id="ikon" name="ikon" class="modal-input">
+                    <select id="ikon" name="ikon" class="modal-input modal-tatib-select">
                         <?php foreach ($pilihan_ikon as $kelas => $nama): ?>
                         <option value="<?= $kelas; ?>"
                             <?= ($mode_form === 'edit' && $peraturan_aktif['icon'] === $kelas) ? 'selected' : ''; ?>>
@@ -269,15 +277,17 @@ if ($modal === 'tambah_peraturan') {
                     </select>
                 </div>
 
-                <div class="modal-actions">
-                    <button type="button" onclick="tutupModalTatib(event)" class="btn-modal-cancel">Batal</button>
-                    <button type="submit" class="btn-modal-submit">Simpan</button>
+                <div class="modal-actions modal-tatib-actions">
+                    <button type="button" onclick="tutupModalTatib(event)" class="btn-modal-cancel" id="btnBatalTatib">Batal</button>
+                    <button type="submit" class="btn-modal-submit" id="btnSimpanTatib">
+                        <span id="btnSimpanTatibText">Simpan</span>
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- MODAL KONFIRMASI HAPUS (INSTAN TANPA RELOAD) -->
+    <!-- MODAL KONFIRMASI HAPUS -->
     <div id="modalHapusTatib" class="modal-overlay <?= ($modal === 'hapus_peraturan' && $peraturan_aktif) ? 'active' : ''; ?>" onclick="tutupModalTatib(event)">
         <div class="modal-card" onclick="event.stopPropagation()">
             <h3 class="modal-title">Hapus Peraturan</h3>
@@ -286,18 +296,29 @@ if ($modal === 'tambah_peraturan') {
                 Tindakan ini tidak bisa dibatalkan.
             </p>
 
-            <form action="/?page=edit_tatib" method="POST" class="modal-form">
+            <form action="/?page=edit_tatib" method="POST" class="modal-form" id="formHapusTatibModal">
                 <input type="hidden" name="aksi" value="hapus">
                 <input type="hidden" name="id" id="tatibHapusId" value="<?= (int) ($peraturan_aktif['id'] ?? 0); ?>">
                 <div class="modal-actions">
-                    <button type="button" onclick="tutupModalTatib(event)" class="btn-modal-cancel">Batal</button>
-                    <button type="submit" class="btn-modal-submit btn-konfirmasi-hapus">Hapus</button>
+                    <button type="button" onclick="tutupModalTatib(event)" class="btn-modal-cancel" id="btnBatalHapusTatib">Batal</button>
+                    <button type="submit" class="btn-modal-submit btn-konfirmasi-hapus" id="btnHapusTatib">
+                        <span id="btnHapusTatibText">Hapus</span>
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
+        function closeToastTatib() {
+            const toast = document.getElementById('toastAlertBox');
+            if (toast) {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(-15px) scale(0.95)';
+                setTimeout(() => toast.remove(), 300);
+            }
+        }
+
         function bukaModalTambahTatib(e) {
             if (e) e.preventDefault();
             document.getElementById('modalTatibTitle').textContent = 'Tambah Peraturan';
@@ -358,6 +379,54 @@ if ($modal === 'tambah_peraturan') {
             url.searchParams.delete('id');
             window.history.replaceState({}, '', url);
         }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const toast = document.getElementById('toastAlertBox');
+            if (toast) setTimeout(closeToastTatib, 5000);
+
+            const formTatib = document.getElementById('formTatibModal');
+            const btnSimpan = document.getElementById('btnSimpanTatib');
+            const btnSimpanText = document.getElementById('btnSimpanTatibText');
+            const btnBatal = document.getElementById('btnBatalTatib');
+
+            if (formTatib) {
+                formTatib.addEventListener('submit', function () {
+                    if (!formTatib.checkValidity()) return;
+                    if (btnSimpan) {
+                        btnSimpan.disabled = true;
+                        btnSimpan.classList.add('kamar-btn-disabled');
+                    }
+                    if (btnBatal) {
+                        btnBatal.disabled = true;
+                        btnBatal.classList.add('kamar-btn-disabled');
+                    }
+                    if (btnSimpanText) {
+                        btnSimpanText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin spinner-gap-right"></i>Menyimpan...';
+                    }
+                });
+            }
+
+            const formHapus = document.getElementById('formHapusTatibModal');
+            const btnHapus = document.getElementById('btnHapusTatib');
+            const btnHapusText = document.getElementById('btnHapusTatibText');
+            const btnBatalHapus = document.getElementById('btnBatalHapusTatib');
+
+            if (formHapus) {
+                formHapus.addEventListener('submit', function () {
+                    if (btnHapus) {
+                        btnHapus.disabled = true;
+                        btnHapus.classList.add('kamar-btn-disabled');
+                    }
+                    if (btnBatalHapus) {
+                        btnBatalHapus.disabled = true;
+                        btnBatalHapus.classList.add('kamar-btn-disabled');
+                    }
+                    if (btnHapusText) {
+                        btnHapusText.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin spinner-gap-right"></i>Menghapus...';
+                    }
+                });
+            }
+        });
 
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape') tutupModalTatib();

@@ -1,27 +1,7 @@
 <?php
 // modules/pemilik/handler/chat_handlers.php
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// 1. Pastikan koneksi $pdo dimuat
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_paths = [
-        __DIR__ . '/../../../config/database.php',
-        __DIR__ . '/../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php',
-        dirname(__DIR__, 2) . '/config/database.php',
-        dirname(__DIR__, 3) . '/config/database.php'
-    ];
-    foreach ($possible_paths as $path) {
-        if (file_exists($path)) {
-            require_once $path;
-            if (isset($pdo) && ($pdo instanceof PDO)) break;
-        }
-    }
-}
+require_once __DIR__ . '/../../../config/init.php';
+/** @var PDO $pdo */
 
 if (!function_exists('buatLinkWaSapaan')) {
     function buatLinkWaSapaan(array $p, string $role_pengirim = 'pemilik'): string
@@ -34,8 +14,8 @@ if (!function_exists('buatLinkWaSapaan')) {
             $nomor = '62' . substr($nomor, 1);
         }
 
-        $nama  = $p['nama'] ?? 'Penghuni';
-        $kamar = $p['kamar'] ?? '-';
+        $nama     = $p['nama'] ?? 'Penghuni';
+        $kamar    = $p['kamar'] ?? '-';
         $pengirim = ($role_pengirim === 'pemilik') ? 'Pemilik SITEMAN - KOS' : 'Penghuni / Pengurus SITEMAN - KOS';
 
         $pesan = "Halo *{$nama}* (Kamar {$kamar}), salam dari {$pengirim}. 🙏";
@@ -45,17 +25,26 @@ if (!function_exists('buatLinkWaSapaan')) {
 
 $penghuniKos = [];
 
-if (isset($pdo) && $pdo instanceof PDO) {
+if (isset($pdo) && ($pdo instanceof PDO)) {
     try {
         $sql = "
             SELECT 
                 p.id,
                 p.nama,
+                p.is_ketua_kos,
                 COALESCE(k.no_kamar, '-') AS kamar,
                 COALESCE(p.no_wa, '-') AS no_wa
             FROM penghuni p
-            LEFT JOIN penghuni_kamar pk ON p.id = pk.penghuni_id
-            LEFT JOIN kamar k ON pk.kamar_id = k.id
+            LEFT JOIN LATERAL (
+                SELECT pk.kamar_id
+                FROM penghuni_kamar pk
+                JOIN kamar km ON km.id = pk.kamar_id
+                WHERE pk.penghuni_id = p.id
+                  AND LOWER(TRIM(COALESCE(km.status_kamar, 'kosong'))) = 'terisi'
+                ORDER BY pk.id DESC
+                LIMIT 1
+            ) pk_aktif ON true
+            LEFT JOIN kamar k ON pk_aktif.kamar_id = k.id
             WHERE LOWER(COALESCE(p.status_akun, 'aktif')) IN ('aktif', 'freeze')
             ORDER BY 
                 NULLIF(regexp_replace(COALESCE(k.no_kamar, '0'), '\D', '', 'g'), '')::INTEGER ASC NULLS LAST,

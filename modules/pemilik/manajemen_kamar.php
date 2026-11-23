@@ -1,22 +1,6 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_paths = [
-        __DIR__ . '/../../config/database.php',
-        __DIR__ . '/../../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
-    ];
-    foreach ($possible_paths as $p) {
-        if (file_exists($p)) {
-            require_once $p;
-            if (isset($pdo) && ($pdo instanceof PDO)) break;
-        }
-    }
-}
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
 $current_page = 'manajemen_kamar';
 $modal_aktif  = $_GET['modal'] ?? '';
@@ -59,7 +43,7 @@ if (isset($pdo) && $pdo instanceof PDO) {
         $stmtSkema = $pdo->query("SELECT * FROM skema_sewa ORDER BY durasi_nilai ASC, id ASC");
         $list_skema = $stmtSkema ? $stmtSkema->fetchAll(PDO::FETCH_ASSOC) : [];
 
-        $stmtKetua = $pdo->query("SELECT id, nama FROM penghuni WHERE is_ketua_kos = true LIMIT 1");
+        $stmtKetua = $pdo->query("SELECT id, nama, nama_bank, no_rekening FROM penghuni WHERE is_ketua_kos = true LIMIT 1");
         $ketuaAktif = $stmtKetua ? ($stmtKetua->fetch(PDO::FETCH_ASSOC) ?: null) : null;
 
         $sqlKamar = "
@@ -80,6 +64,8 @@ if (isset($pdo) && $pdo instanceof PDO) {
                 p.foto_ktp,
                 p.pin,
                 p.is_ketua_kos,
+                p.nama_bank,
+                p.no_rekening,
                 LOWER(TRIM(COALESCE(p.status_akun, 'aktif'))) AS status_akun,
                 t_last.status_tagihan AS status_bayar,
                 t_last.tanggal_janji_bayar,
@@ -106,13 +92,29 @@ if (isset($pdo) && $pdo instanceof PDO) {
         $rows = $pdo->query($sqlKamar)->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($rows as $r) {
-            $noKamar  = $r['no_kamar'];
+            $noKamar  = trim((string)$r['no_kamar']);
             $isKosong = ($r['status_kamar'] === 'kosong' || empty($r['nama']));
+            $isKetua  = !empty($r['is_ketua_kos']);
 
             $tglMulai      = $r['tanggal_masuk'] ?? date('Y-m-d');
             $tglSelesaiFmt = !empty($r['tanggal_selesai'])
                 ? date('d / m / Y', strtotime($r['tanggal_selesai']))
                 : '-';
+
+            $fotoKtpRaw  = trim((string)($r['foto_ktp'] ?? ''));
+            $fotoKtpFile = $fotoKtpRaw !== '' ? basename($fotoKtpRaw) : '';
+            $ktpUrl      = '';
+            if ($fotoKtpFile !== '' && $fotoKtpFile !== 'ktp_default.jpg' && strtolower($fotoKtpFile) !== 'null') {
+                $lokasiFileKtp = __DIR__ . '/../../public/uploads/ktp/' . $fotoKtpFile;
+                if (is_file($lokasiFileKtp)) {
+                    $extKtp      = strtolower(pathinfo($lokasiFileKtp, PATHINFO_EXTENSION));
+                    $mimeKtp     = ($extKtp === 'png') ? 'image/png' : (($extKtp === 'webp') ? 'image/webp' : 'image/jpeg');
+                    $ktpContent  = file_get_contents($lokasiFileKtp);
+                    if ($ktpContent !== false) {
+                        $ktpUrl = 'data:' . $mimeKtp . ';base64,' . base64_encode($ktpContent);
+                    }
+                }
+            }
 
             $item = [
                 'kamar_id'            => $r['kamar_id'],
@@ -125,8 +127,11 @@ if (isset($pdo) && $pdo instanceof PDO) {
                 'email'               => $r['email'] ?? '',
                 'kontak_wali'         => $r['kontak_wali'] ?? '',
                 'foto_ktp'            => $r['foto_ktp'] ?? '',
+                'ktp_url'             => $ktpUrl,
                 'pin'                 => $r['pin'] ?? '123456',
-                'is_ketua_kos'        => !empty($r['is_ketua_kos']),
+                'is_ketua_kos'        => $isKetua,
+                'nama_bank'           => $isKetua ? ($r['nama_bank'] ?? '') : '',
+                'no_rekening'         => $isKetua ? ($r['no_rekening'] ?? '') : '',
                 'status_akun'         => $r['status_akun'] ?? 'aktif',
                 'skema_id'            => $r['skema_id'] ?? 0,
                 'durasi_sewa'         => $r['durasi_sewa'] ?? '',
@@ -153,13 +158,11 @@ if (isset($pdo) && $pdo instanceof PDO) {
     }
 }
 
-// Pagination (8 kamar per halaman)
+// Konfigurasi Pagination Client-Side (8 kamar per halaman)
 $per_halaman   = 8;
 $total_kamar   = count($semua_kamar);
 $total_halaman = max(1, (int) ceil($total_kamar / $per_halaman));
 $halaman_aktif = max(1, min($total_halaman, (int) ($_GET['hal'] ?? 1)));
-$offset        = ($halaman_aktif - 1) * $per_halaman;
-$kamar_tampil  = array_slice($semua_kamar, $offset, $per_halaman);
 
 $notif_freeze_list = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '') === 'freeze');
 $notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '') !== 'freeze');
@@ -249,7 +252,9 @@ $notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '
                                         <a href="<?= htmlspecialchars($nf['wa_pengingat_url']); ?>" target="_blank" class="kamar-notif-btn-wa">
                                             <i class="fa-brands fa-whatsapp"></i> WA
                                         </a>
-                                        <a href="/?page=manajemen_kamar&hal=<?= $halaman_aktif; ?>&modal=detail_kamar&nomor=<?= urlencode($nf['no_kamar']); ?>" class="kamar-notif-btn-kelola">
+                                        <a href="/?page=manajemen_kamar&hal=<?= $halaman_aktif; ?>&modal=detail_kamar&nomor=<?= urlencode($nf['no_kamar']); ?>"
+                                           onclick="bukaDetailKamarInstan(event, '<?= htmlspecialchars($nf['no_kamar'], ENT_QUOTES); ?>')"
+                                           class="kamar-notif-btn-kelola">
                                             Kelola
                                         </a>
                                     </div>
@@ -284,7 +289,9 @@ $notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '
                                         <a href="<?= htmlspecialchars($nw['wa_pengingat_url']); ?>" target="_blank" class="kamar-notif-btn-wa">
                                             <i class="fa-brands fa-whatsapp"></i> WA
                                         </a>
-                                        <a href="/?page=manajemen_kamar&hal=<?= $halaman_aktif; ?>&modal=detail_kamar&nomor=<?= urlencode($nw['no_kamar']); ?>" class="kamar-notif-btn-kelola">
+                                        <a href="/?page=manajemen_kamar&hal=<?= $halaman_aktif; ?>&modal=detail_kamar&nomor=<?= urlencode($nw['no_kamar']); ?>"
+                                           onclick="bukaDetailKamarInstan(event, '<?= htmlspecialchars($nw['no_kamar'], ENT_QUOTES); ?>')"
+                                           class="kamar-notif-btn-kelola">
                                             Detail
                                         </a>
                                     </div>
@@ -315,17 +322,20 @@ $notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '
 
                 <!-- Grid Kartu Kamar Mobile -->
                 <div class="kamar-grid">
-                    <?php if (empty($kamar_tampil)): ?>
+                    <?php if (empty($semua_kamar)): ?>
                         <p class="kamar-empty-state-mobile">Belum ada kamar yang terdaftar.</p>
                     <?php else: ?>
-                        <?php foreach ($kamar_tampil as $kmr): ?>
+                        <?php foreach ($semua_kamar as $idx => $kmr): ?>
                             <?php
+                                $page_kmr = (int) floor($idx / $per_halaman) + 1;
                                 $isKosong = ($kmr['status_kamar'] === 'kosong');
                                 $isFreeze = (!$isKosong && $kmr['status_akun'] === 'freeze');
                                 $isLunas  = (!$isKosong && $kmr['status_bayar'] === 'lunas');
                             ?>
-                            <a href="/?page=manajemen_kamar&hal=<?= $halaman_aktif; ?>&modal=detail_kamar&nomor=<?= urlencode($kmr['nomor']); ?>"
-                               class="kamar-card">
+                            <a href="/?page=manajemen_kamar&hal=<?= $page_kmr; ?>&modal=detail_kamar&nomor=<?= urlencode($kmr['nomor']); ?>"
+                               onclick="bukaDetailKamarInstan(event, '<?= htmlspecialchars($kmr['nomor'], ENT_QUOTES); ?>')"
+                               data-kamar-page="<?= $page_kmr; ?>"
+                               class="kamar-card kamar-page-item <?= $page_kmr !== $halaman_aktif ? 'kamar-hidden-item' : ''; ?>">
                                 <?php if ($isKosong): ?>
                                     <span class="badge-status badge-kosong">Kosong</span>
                                 <?php elseif ($isFreeze): ?>
@@ -347,17 +357,19 @@ $notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '
 
                 <?php if ($total_halaman > 1): ?>
                     <div class="kamar-mobile-pagination">
-                        <a href="/?page=manajemen_kamar&hal=<?= max(1, $halaman_aktif - 1); ?>"
+                        <button type="button" id="btnPrevKamarMob"
+                           onclick="gantiHalKamar(-1)"
                            class="kamar-mobile-page-btn <?= $halaman_aktif <= 1 ? 'disabled' : ''; ?>"
-                           <?= $halaman_aktif <= 1 ? 'onclick="return false;"' : ''; ?>>
+                           <?= $halaman_aktif <= 1 ? 'disabled' : ''; ?>>
                             <i class="fa-solid fa-chevron-left"></i>
-                        </a>
-                        <span class="kamar-mobile-page-info">Hal <?= $halaman_aktif; ?> / <?= $total_halaman; ?></span>
-                        <a href="/?page=manajemen_kamar&hal=<?= min($total_halaman, $halaman_aktif + 1); ?>"
+                        </button>
+                        <span class="kamar-mobile-page-info" id="infoHalKamarMob">Hal <?= $halaman_aktif; ?> / <?= $total_halaman; ?></span>
+                        <button type="button" id="btnNextKamarMob"
+                           onclick="gantiHalKamar(1)"
                            class="kamar-mobile-page-btn <?= $halaman_aktif >= $total_halaman ? 'disabled' : ''; ?>"
-                           <?= $halaman_aktif >= $total_halaman ? 'onclick="return false;"' : ''; ?>>
+                           <?= $halaman_aktif >= $total_halaman ? 'disabled' : ''; ?>>
                             <i class="fa-solid fa-chevron-right"></i>
-                        </a>
+                        </button>
                     </div>
                 <?php endif; ?>
             </main>
@@ -401,7 +413,9 @@ $notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '
                                     <a href="<?= htmlspecialchars($nf['wa_pengingat_url']); ?>" target="_blank" class="kamar-notif-desk-wa">
                                         <i class="fa-brands fa-whatsapp"></i> Ingatkan WA
                                     </a>
-                                    <a href="/?page=manajemen_kamar&hal=<?= $halaman_aktif; ?>&modal=detail_kamar&nomor=<?= urlencode($nf['no_kamar']); ?>" class="kamar-notif-desk-kelola">
+                                    <a href="/?page=manajemen_kamar&hal=<?= $halaman_aktif; ?>&modal=detail_kamar&nomor=<?= urlencode($nf['no_kamar']); ?>"
+                                       onclick="bukaDetailKamarInstan(event, '<?= htmlspecialchars($nf['no_kamar'], ENT_QUOTES); ?>')"
+                                       class="kamar-notif-desk-kelola">
                                         Kelola / Unfreeze
                                     </a>
                                 </div>
@@ -438,7 +452,9 @@ $notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '
                                     <a href="<?= htmlspecialchars($nw['wa_pengingat_url']); ?>" target="_blank" class="kamar-notif-desk-wa">
                                         <i class="fa-brands fa-whatsapp"></i> Ingatkan WA
                                     </a>
-                                    <a href="/?page=manajemen_kamar&hal=<?= $halaman_aktif; ?>&modal=detail_kamar&nomor=<?= urlencode($nw['no_kamar']); ?>" class="kamar-notif-desk-kelola">
+                                    <a href="/?page=manajemen_kamar&hal=<?= $halaman_aktif; ?>&modal=detail_kamar&nomor=<?= urlencode($nw['no_kamar']); ?>"
+                                       onclick="bukaDetailKamarInstan(event, '<?= htmlspecialchars($nw['no_kamar'], ENT_QUOTES); ?>')"
+                                       class="kamar-notif-desk-kelola">
                                         Detail Kamar
                                     </a>
                                 </div>
@@ -470,17 +486,20 @@ $notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '
             <!-- Panel Grid Kamar Desktop -->
             <div class="kamar-desktop-panel">
                 <div class="kamar-desktop-grid-white">
-                    <?php if (empty($kamar_tampil)): ?>
+                    <?php if (empty($semua_kamar)): ?>
                         <p class="kamar-empty-state-desktop">Belum ada data kamar. Silakan klik tombol "Tambah Kamar" di atas.</p>
                     <?php else: ?>
-                        <?php foreach ($kamar_tampil as $kmr): ?>
+                        <?php foreach ($semua_kamar as $idx => $kmr): ?>
                             <?php
+                                $page_kmr = (int) floor($idx / $per_halaman) + 1;
                                 $isKosong = ($kmr['status_kamar'] === 'kosong');
                                 $isFreeze = (!$isKosong && $kmr['status_akun'] === 'freeze');
                                 $isLunas  = (!$isKosong && $kmr['status_bayar'] === 'lunas');
                             ?>
-                            <a href="/?page=manajemen_kamar&hal=<?= $halaman_aktif; ?>&modal=detail_kamar&nomor=<?= urlencode($kmr['nomor']); ?>"
-                               class="<?= $isKosong ? 'kamar-card-gray' : 'kamar-card-white'; ?>">
+                            <a href="/?page=manajemen_kamar&hal=<?= $page_kmr; ?>&modal=detail_kamar&nomor=<?= urlencode($kmr['nomor']); ?>"
+                               onclick="bukaDetailKamarInstan(event, '<?= htmlspecialchars($kmr['nomor'], ENT_QUOTES); ?>')"
+                               data-kamar-page="<?= $page_kmr; ?>"
+                               class="<?= $isKosong ? 'kamar-card-gray' : 'kamar-card-white'; ?> kamar-page-item <?= $page_kmr !== $halaman_aktif ? 'kamar-hidden-item' : ''; ?>">
                                 <?php if ($isKosong): ?>
                                     <span class="badge-kamar-status badge-kamar-kosong">Kosong</span>
                                 <?php elseif ($isFreeze): ?>
@@ -516,17 +535,19 @@ $notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '
 
                     <?php if ($total_halaman > 1): ?>
                         <div class="kamar-pagination-row">
-                            <a href="/?page=manajemen_kamar&hal=<?= max(1, $halaman_aktif - 1); ?>"
+                            <button type="button" id="btnPrevKamarDesk"
+                               onclick="gantiHalKamar(-1)"
                                class="kamar-page-btn"
-                               <?= $halaman_aktif <= 1 ? 'onclick="return false;"' : ''; ?>>
+                               <?= $halaman_aktif <= 1 ? 'disabled' : ''; ?>>
                                 <i class="fa-solid fa-chevron-left"></i>
-                            </a>
-                            <span class="kamar-page-info">Halaman <?= $halaman_aktif; ?> dari <?= $total_halaman; ?></span>
-                            <a href="/?page=manajemen_kamar&hal=<?= min($total_halaman, $halaman_aktif + 1); ?>"
+                            </button>
+                            <span class="kamar-page-info" id="infoHalKamarDesk">Halaman <?= $halaman_aktif; ?> dari <?= $total_halaman; ?></span>
+                            <button type="button" id="btnNextKamarDesk"
+                               onclick="gantiHalKamar(1)"
                                class="kamar-page-btn"
-                               <?= $halaman_aktif >= $total_halaman ? 'onclick="return false;"' : ''; ?>>
+                               <?= $halaman_aktif >= $total_halaman ? 'disabled' : ''; ?>>
                                 <i class="fa-solid fa-chevron-right"></i>
-                            </a>
+                            </button>
                         </div>
                     <?php endif; ?>
                 </div>
@@ -595,6 +616,48 @@ $notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '
                 tutupSemuaModalInstan();
             }
         });
+
+        let currentHalKamar = <?= (int)$halaman_aktif; ?>;
+        const totalHalKamar = <?= (int)$total_halaman; ?>;
+
+        function gantiHalKamar(delta) {
+            const target = currentHalKamar + delta;
+            if (target < 1 || target > totalHalKamar) return;
+            currentHalKamar = target;
+
+            document.querySelectorAll('.kamar-page-item').forEach(function (card) {
+                const page = parseInt(card.getAttribute('data-kamar-page'), 10);
+                card.classList.toggle('kamar-hidden-item', page !== currentHalKamar);
+            });
+
+            const infoDesk = document.getElementById('infoHalKamarDesk');
+            const infoMob  = document.getElementById('infoHalKamarMob');
+            if (infoDesk) infoDesk.textContent = `Halaman ${currentHalKamar} dari ${totalHalKamar}`;
+            if (infoMob) infoMob.textContent = `Hal ${currentHalKamar} / ${totalHalKamar}`;
+
+            const prevDesk = document.getElementById('btnPrevKamarDesk');
+            const nextDesk = document.getElementById('btnNextKamarDesk');
+            const prevMob  = document.getElementById('btnPrevKamarMob');
+            const nextMob  = document.getElementById('btnNextKamarMob');
+
+            if (prevDesk) prevDesk.disabled = currentHalKamar <= 1;
+            if (nextDesk) nextDesk.disabled = currentHalKamar >= totalHalKamar;
+            if (prevMob) {
+                prevMob.disabled = currentHalKamar <= 1;
+                prevMob.classList.toggle('disabled', currentHalKamar <= 1);
+            }
+            if (nextMob) {
+                nextMob.disabled = currentHalKamar >= totalHalKamar;
+                nextMob.classList.toggle('disabled', currentHalKamar >= totalHalKamar);
+            }
+
+            if (window.history && window.history.replaceState) {
+                const url = new URL(window.location.href);
+                if (currentHalKamar === 1) url.searchParams.delete('hal');
+                else url.searchParams.set('hal', currentHalKamar);
+                window.history.replaceState({}, '', url);
+            }
+        }
     </script>
 
 </body>

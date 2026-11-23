@@ -5,24 +5,8 @@
  * Lokasi: modules/shared/handler/verifikasi_handler.php
  */
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_paths = [
-        __DIR__ . '/../../../config/database.php',
-        __DIR__ . '/../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
-    ];
-    foreach ($possible_paths as $p) {
-        if (file_exists($p)) {
-            require_once $p;
-            if (isset($pdo) && ($pdo instanceof PDO)) break;
-        }
-    }
-}
+require_once __DIR__ . '/../../../config/init.php';
+/** @var PDO $pdo */
 
 require_once __DIR__ . '/sewa_reminder_helper.php';
 
@@ -39,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
     $pembayaran_id = (int) ($_POST['pembayaran_id'] ?? 0);
     $aksi          = trim($_POST['aksi_verifikasi'] ?? '');
 
-    if ($pembayaran_id > 0 && isset($pdo)) {
+    if ($pembayaran_id > 0 && isset($pdo) && ($pdo instanceof PDO)) {
         try {
             $pdo->beginTransaction();
 
@@ -52,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                     t.id AS tagihan_id,
                     t.penghuni_kamar_id,
                     t.kategori_iuran_id,
-                    COALESCE(ki.nominal, s.nominal, 5500000) AS total_tagihan,
+                    COALESCE(ki.nominal, s.nominal, 0) AS total_tagihan,
                     pk.penghuni_id,
                     pen.nama AS nama_penghuni,
                     pen.no_wa AS no_wa_penghuni,
@@ -108,9 +92,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                       AND LOWER(TRIM(status_verifikasi)) = 'diterima'
                 ");
                 $stmtTotalMasuk->execute([':tid' => $tagihan_id]);
-                $totalDiterima = (float)$stmtTotalMasuk->fetchColumn();
+                $totalDiterima    = (float)$stmtTotalMasuk->fetchColumn();
                 $sisaSetelahBayar = max(0, $total_tagihan - $totalDiterima);
-                $statusBaru = ($sisaSetelahBayar <= 0) ? 'lunas' : 'sebagian';
+
+                // Jika sisa <= 0 atau pembayaran tunggal sudah >= target tagihan, pastikan status langsung 'lunas'
+                $statusBaru = ($sisaSetelahBayar <= 0 || $jumlah_bayar >= $total_tagihan) ? 'lunas' : 'sebagian';
 
                 $stmtUpdTagihan = $pdo->prepare("
                     UPDATE tagihan 
@@ -195,6 +181,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 }
 
                 $pdo->commit();
+                if (function_exists('bersihkanCacheNotifSiteman')) {
+                    bersihkanCacheNotifSiteman();
+                }
+
                 $infoSisa = ($statusBaru === 'sebagian')
                     ? " (Cicilan diterima, sisa tagihan: Rp " . number_format($sisaSetelahBayar, 0, ',', '.') . ")."
                     : " (Tagihan LUNAS).";
@@ -242,6 +232,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 ]);
 
                 $pdo->commit();
+                if (function_exists('bersihkanCacheNotifSiteman')) {
+                    bersihkanCacheNotifSiteman();
+                }
 
                 // 3. Langsung redirect ke WhatsApp dengan format alasan penolakan
                 if ($no_wa_pen !== '') {
@@ -249,7 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                         $no_wa_pen = '62' . substr($no_wa_pen, 1);
                     }
                     $nominal_fmt   = number_format($jumlah_bayar, 0, ',', '.');
-                    $pengirim_role = $is_pemilik ? 'Pemilik SITEMAN - KOS' : 'Pengurus SITEMAN - KOS';
+                    $pengirim_role = $is_pemilik ? 'Pemilik SITEMAN - KOS' : 'Ketua Kos SITEMAN - KOS';
 
                     $pesan_wa = "Halo *{$nama_pen}* (Kamar {$kamar_pen}),\n\n"
                               . "Mohon maaf, konfirmasi pembayaran *{$tipe_label}* sebesar *Rp {$nominal_fmt}* belum dapat kami verifikasi (Ditolak).\n\n"

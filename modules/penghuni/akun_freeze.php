@@ -1,9 +1,7 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
-require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../shared/handler/sewa_reminder_helper.php';
 require_once __DIR__ . '/../shared/handler/iuran_reminder_helper.php';
 

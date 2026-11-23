@@ -1,22 +1,6 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_paths = [
-        __DIR__ . '/../../config/database.php',
-        __DIR__ . '/../../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
-    ];
-    foreach ($possible_paths as $p) {
-        if (file_exists($p)) {
-            require_once $p;
-            if (isset($pdo) && ($pdo instanceof PDO)) break;
-        }
-    }
-}
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
 $tahun = date('Y');
 
@@ -60,6 +44,9 @@ if (isset($pdo) && $pdo instanceof PDO) {
 
     } catch (Exception $e) {}
 }
+
+$pemilikBelumIsiRek = (($_SESSION['user']['role'] ?? '') === 'pemilik')
+    && (empty(trim((string)($_SESSION['user']['nama_bank'] ?? ''))) || empty(trim((string)($_SESSION['user']['no_rekening'] ?? ''))));
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -79,6 +66,18 @@ if (isset($pdo) && $pdo instanceof PDO) {
     <div class="mobile-container mobile-dashboard-view">
         <div>
             <?php require_once __DIR__ . '/../components/header.php'; ?>
+
+            <?php if ($pemilikBelumIsiRek): ?>
+            <div class="iuran-notif-banner notif-warning banner-wajib-rek-mobile">
+                <div class="iuran-notif-icon">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <div class="iuran-notif-body">
+                    <strong>Rekening Sewa Belum Lengkap</strong>
+                    <p>Silakan lengkapi <b>Nama Bank</b> dan <b>Nomor Rekening</b> di <a href="/?page=profile&modal=ubah_profil" class="link-wajib-rek">Profil Akun</a> agar penghuni dapat melakukan transfer sewa kamar.</p>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <main class="menu-card-container">
                 <h2 class="menu-heading">Silahkan pilih menu</h2>
@@ -119,6 +118,18 @@ if (isset($pdo) && $pdo instanceof PDO) {
         <?php require_once __DIR__ . '/../components/sidebar.php'; ?>
 
         <main class="desktop-content">
+            <?php if ($pemilikBelumIsiRek): ?>
+            <div class="iuran-notif-banner notif-warning banner-wajib-rek">
+                <div class="iuran-notif-icon">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <div class="iuran-notif-body">
+                    <strong>Rekening Sewa Belum Lengkap</strong>
+                    <p>Silakan lengkapi <b>Nama Bank</b> dan <b>Nomor Rekening</b> di halaman <a href="/?page=profile&modal=ubah_profil" class="link-wajib-rek">Profil Akun</a> agar penghuni dapat melakukan transfer sewa kamar.</p>
+                </div>
+            </div>
+            <?php endif; ?>
+
             <h2 class="desktop-header-title">Ringkasan Tahun <?= htmlspecialchars($tahun); ?></h2>
             <p class="desktop-header-subtitle">Kondisi kos per tahun <?= htmlspecialchars($tahun); ?></p>
 

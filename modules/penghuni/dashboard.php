@@ -1,26 +1,8 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
-// 1. Load Koneksi Database
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_paths = [
-        __DIR__ . '/../../config/database.php',
-        __DIR__ . '/../config/database.php',
-        __DIR__ . '/../../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
-    ];
-    foreach ($possible_paths as $p) {
-        if (file_exists($p)) {
-            require_once $p;
-            if (isset($pdo) && ($pdo instanceof PDO)) break;
-        }
-    }
-}
-
-// 2. Load Handler Tagihan & Helper Pengingat Sewa / Iuran
+// 1. Load Handler Tagihan & Helper Pengingat Sewa / Iuran
 $handler_path = __DIR__ . '/handler/tagihan_handler.php';
 if (file_exists($handler_path)) {
     require_once $handler_path;
@@ -28,20 +10,44 @@ if (file_exists($handler_path)) {
 require_once __DIR__ . '/../shared/handler/sewa_reminder_helper.php';
 require_once __DIR__ . '/../shared/handler/iuran_reminder_helper.php';
 
-// 3. Identifikasi Akun & Resolusi ID Kamar via Handler Resmi
+// 2. Sinkronisasi Status Ketua Kos Real-Time Sebelum Render Menu Grid
+$penghuniId = (int)($_SESSION['user']['id'] ?? 0);
+if (empty($GLOBALS['siteman_user_synced']) && isset($pdo) && ($pdo instanceof PDO) && $penghuniId > 0 && ($_SESSION['user']['role'] ?? '') !== 'pemilik') {
+    try {
+        $stmtSync = $pdo->prepare("SELECT nama, is_ketua_kos, nama_bank, no_rekening FROM penghuni WHERE id = :id LIMIT 1");
+        $stmtSync->execute([':id' => $penghuniId]);
+        $freshUser = $stmtSync->fetch(PDO::FETCH_ASSOC);
+
+        if ($freshUser) {
+            $isKetuaSync = (bool)$freshUser['is_ketua_kos'];
+            $_SESSION['user']['nama']         = $freshUser['nama'];
+            $_SESSION['user']['is_ketua_kos'] = $isKetuaSync;
+            $_SESSION['user']['is_pj']        = $isKetuaSync;
+            $_SESSION['user']['nama_bank']    = $isKetuaSync ? ($freshUser['nama_bank'] ?? null) : null;
+            $_SESSION['user']['no_rekening']  = $isKetuaSync ? ($freshUser['no_rekening'] ?? null) : null;
+        }
+        $GLOBALS['siteman_user_synced'] = true;
+    } catch (Throwable $e) {}
+}
+
 $currentUser = $_SESSION['user'] ?? [];
 $is_pj       = !empty($currentUser['is_pj']) || !empty($currentUser['is_ketua_kos']) || ($currentUser['role'] ?? '') === 'pj';
-$penghuniId  = (int)($currentUser['id'] ?? 0);
 
-// Evaluasi status jatuh tempo sewa & iuran (+7 hari masa tenggang)
+// 3. Evaluasi status jatuh tempo sewa & iuran (+7 hari masa tenggang)
 $evalSewa  = ($penghuniId > 0 && isset($pdo)) ? evaluasiStatusSewaPenghuni($pdo, $penghuniId) : null;
 $evalIuran = ($penghuniId > 0 && isset($pdo)) ? evaluasiStatusIuranPenghuni($pdo, $penghuniId) : null;
 
-$peringatanTagihan = $evalSewa ?? $evalIuran;
 if (($evalSewa['status_akun'] ?? '') === 'freeze' || ($evalIuran['status_akun'] ?? '') === 'freeze') {
     $_SESSION['user']['status_akun'] = 'freeze';
     header('Location: /?page=akun_freeze');
     exit;
+}
+
+// Prioritaskan fase paling mendesak ('tenggang' diutamakan daripada 'peringatan')
+if (($evalIuran['fase'] ?? '') === 'tenggang' && ($evalSewa['fase'] ?? '') !== 'tenggang') {
+    $peringatanTagihan = $evalIuran;
+} else {
+    $peringatanTagihan = $evalSewa ?? $evalIuran;
 }
 
 $isPeringatanIuran = (($peringatanTagihan['jenis_tunggakan'] ?? 'sewa') === 'iuran');
@@ -79,9 +85,11 @@ $ringkasan = [
 foreach ($daftar_tagihan as $t) {
     $key = (stripos($t['jenis'], 'sewa') !== false) ? 'sewa' : 'iuran';
 
-    $is_lunas   = ($t['status_tagihan'] === 'lunas');
-    $is_pending = (($t['status_verif'] ?? '') === 'pending' || $t['status_tagihan'] === 'sebagian');
-    $is_ditolak = (($t['status_verif'] ?? '') === 'ditolak');
+    $sisaTagihan = (float)($t['nominal'] ?? 0);
+    $is_pending  = (($t['status_verif'] ?? '') === 'pending');
+    $is_lunas    = (strtolower(trim($t['status_tagihan'] ?? '')) === 'lunas' || (!$is_pending && $sisaTagihan <= 0));
+    $is_ditolak  = (!$is_lunas && !$is_pending && ($t['status_verif'] ?? '') === 'ditolak');
+    $is_cicil    = (!$is_lunas && !$is_pending && !$is_ditolak && ($t['status_tagihan'] === 'sebagian' || (float)($t['sudah_dibayar'] ?? 0) > 0));
 
     if ($is_lunas) {
         $status_txt    = 'Lunas';
@@ -97,6 +105,11 @@ foreach ($daftar_tagihan as $t) {
         $status_txt    = 'Ditolak';
         $badge_class   = 'pill-ditolak';
         $action_label  = 'Upload Ulang Bukti';
+        $is_actionable = true;
+    } elseif ($is_cicil) {
+        $status_txt    = 'Dicicil';
+        $badge_class   = 'pill-pending';
+        $action_label  = 'Cicil / Lunasi Sisa';
         $is_actionable = true;
     } else {
         $status_txt    = 'Belum Lunas';

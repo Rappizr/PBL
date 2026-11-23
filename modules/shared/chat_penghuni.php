@@ -1,86 +1,10 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
-// 1. Pastikan koneksi database $pdo terhubung
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $db_paths = [
-        __DIR__ . '/../../config/database.php',
-        __DIR__ . '/../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
-    ];
-    foreach ($db_paths as $dbp) {
-        if (file_exists($dbp)) {
-            require_once $dbp;
-            if (isset($pdo) && ($pdo instanceof PDO)) break;
-        }
-    }
-}
+require_once __DIR__ . '/../pemilik/handler/chat_handlers.php';
 
-// 2. Load handler jika file tersedia
-$handler_paths = [
-    __DIR__ . '/handler/chat_handlers.php',
-    __DIR__ . '/handler/chat_handler.php',
-    __DIR__ . '/../pemilik/handler/chat_handlers.php',
-    __DIR__ . '/../pemilik/handler/chat_handler.php'
-];
-foreach ($handler_paths as $hp) {
-    if (file_exists($hp)) {
-        require_once $hp;
-        break;
-    }
-}
-
-if (!function_exists('buatLinkWaSapaan')) {
-    function buatLinkWaSapaan(array $p, string $role_pengirim = 'pemilik'): string
-    {
-        $nomor = preg_replace('/\D/', '', (string)($p['no_wa'] ?? ''));
-        if ($nomor === '' || $nomor === '-') {
-            return '#';
-        }
-        if (str_starts_with($nomor, '0')) {
-            $nomor = '62' . substr($nomor, 1);
-        }
-
-        $nama     = $p['nama'] ?? 'Penghuni';
-        $kamar    = $p['kamar'] ?? '-';
-        $pengirim = ($role_pengirim === 'pemilik') ? 'Pemilik SITEMAN - KOS' : 'Penghuni / Pengurus SITEMAN - KOS';
-
-        $pesan = "Halo *{$nama}* (Kamar {$kamar}), salam dari {$pengirim}. 🙏";
-        return "https://wa.me/{$nomor}?text=" . rawurlencode($pesan);
-    }
-}
-
-// 3. Fallback query langsung jika $penghuniKos masih kosong
-$penghuniKos = $penghuniKos ?? [];
-if (empty($penghuniKos) && isset($pdo) && ($pdo instanceof PDO)) {
-    try {
-        $sql = "
-            SELECT DISTINCT ON (p.id)
-                p.id,
-                p.nama,
-                COALESCE(k.no_kamar, '-') AS kamar,
-                COALESCE(p.no_wa, '-') AS no_wa
-            FROM penghuni p
-            LEFT JOIN penghuni_kamar pk ON p.id = pk.penghuni_id
-            LEFT JOIN kamar k ON pk.kamar_id = k.id
-            ORDER BY p.id ASC, pk.id DESC
-        ";
-        $stmt = $pdo->query($sql);
-        $penghuniKos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-        // Urutkan berdasarkan nomor kamar secara natural di PHP (aman untuk angka maupun huruf)
-        usort($penghuniKos, function ($a, $b) {
-            return strnatcmp((string)$a['kamar'], (string)$b['kamar']);
-        });
-    } catch (Throwable $e) {
-        error_log('[chat_penghuni] ' . $e->getMessage());
-        $penghuniKos = [];
-    }
-}
-
+$penghuniKos  = $penghuniKos ?? [];
 $role_user    = $_SESSION['user']['role'] ?? 'pemilik';
 $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?page=dashboard_penghuni';
 ?>
@@ -101,11 +25,7 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
         <div>
-            <?php
-            if (file_exists(__DIR__ . '/../components/header.php')) {
-                require_once __DIR__ . '/../components/header.php';
-            }
-            ?>
+            <?php require_once __DIR__ . '/../components/header.php'; ?>
 
             <main class="chat-container">
                 <div class="subpage-banner-card">
@@ -122,11 +42,9 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
 
                 <div class="chat-list" id="chatListMobile">
                     <?php if (empty($penghuniKos)): ?>
-                    <div class="empty-state-card"
-                        style="width: 100%; text-align: center; padding: 20px; background: #fff; border-radius: 12px; margin-top: 10px;">
-                        <i class="fa-solid fa-folder-open"
-                            style="font-size: 24px; color: #4ca5b0; margin-bottom: 8px;"></i>
-                        <p style="margin: 0; font-size: 13px; font-weight: 600; color: #4a5568;">Tidak ada data penghuni</p>
+                    <div class="empty-state-card chat-empty-mobile">
+                        <i class="fa-solid fa-folder-open empty-icon"></i>
+                        <p>Tidak ada data penghuni</p>
                     </div>
                     <?php else: ?>
                     <?php foreach ($penghuniKos as $p): ?>
@@ -134,7 +52,12 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
                         data-kamar="<?= strtolower(htmlspecialchars($p['kamar'])); ?>">
                         <div class="chat-info">
                             <div class="chat-header-row">
-                                <span class="chat-nama"><?= htmlspecialchars($p['nama']); ?></span>
+                                <span class="chat-nama">
+                                    <?= htmlspecialchars($p['nama']); ?>
+                                    <?php if (!empty($p['is_ketua_kos'])): ?>
+                                        <i class="fa-solid fa-user-shield" title="Ketua Kos"></i>
+                                    <?php endif; ?>
+                                </span>
                                 <span class="badge-kamar-putih">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                             </div>
                             <span class="chat-wa"><?= htmlspecialchars($p['no_wa']); ?></span>
@@ -154,20 +77,12 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
             </main>
         </div>
 
-        <?php
-        if (file_exists(__DIR__ . '/../components/footer.php')) {
-            require_once __DIR__ . '/../components/footer.php';
-        }
-        ?>
+        <?php require_once __DIR__ . '/../components/footer.php'; ?>
     </div>
 
     <!-- LAYOUT DESKTOP -->
     <div class="desktop-dashboard-wrapper">
-        <?php
-        if (file_exists(__DIR__ . '/../components/sidebar.php')) {
-            require_once __DIR__ . '/../components/sidebar.php';
-        }
-        ?>
+        <?php require_once __DIR__ . '/../components/sidebar.php'; ?>
 
         <main class="desktop-content">
             <h2 class="desktop-header-title">Chat Penghuni</h2>
@@ -182,11 +97,9 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
 
             <div class="desktop-chat-list" id="chatListDesktop">
                 <?php if (empty($penghuniKos)): ?>
-                <div class="empty-state-card"
-                    style="width: 100%; text-align: center; padding: 30px; background: #fff; border-radius: 16px; margin-top: 10px; max-width: 820px;">
-                    <i class="fa-solid fa-folder-open"
-                        style="font-size: 28px; color: #4ca5b0; margin-bottom: 10px;"></i>
-                    <p style="margin: 0; font-size: 14px; font-weight: 700; color: #4a5568;">Tidak ada data penghuni</p>
+                <div class="empty-state-card chat-empty-desktop">
+                    <i class="fa-solid fa-folder-open empty-icon"></i>
+                    <p>Tidak ada data penghuni</p>
                 </div>
                 <?php else: ?>
                 <?php foreach ($penghuniKos as $p): ?>
@@ -194,7 +107,12 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
                     data-kamar="<?= strtolower(htmlspecialchars($p['kamar'])); ?>">
                     <div class="desktop-chat-info">
                         <div class="desktop-chat-header-row">
-                            <span class="desktop-chat-nama"><?= htmlspecialchars($p['nama']); ?></span>
+                            <span class="desktop-chat-nama">
+                                <?= htmlspecialchars($p['nama']); ?>
+                                <?php if (!empty($p['is_ketua_kos'])): ?>
+                                    <i class="fa-solid fa-user-shield" title="Ketua Kos"></i>
+                                <?php endif; ?>
+                            </span>
                             <span class="desktop-badge-kamar">Kamar <?= htmlspecialchars($p['kamar']); ?></span>
                         </div>
                         <span class="desktop-chat-telp"><?= htmlspecialchars($p['no_wa']); ?></span>

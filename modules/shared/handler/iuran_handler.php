@@ -5,12 +5,10 @@
  * Lokasi: modules/shared/handler/iuran_handler.php
  */
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
 date_default_timezone_set('Asia/Jakarta');
-require_once __DIR__ . '/../../../config/database.php';
+require_once __DIR__ . '/../../../config/init.php';
+/** @var PDO $pdo */
+
 require_once __DIR__ . '/sewa_reminder_helper.php';
 require_once __DIR__ . '/iuran_reminder_helper.php';
 
@@ -118,13 +116,13 @@ if (!function_exists('buatLinkWaIuran')) {
 $role_user     = $_SESSION['user']['role'] ?? 'penghuni';
 $user_login_id = (int)($_SESSION['user']['id'] ?? 0);
 $is_pemilik    = ($role_user === 'pemilik');
-$is_pj         = !$is_pemilik && (!empty($_SESSION['user']['is_pj']) || !empty($_SESSION['user']['is_ketua_kos']));
+$is_pj         = !$is_pemilik && (!empty($_SESSION['user']['is_pj']) || !empty($_SESSION['user']['is_ketua_kos']) || $role_user === 'pj');
 $can_manage    = $is_pemilik || $is_pj;
-$nama_login    = trim((string)($_SESSION['user']['nama'] ?? ($is_pemilik ? 'Pak Kos' : 'PJ Kos')));
-$pengirim_tag  = $is_pemilik ? "Pemilik ({$nama_login})" : "PJ ({$nama_login})";
+$nama_login    = trim((string)($_SESSION['user']['nama'] ?? ($is_pemilik ? 'Pemilik Kos' : 'Ketua Kos')));
+$pengirim_tag  = $is_pemilik ? "Pemilik ({$nama_login})" : "Ketua Kos ({$nama_login})";
 
 $link_kembali = $is_pemilik ? '/?page=dashboard_pemilik' : '/?page=dashboard_penghuni';
-$current_page = $_GET['page'] ?? ($can_manage ? 'iuran' : 'iuran');
+$current_page = $_GET['page'] ?? ($can_manage ? 'kelola_iuran' : 'monitoring_iuran');
 
 $modal_type             = $_GET['modal'] ?? '';
 $show_modal_pengeluaran = ($modal_type === 'tambah_pengeluaran');

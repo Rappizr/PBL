@@ -1,46 +1,25 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
-// 1. Load Koneksi Database
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_paths = [
-        __DIR__ . '/../../config/database.php',
-        __DIR__ . '/../config/database.php',
-        __DIR__ . '/../../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
-    ];
-    foreach ($possible_paths as $path) {
-        if (file_exists($path)) {
-            require_once $path;
-            if (isset($pdo) && ($pdo instanceof PDO)) break;
-        }
-    }
-}
-
-// 2. Load File Handler & Helper Pengingat Sewa / Iuran
-$handler_paths = [
-    __DIR__ . '/handler/tagihan_handler.php',
-    __DIR__ . '/handler/tagihan_riwayat_handlers.php',
-    __DIR__ . '/handlers/tagihan_riwayat_handlers.php'
-];
-
-foreach ($handler_paths as $hp) {
-    if (file_exists($hp)) {
-        require_once $hp;
-        break;
-    }
-}
+require_once __DIR__ . '/handler/tagihan_handler.php';
 require_once __DIR__ . '/../shared/handler/sewa_reminder_helper.php';
+require_once __DIR__ . '/../shared/handler/iuran_reminder_helper.php';
 
-// 3. Eksekusi Fungsi Handler
+// 2. Eksekusi Fungsi Handler
 $nama_penghuni = $_SESSION['user']['nama'] ?? ($_SESSION['nama'] ?? 'Penghuni');
 $penghuniId    = (int)($_SESSION['user']['id'] ?? 0);
 $pk_id         = function_exists('resolvePenghuniKamarId') ? resolvePenghuniKamarId($pdo, $_SESSION['user'] ?? []) : (int)($_SESSION['user']['penghuni_kamar_id'] ?? 0);
 
-$peringatanTagihan = ($penghuniId > 0 && isset($pdo)) ? evaluasiStatusSewaPenghuni($pdo, $penghuniId) : null;
+$evalSewa  = ($penghuniId > 0 && isset($pdo)) ? evaluasiStatusSewaPenghuni($pdo, $penghuniId) : null;
+$evalIuran = ($penghuniId > 0 && isset($pdo)) ? evaluasiStatusIuranPenghuni($pdo, $penghuniId) : null;
+
+if (($evalIuran['fase'] ?? '') === 'tenggang' && ($evalSewa['fase'] ?? '') !== 'tenggang') {
+    $peringatanTagihan = $evalIuran;
+} else {
+    $peringatanTagihan = $evalSewa ?? $evalIuran;
+}
+
 $isPeringatanIuran = (($peringatanTagihan['jenis_tunggakan'] ?? 'sewa') === 'iuran');
 $judulPeringatan   = $isPeringatanIuran ? 'Pengingat Iuran Kas' : 'Pengingat Sewa Kamar';
 
@@ -51,6 +30,54 @@ unset($_SESSION['pesan_sukses'], $_SESSION['pesan_error']);
 
 $daftar_tagihan_saya = function_exists('fetchDaftarTagihan') ? fetchDaftarTagihan($pdo, $pk_id) : ($daftar_tagihan_saya ?? []);
 $semua_riwayat       = function_exists('fetchRiwayatTransaksi') ? fetchRiwayatTransaksi($pdo, $pk_id) : ($semua_riwayat ?? []);
+
+// Ambil Rekening Dinamis:
+// - Sewa: selalu dari tabel pemilik (nama_bank, no_rekening + nama)
+// - Iuran: jika ada Ketua Kos aktif -> FULL dari Ketua Kos (TANPA fallback ke pemilik);
+//          jika TIDAK ada Ketua Kos aktif -> diambil alih oleh Pemilik Kos.
+$rekening_sewa      = 'Rekening sewa belum diatur oleh Pemilik Kos';
+$ada_rekening_sewa  = false;
+$rekening_iuran     = 'Rekening kas iuran belum diatur';
+$ada_rekening_iuran = false;
+
+if (isset($pdo) && ($pdo instanceof PDO)) {
+    try {
+        $stmtPem = $pdo->query("SELECT nama, nama_bank, no_rekening FROM pemilik ORDER BY id ASC LIMIT 1");
+        $pemRow  = $stmtPem ? $stmtPem->fetch(PDO::FETCH_ASSOC) : null;
+        if ($pemRow && !empty(trim((string)($pemRow['no_rekening'] ?? '')))) {
+            $bankPem = trim((string)($pemRow['nama_bank'] ?: 'Bank'));
+            $rekPem  = trim((string)$pemRow['no_rekening']);
+            $anPem   = trim((string)$pemRow['nama']);
+            $rekening_sewa     = "{$bankPem} {$rekPem} a.n. {$anPem}";
+            $ada_rekening_sewa = true;
+        }
+
+        $stmtKetua = $pdo->query("
+            SELECT id, nama, nama_bank, no_rekening
+            FROM penghuni
+            WHERE is_ketua_kos = true
+              AND LOWER(TRIM(COALESCE(status_akun, 'aktif'))) = 'aktif'
+            LIMIT 1
+        ");
+        $ketuaRow = $stmtKetua ? $stmtKetua->fetch(PDO::FETCH_ASSOC) : null;
+
+        if ($ketuaRow) {
+            if (!empty(trim((string)($ketuaRow['no_rekening'] ?? '')))) {
+                $bankKt = trim((string)($ketuaRow['nama_bank'] ?: 'Bank'));
+                $rekKt  = trim((string)$ketuaRow['no_rekening']);
+                $anKt   = trim((string)$ketuaRow['nama']);
+                $rekening_iuran     = "{$bankKt} {$rekKt} a.n. {$anKt}";
+                $ada_rekening_iuran = true;
+            } else {
+                $rekening_iuran     = 'Rekening kas belum diisi oleh Ketua Kos (' . trim((string)$ketuaRow['nama']) . ')';
+                $ada_rekening_iuran = false;
+            }
+        } else {
+            $rekening_iuran     = $rekening_sewa;
+            $ada_rekening_iuran = $ada_rekening_sewa;
+        }
+    } catch (Exception $e) {}
+}
 
 // 4. Filter Range Tanggal
 $date_range = trim($_GET['date_range'] ?? '');
@@ -194,13 +221,17 @@ if (isset($_GET['invoice_id'])) {
                     <?php else: ?>
                     <?php foreach ($daftar_tagihan_saya as $t): ?>
                     <?php
-                        $is_lunas      = ($t['status_tagihan'] === 'lunas');
-                        $is_pending    = (($t['status_verif'] ?? '') === 'pending');
-                        $is_ditolak    = (!$is_pending && ($t['status_verif'] ?? '') === 'ditolak');
                         $sudahDibayar  = (float)($t['sudah_dibayar'] ?? 0);
                         $sisaTagihan   = (float)($t['nominal'] ?? 0);
+                        $is_pending    = (($t['status_verif'] ?? '') === 'pending');
+                        $is_lunas      = (strtolower(trim($t['status_tagihan'] ?? '')) === 'lunas' || (!$is_pending && $sisaTagihan <= 0));
+                        $is_ditolak    = (!$is_lunas && !$is_pending && ($t['status_verif'] ?? '') === 'ditolak');
                         $nominalFmt    = number_format($sisaTagihan, 0, ',', '.');
                         $sudahBayarFmt = number_format($sudahDibayar, 0, ',', '.');
+                        $isSewaItem    = (stripos($t['jenis'] ?? '', 'sewa') !== false);
+                        $rekTujuanItem = $isSewaItem ? $rekening_sewa : $rekening_iuran;
+                        $adaRekItem    = $isSewaItem ? $ada_rekening_sewa : $ada_rekening_iuran;
+                        $lblTujuanItem = $isSewaItem ? 'Transfer ke Rekening Pemilik Kos' : 'Transfer ke Rekening Kas Iuran';
                     ?>
                     <div class="item-tagihan-card <?= $is_ditolak ? 'tagihan-ditolak' : ''; ?>">
                         <div class="item-tagihan-header">
@@ -241,13 +272,13 @@ if (isset($_GET['invoice_id'])) {
                         <div class="btn-card-action btn-card-pending"><i class="fa-solid fa-clock"></i> Diproses (Rp <?= number_format((float)($t['nominal_pending'] ?? $sisaTagihan), 0, ',', '.'); ?>)</div>
                         <?php elseif ($is_ditolak): ?>
                         <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>"
-                            onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>, <?= (int)$sisaTagihan; ?>)"
+                            onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>, <?= (int)$sisaTagihan; ?>, <?= htmlspecialchars(json_encode($rekTujuanItem), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($lblTujuanItem), ENT_QUOTES, 'UTF-8'); ?>, <?= $adaRekItem ? 'true' : 'false'; ?>)"
                             class="btn-card-action btn-card-upload-ulang">
                             <i class="fa-solid fa-cloud-arrow-up"></i> Upload Ulang Bukti
                         </a>
                         <?php else: ?>
                         <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>"
-                            onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>, <?= (int)$sisaTagihan; ?>)"
+                            onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>, <?= (int)$sisaTagihan; ?>, <?= htmlspecialchars(json_encode($rekTujuanItem), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($lblTujuanItem), ENT_QUOTES, 'UTF-8'); ?>, <?= $adaRekItem ? 'true' : 'false'; ?>)"
                             class="btn-card-action"><?= $sudahDibayar > 0 ? 'Cicil / Lunasi Sisa' : 'Bayar / Cicil'; ?></a>
                         <?php endif; ?>
                     </div>
@@ -364,13 +395,17 @@ if (isset($_GET['invoice_id'])) {
                 <?php else: ?>
                 <?php foreach ($daftar_tagihan_saya as $t): ?>
                 <?php
-                    $is_lunas      = ($t['status_tagihan'] === 'lunas');
-                    $is_pending    = (($t['status_verif'] ?? '') === 'pending');
-                    $is_ditolak    = (!$is_pending && ($t['status_verif'] ?? '') === 'ditolak');
                     $sudahDibayar  = (float)($t['sudah_dibayar'] ?? 0);
                     $sisaTagihan   = (float)($t['nominal'] ?? 0);
+                    $is_pending    = (($t['status_verif'] ?? '') === 'pending');
+                    $is_lunas      = (strtolower(trim($t['status_tagihan'] ?? '')) === 'lunas' || (!$is_pending && $sisaTagihan <= 0));
+                    $is_ditolak    = (!$is_lunas && !$is_pending && ($t['status_verif'] ?? '') === 'ditolak');
                     $nominalFmt    = number_format($sisaTagihan, 0, ',', '.');
                     $sudahBayarFmt = number_format($sudahDibayar, 0, ',', '.');
+                    $isSewaItem    = (stripos($t['jenis'] ?? '', 'sewa') !== false);
+                    $rekTujuanItem = $isSewaItem ? $rekening_sewa : $rekening_iuran;
+                    $adaRekItem    = $isSewaItem ? $ada_rekening_sewa : $ada_rekening_iuran;
+                    $lblTujuanItem = $isSewaItem ? 'Transfer ke Rekening Pemilik Kos' : 'Transfer ke Rekening Kas Iuran';
                 ?>
                 <div class="item-tagihan-card <?= $is_ditolak ? 'tagihan-ditolak' : ''; ?>">
                     <div class="item-tagihan-header">
@@ -411,13 +446,13 @@ if (isset($_GET['invoice_id'])) {
                     <div class="btn-card-action btn-card-pending"><i class="fa-solid fa-clock"></i> Diproses (Rp <?= number_format((float)($t['nominal_pending'] ?? $sisaTagihan), 0, ',', '.'); ?>)</div>
                     <?php elseif ($is_ditolak): ?>
                     <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>"
-                        onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>, <?= (int)$sisaTagihan; ?>)"
+                        onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>, <?= (int)$sisaTagihan; ?>, <?= htmlspecialchars(json_encode($rekTujuanItem), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($lblTujuanItem), ENT_QUOTES, 'UTF-8'); ?>, <?= $adaRekItem ? 'true' : 'false'; ?>)"
                         class="btn-card-action btn-card-upload-ulang">
                         <i class="fa-solid fa-cloud-arrow-up"></i> Upload Ulang Bukti
                     </a>
                     <?php else: ?>
                     <a href="/?page=tagihan_riwayat&bayar_id=<?= (int)$t['id']; ?>"
-                        onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>, <?= (int)$sisaTagihan; ?>)"
+                        onclick="bukaModalBayarInstan(event, <?= (int)$t['id']; ?>, <?= htmlspecialchars(json_encode($t['jenis']), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode('Rp ' . $nominalFmt), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($t['jatuh_tempo']), ENT_QUOTES, 'UTF-8'); ?>, <?= (int)$sisaTagihan; ?>, <?= htmlspecialchars(json_encode($rekTujuanItem), ENT_QUOTES, 'UTF-8'); ?>, <?= htmlspecialchars(json_encode($lblTujuanItem), ENT_QUOTES, 'UTF-8'); ?>, <?= $adaRekItem ? 'true' : 'false'; ?>)"
                         class="btn-card-action"><?= $sudahDibayar > 0 ? 'Cicil / Lunasi Sisa' : 'Bayar / Cicil'; ?></a>
                     <?php endif; ?>
                 </div>
@@ -574,6 +609,12 @@ if (isset($_GET['invoice_id'])) {
     </div>
 
     <!-- MODAL BAYAR / CICIL (INSTAN TANPA RELOAD) -->
+    <?php
+        $is_sewa_modal_init = $tagihan_dipilih ? (stripos($tagihan_dipilih['jenis'] ?? '', 'sewa') !== false) : true;
+        $rek_modal_init     = $is_sewa_modal_init ? $rekening_sewa : $rekening_iuran;
+        $ada_rek_modal_init = $is_sewa_modal_init ? $ada_rekening_sewa : $ada_rekening_iuran;
+        $lbl_rek_modal_init = $is_sewa_modal_init ? 'Transfer ke Rekening Pemilik Kos' : 'Transfer ke Rekening Kas Iuran';
+    ?>
     <div id="modalBayarTagihan" class="modal-overlay <?= $tagihan_dipilih ? 'active' : ''; ?>" onclick="tutupModalTagihanInstan(event)">
         <div class="modal-bayar-card" onclick="event.stopPropagation()">
             <h3 class="modal-bayar-title">Bayar / Cicil Tagihan</h3>
@@ -589,6 +630,7 @@ if (isset($_GET['invoice_id'])) {
                 class="modal-form-upload-tagihan" onsubmit="handleKirimBuktiSubmit(event)">
                 <input type="hidden" name="tagihan_id" id="bayarModalTagihanId" value="<?= (int)($tagihan_dipilih['id'] ?? 0); ?>">
                 <input type="hidden" id="bayarModalMaxSisa" value="<?= (int)($tagihan_dipilih['nominal'] ?? 0); ?>">
+                <input type="hidden" id="bayarModalAdaRek" value="<?= $ada_rek_modal_init ? '1' : '0'; ?>">
 
                 <!-- INPUT NOMINAL PEMBAYARAN / CICILAN -->
                 <div class="modal-rekening-wrapper">
@@ -616,14 +658,14 @@ if (isset($_GET['invoice_id'])) {
                     </div>
                 </div>
 
-                <!-- BLOK TRANSFER (REKENING + UPLOAD BUKTI) -->
+                <!-- BLOK TRANSFER (REKENING DINAMIS + UPLOAD BUKTI) -->
                 <div id="blokMetodeTransfer" class="blok-metode-transfer">
                     <div class="modal-rekening-wrapper">
-                        <label class="modal-rekening-label">Transfer Ke Rekening</label>
-                        <div class="modal-rekening-val">BCA 12345678 a.n Pemilik Kos</div>
+                        <label class="modal-rekening-label" id="bayarModalRekLabel"><?= htmlspecialchars($lbl_rek_modal_init); ?></label>
+                        <div class="modal-rekening-val" id="bayarModalRekVal"><?= htmlspecialchars($rek_modal_init); ?></div>
                     </div>
 
-                    <div class="modal-upload-wrapper">
+                    <div class="modal-upload-wrapper" id="wrapperUploadBuktiTransfer">
                         <label class="modal-rekening-label">Upload Bukti Pembayaran</label>
                         <label class="modal-upload-box" id="dropAreaBukti">
                             <input type="file" name="bukti_transfer" id="inputBuktiTransfer" accept="image/*" required
@@ -709,16 +751,27 @@ if (isset($_GET['invoice_id'])) {
         }
     }
 
-    function bukaModalBayarInstan(e, id, jenis, nominalFmt, batas, sisaAngka) {
+    function bukaModalBayarInstan(e, id, jenis, nominalFmt, batas, sisaAngka, rekTujuan, rekLabel, adaRek) {
         if (e) e.preventDefault();
 
         const maxVal = parseInt(sisaAngka || 0, 10);
+        const rekTersedia = (adaRek === true || adaRek === 'true' || adaRek === 1 || adaRek === '1');
+
         document.getElementById('bayarModalTagihanId').value = id;
         document.getElementById('bayarModalMaxSisa').value = maxVal;
+        document.getElementById('bayarModalAdaRek').value = rekTersedia ? '1' : '0';
         document.getElementById('bayarModalJenis').textContent = jenis;
         document.getElementById('bayarModalNominal').textContent = nominalFmt;
         document.getElementById('bayarModalBatas').textContent = batas;
         document.getElementById('bayarModalTunaiNominal').textContent = nominalFmt;
+
+        const elRekLabel = document.getElementById('bayarModalRekLabel');
+        const elRekVal   = document.getElementById('bayarModalRekVal');
+        if (elRekLabel && rekLabel) elRekLabel.textContent = rekLabel;
+        if (elRekVal && rekTujuan) {
+            elRekVal.textContent = rekTujuan;
+            elRekVal.style.color = rekTersedia ? '' : '#b91c1c';
+        }
 
         const inputNom = document.getElementById('inputNominalBayar');
         if (inputNom) {
@@ -834,16 +887,24 @@ if (isset($_GET['invoice_id'])) {
     }
 
     function toggleMetodeBayar(metode) {
-        const blokTransfer = document.getElementById('blokMetodeTransfer');
-        const blokTunai = document.getElementById('blokMetodeTunai');
-        const fileInput = document.getElementById('inputBuktiTransfer');
-        const btnText = document.getElementById('btnSubmitText');
+        const blokTransfer   = document.getElementById('blokMetodeTransfer');
+        const blokTunai      = document.getElementById('blokMetodeTunai');
+        const wrapperUpload  = document.getElementById('wrapperUploadBuktiTransfer');
+        const fileInput      = document.getElementById('inputBuktiTransfer');
+        const btnText        = document.getElementById('btnSubmitText');
+        const btnSubmit      = document.getElementById('btnSubmitBukti');
+        const rekTersedia    = (document.getElementById('bayarModalAdaRek')?.value === '1');
 
         if (metode === 'transfer') {
             if (blokTransfer) blokTransfer.style.display = 'flex';
             if (blokTunai) blokTunai.style.display = 'none';
-            if (fileInput) fileInput.required = true;
-            if (btnText) btnText.innerText = 'Kirim Bukti';
+            if (wrapperUpload) wrapperUpload.style.display = rekTersedia ? 'block' : 'none';
+            if (fileInput) fileInput.required = rekTersedia;
+            if (btnText) btnText.innerText = rekTersedia ? 'Kirim Bukti' : 'Rekening Belum Tersedia';
+            if (btnSubmit) {
+                btnSubmit.disabled = !rekTersedia;
+                btnSubmit.style.opacity = rekTersedia ? '1' : '0.55';
+            }
         } else {
             if (blokTransfer) blokTransfer.style.display = 'none';
             if (blokTunai) blokTunai.style.display = 'block';
@@ -852,6 +913,10 @@ if (isset($_GET['invoice_id'])) {
                 fileInput.value = '';
             }
             if (btnText) btnText.innerText = 'Konfirmasi Bayar Tunai';
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.style.opacity = '1';
+            }
         }
     }
 
@@ -901,6 +966,12 @@ if (isset($_GET['invoice_id'])) {
         }
 
         if (metode === 'transfer') {
+            const rekTersedia = (document.getElementById('bayarModalAdaRek')?.value === '1');
+            if (!rekTersedia) {
+                alert('Rekening tujuan transfer belum diatur. Silakan pilih metode Tunai atau hubungi pengurus kos.');
+                e.preventDefault();
+                return;
+            }
             const fileInput = document.getElementById('inputBuktiTransfer');
             if (!fileInput.files || fileInput.files.length === 0) {
                 alert('Silakan pilih foto struk pembayaran transfer terlebih dahulu.');

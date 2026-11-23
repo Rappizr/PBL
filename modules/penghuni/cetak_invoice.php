@@ -1,26 +1,8 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
-// 1. Load Koneksi Database
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_paths = [
-        __DIR__ . '/../../config/database.php',
-        __DIR__ . '/../config/database.php',
-        __DIR__ . '/../../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
-    ];
-    foreach ($possible_paths as $path) {
-        if (file_exists($path)) {
-            require_once $path;
-            if (isset($pdo) && ($pdo instanceof PDO)) break;
-        }
-    }
-}
-
-// 2. Load Handler Tagihan
+// 1. Load Handler Tagihan
 $handler_paths = [
     __DIR__ . '/handler/tagihan_handler.php',
     __DIR__ . '/handler/tagihan_riwayat_handlers.php',
@@ -33,7 +15,7 @@ foreach ($handler_paths as $hp) {
     }
 }
 
-// 3. Validasi Akses & Ambil Data Invoice
+// 2. Validasi Akses & Ambil Data Invoice
 $nama_penghuni = $_SESSION['user']['nama'] ?? ($_SESSION['nama'] ?? 'Penghuni');
 $pk_id         = function_exists('resolvePenghuniKamarId') 
                  ? resolvePenghuniKamarId($pdo, $_SESSION['user'] ?? []) 
@@ -56,22 +38,49 @@ if (!$invoice) {
     exit;
 }
 
-// 4. Ambil Nama Pemilik Kos dari Database
-$nama_pemilik = 'Pengelola SITEMAN - KOS';
-if (isset($pdo) && ($pdo instanceof PDO)) {
-    try {
-        $stmtPemilik = $pdo->query("SELECT nama FROM pemilik ORDER BY id ASC LIMIT 1");
-        $rowPemilik  = $stmtPemilik->fetch(PDO::FETCH_ASSOC);
-        if ($rowPemilik && !empty(trim($rowPemilik['nama']))) {
-            $nama_pemilik = trim($rowPemilik['nama']);
-        }
-    } catch (Throwable $e) {
-        // Fallback jika tabel/kolom berbeda
-    }
-}
-
 $is_sewa       = (stripos($invoice['judul'], 'sewa') !== false);
 $judul_dokumen = $is_sewa ? 'KWITANSI / INVOICE SEWA KAMAR' : 'KWITANSI / INVOICE IURAN KOS';
+
+// 3. Ambil Nama Pengesah Dokumen (Pemilik untuk Sewa, Ketua Kos untuk Iuran dengan fallback Pemilik)
+$nama_pengesah    = 'Pengelola SITEMAN - KOS';
+$jabatan_pengesah = $is_sewa ? 'Pemilik Kos,' : 'Ketua Kos (Pengelola Iuran),';
+
+if (isset($pdo) && ($pdo instanceof PDO)) {
+    try {
+        $namaPemilikDb = '';
+        $stmtPemilik   = $pdo->query("SELECT nama FROM pemilik ORDER BY id ASC LIMIT 1");
+        $rowPemilik    = $stmtPemilik ? $stmtPemilik->fetch(PDO::FETCH_ASSOC) : null;
+        if ($rowPemilik && !empty(trim((string)$rowPemilik['nama']))) {
+            $namaPemilikDb = trim((string)$rowPemilik['nama']);
+        }
+
+        if ($is_sewa) {
+            if ($namaPemilikDb !== '') {
+                $nama_pengesah = $namaPemilikDb;
+            }
+        } else {
+            $stmtKetua = $pdo->query("
+                SELECT nama 
+                FROM penghuni 
+                WHERE is_ketua_kos = true 
+                  AND LOWER(TRIM(COALESCE(status_akun, 'aktif'))) = 'aktif'
+                LIMIT 1
+            ");
+            $rowKetua = $stmtKetua ? $stmtKetua->fetch(PDO::FETCH_ASSOC) : null;
+
+            if ($rowKetua && !empty(trim((string)$rowKetua['nama']))) {
+                $nama_pengesah    = trim((string)$rowKetua['nama']);
+                $jabatan_pengesah = 'Ketua Kos (Pengelola Iuran),';
+            } else {
+                // Tidak ada Ketua Kos aktif -> diambil alih oleh Pemilik Kos
+                $nama_pengesah    = ($namaPemilikDb !== '') ? $namaPemilikDb : 'Pemilik Kos';
+                $jabatan_pengesah = 'Pemilik Kos (Pengelola Iuran),';
+            }
+        }
+    } catch (Throwable $e) {
+        // Fallback default jika query gagal
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -104,7 +113,7 @@ $judul_dokumen = $is_sewa ? 'KWITANSI / INVOICE SEWA KAMAR' : 'KWITANSI / INVOIC
         <div class="laporan-kop-surat">
             <h1 class="laporan-kop-title">SITEMAN - KOS</h1>
             <p class="laporan-kop-sub">Sistem Manajemen Operasional &amp; Hunian Kos Terpadu</p>
-            <div class="laporan-kop-heading"><?= $judul_dokumen; ?></div>
+            <div class="laporan-kop-heading"><?= htmlspecialchars($judul_dokumen); ?></div>
         </div>
 
         <!-- KOTAK INFORMASI TRANSAKSI -->
@@ -159,8 +168,8 @@ $judul_dokumen = $is_sewa ? 'KWITANSI / INVOICE SEWA KAMAR' : 'KWITANSI / INVOIC
         <div class="laporan-ttd-wrapper">
             <div class="laporan-ttd-box">
                 <p class="invoice-ttd-date">Malang, <?= htmlspecialchars($invoice['tanggal']); ?></p>
-                <p class="invoice-ttd-jabatan">Pemilik Kos,</p>
-                <p class="laporan-ttd-nama"><?= htmlspecialchars($nama_pemilik); ?></p>
+                <p class="invoice-ttd-jabatan"><?= htmlspecialchars($jabatan_pengesah); ?></p>
+                <p class="laporan-ttd-nama"><?= htmlspecialchars($nama_pengesah); ?></p>
                 <p class="laporan-ttd-role">Terverifikasi Otomatis oleh Sistem</p>
             </div>
         </div>
