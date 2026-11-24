@@ -164,8 +164,13 @@ $total_kamar   = count($semua_kamar);
 $total_halaman = max(1, (int) ceil($total_kamar / $per_halaman));
 $halaman_aktif = max(1, min($total_halaman, (int) ($_GET['hal'] ?? 1)));
 
-$notif_freeze_list = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '') === 'freeze');
-$notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '') !== 'freeze');
+// Pisahkan & urutkan daftar freeze (pengajuan janji bayar tampil paling atas)
+$notif_freeze_list = array_values(array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '') === 'freeze'));
+usort($notif_freeze_list, fn($a, $b) => (int)!empty($b['ada_pengajuan_janji']) <=> (int)!empty($a['ada_pengajuan_janji']));
+
+$jml_freeze_total    = count($notif_freeze_list);
+$jml_pengajuan_janji = count(array_filter($notif_freeze_list, fn($n) => !empty($n['ada_pengajuan_janji'])));
+$notif_warn_list     = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '') !== 'freeze');
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -232,30 +237,42 @@ $notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '
                     <div class="kamar-notif-accordion accordion-danger">
                         <button type="button" class="kamar-notif-accordion-header" onclick="toggleNotifAccordion(this)">
                             <div class="kamar-notif-acc-left">
-                                <div class="kamar-notif-acc-icon"><i class="fa-solid fa-lock"></i></div>
+                                <div class="kamar-notif-acc-icon">
+                                    <i class="fa-solid <?= $jml_pengajuan_janji > 0 ? 'fa-handshake' : 'fa-lock'; ?>"></i>
+                                </div>
                                 <div class="kamar-notif-acc-text">
-                                    <strong><?= count($notif_freeze_list); ?> Akun Penghuni Freeze</strong>
-                                    <span>Ketuk untuk melihat &amp; kirim pengingat</span>
+                                    <?php if ($jml_pengajuan_janji > 0): ?>
+                                        <strong><?= $jml_freeze_total; ?> Akun Freeze (<?= $jml_pengajuan_janji; ?> Pengajuan Janji Bayar)</strong>
+                                        <span>Ketuk untuk meninjau pengajuan janji bayar</span>
+                                    <?php else: ?>
+                                        <strong><?= $jml_freeze_total; ?> Akun Penghuni Freeze</strong>
+                                        <span>Ketuk untuk melihat &amp; kirim pengingat</span>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                             <span class="kamar-notif-acc-toggle">Lihat <i class="fa-solid fa-chevron-down"></i></span>
                         </button>
                         <div class="kamar-notif-accordion-body">
                             <?php foreach ($notif_freeze_list as $nf): ?>
-                                <div class="kamar-notif-compact-item">
+                                <?php $isAjuan = !empty($nf['ada_pengajuan_janji']); ?>
+                                <div class="kamar-notif-compact-item <?= $isAjuan ? 'compact-item-pengajuan' : ''; ?>">
                                     <div class="compact-item-top">
                                         <strong>Kamar <?= htmlspecialchars($nf['no_kamar']); ?> - <?= htmlspecialchars($nf['nama_penghuni']); ?></strong>
-                                        <span class="compact-badge badge-text-danger">Freeze</span>
+                                        <?php if ($isAjuan): ?>
+                                            <span class="compact-badge badge-pengajuan">Pengajuan Janji Bayar</span>
+                                        <?php else: ?>
+                                            <span class="compact-badge badge-tunggakan">Freeze</span>
+                                        <?php endif; ?>
                                     </div>
                                     <p class="compact-item-desc"><?= htmlspecialchars($nf['pesan_ringkas']); ?></p>
                                     <div class="kamar-notif-mob-actions">
                                         <a href="<?= htmlspecialchars($nf['wa_pengingat_url']); ?>" target="_blank" class="kamar-notif-btn-wa">
-                                            <i class="fa-brands fa-whatsapp"></i> WA
+                                            <i class="fa-brands fa-whatsapp"></i> <?= $isAjuan ? 'Chat WA' : 'WA'; ?>
                                         </a>
                                         <a href="/?page=manajemen_kamar&hal=<?= $halaman_aktif; ?>&modal=detail_kamar&nomor=<?= urlencode($nf['no_kamar']); ?>"
                                            onclick="bukaDetailKamarInstan(event, '<?= htmlspecialchars($nf['no_kamar'], ENT_QUOTES); ?>')"
-                                           class="kamar-notif-btn-kelola">
-                                            Kelola
+                                           class="kamar-notif-btn-kelola <?= $isAjuan ? 'btn-tinjau-highlight' : ''; ?>">
+                                            <?= $isAjuan ? 'Tinjau Pengajuan' : 'Kelola'; ?>
                                         </a>
                                     </div>
                                 </div>
@@ -391,32 +408,45 @@ $notif_warn_list   = array_filter($daftar_notif_sewa, fn($n) => ($n['fase'] ?? '
                 <div class="kamar-notif-accordion kamar-notif-acc-desktop accordion-danger">
                     <button type="button" class="kamar-notif-accordion-header" onclick="toggleNotifAccordion(this)">
                         <div class="kamar-notif-acc-left">
-                            <div class="kamar-notif-acc-icon"><i class="fa-solid fa-lock"></i></div>
+                            <div class="kamar-notif-acc-icon">
+                                <i class="fa-solid <?= $jml_pengajuan_janji > 0 ? 'fa-handshake' : 'fa-lock'; ?>"></i>
+                            </div>
                             <div class="kamar-notif-acc-text">
-                                <strong><?= count($notif_freeze_list); ?> Akun Penghuni dalam Status Freeze (Dibekukan)</strong>
-                                <span>Klik untuk melihat daftar penghuni yang melewati batas tenggang sewa</span>
+                                <?php if ($jml_pengajuan_janji > 0): ?>
+                                    <strong><?= $jml_freeze_total; ?> Akun Freeze (<?= $jml_pengajuan_janji; ?> Pengajuan Janji Bayar Menunggu Tinjauan)</strong>
+                                    <span>Klik untuk meninjau pengajuan janji bayar atau membuka status freeze</span>
+                                <?php else: ?>
+                                    <strong><?= $jml_freeze_total; ?> Akun Penghuni dalam Status Freeze (Dibekukan)</strong>
+                                    <span>Klik untuk melihat daftar penghuni yang melewati batas tenggang sewa</span>
+                                <?php endif; ?>
                             </div>
                         </div>
                         <span class="kamar-notif-acc-toggle">Lihat <i class="fa-solid fa-chevron-down"></i></span>
                     </button>
                     <div class="kamar-notif-accordion-body">
                         <?php foreach ($notif_freeze_list as $nf): ?>
-                            <div class="kamar-notif-compact-row">
+                            <?php $isAjuan = !empty($nf['ada_pengajuan_janji']); ?>
+                            <div class="kamar-notif-compact-row <?= $isAjuan ? 'compact-item-pengajuan' : ''; ?>">
                                 <div class="compact-row-info">
                                     <strong>
                                         Kamar <?= htmlspecialchars($nf['no_kamar']); ?> - <?= htmlspecialchars($nf['nama_penghuni']); ?>
                                         <span class="compact-badge badge-text-danger">Rp <?= number_format((float)$nf['total_tunggakan'], 0, ',', '.'); ?></span>
+                                        <?php if ($isAjuan): ?>
+                                            <span class="compact-badge badge-pengajuan"><i class="fa-solid fa-handshake"></i> Pengajuan Janji Bayar</span>
+                                        <?php else: ?>
+                                            <span class="compact-badge badge-tunggakan">Belum Ada Pengajuan</span>
+                                        <?php endif; ?>
                                     </strong>
                                     <span><?= htmlspecialchars($nf['pesan_ringkas']); ?></span>
                                 </div>
                                 <div class="kamar-notif-desk-actions">
                                     <a href="<?= htmlspecialchars($nf['wa_pengingat_url']); ?>" target="_blank" class="kamar-notif-desk-wa">
-                                        <i class="fa-brands fa-whatsapp"></i> Ingatkan WA
+                                        <i class="fa-brands fa-whatsapp"></i> <?= $isAjuan ? 'Chat WA' : 'Ingatkan WA'; ?>
                                     </a>
                                     <a href="/?page=manajemen_kamar&hal=<?= $halaman_aktif; ?>&modal=detail_kamar&nomor=<?= urlencode($nf['no_kamar']); ?>"
                                        onclick="bukaDetailKamarInstan(event, '<?= htmlspecialchars($nf['no_kamar'], ENT_QUOTES); ?>')"
-                                       class="kamar-notif-desk-kelola">
-                                        Kelola / Unfreeze
+                                       class="kamar-notif-desk-kelola <?= $isAjuan ? 'btn-tinjau-highlight' : ''; ?>">
+                                        <?= $isAjuan ? 'Tinjau Pengajuan' : 'Kelola / Unfreeze'; ?>
                                     </a>
                                 </div>
                             </div>

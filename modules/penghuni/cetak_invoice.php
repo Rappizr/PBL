@@ -72,7 +72,6 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
                 $nama_pengesah    = trim((string)$rowKetua['nama']);
                 $jabatan_pengesah = 'Ketua Kos (Pengelola Iuran),';
             } else {
-                // Tidak ada Ketua Kos aktif -> diambil alih oleh Pemilik Kos
                 $nama_pengesah    = ($namaPemilikDb !== '') ? $namaPemilikDb : 'Pemilik Kos';
                 $jabatan_pengesah = 'Pemilik Kos (Pengelola Iuran),';
             }
@@ -121,7 +120,9 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
             <div class="laporan-meta-col">
                 <span><strong>Nomor Invoice:</strong> <?= htmlspecialchars($invoice['nomor_invoice']); ?></span>
                 <span><strong>Ditagihkan Kepada:</strong> <?= htmlspecialchars($nama_penghuni); ?> (Kamar <?= htmlspecialchars($invoice['no_kamar']); ?>)</span>
+                <span><strong>Tanggal Masuk:</strong> <?= htmlspecialchars($invoice['tanggal_masuk'] ?? '-'); ?></span>
                 <span><strong>Periode Tagihan:</strong> <?= htmlspecialchars($invoice['periode_sewa']); ?></span>
+                <span><strong>Berlaku Sampai:</strong> <?= htmlspecialchars($invoice['berlaku_sampai'] ?? '-'); ?></span>
             </div>
             <div class="laporan-meta-col invoice-meta-col-right">
                 <span><strong>Tanggal Terbit:</strong> <?= htmlspecialchars($invoice['tanggal_terbit']); ?></span>
@@ -141,7 +142,7 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
                 <tr>
                     <th class="invoice-col-no">No</th>
                     <th>Deskripsi Pembayaran</th>
-                    <th>Keterangan Periode</th>
+                    <th>Keterangan &amp; Masa Berlaku</th>
                     <th class="invoice-col-nominal">Nominal</th>
                 </tr>
             </thead>
@@ -149,7 +150,7 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
                 <tr>
                     <td class="invoice-cell-center">1</td>
                     <td><strong><?= htmlspecialchars($invoice['judul']); ?></strong></td>
-                    <td><?= htmlspecialchars($invoice['periode_sewa']); ?></td>
+                    <td><?= htmlspecialchars($invoice['periode_sewa']); ?> (Berlaku s/d <?= htmlspecialchars($invoice['berlaku_sampai'] ?? '-'); ?>)</td>
                     <td class="invoice-cell-nominal">Rp <?= number_format($invoice['nominal'], 0, ',', '.'); ?></td>
                 </tr>
                 <tr class="laporan-row-saldo-bersih">
@@ -161,7 +162,7 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
 
         <!-- CATATAN RESMI -->
         <div class="invoice-footer-note">
-            <strong>Catatan:</strong> Dokumen ini merupakan bukti pembayaran sah yang diterbitkan secara elektronik oleh sistem <strong>SITEMAN - KOS</strong> dan telah diverifikasi lunas.
+            <strong>Catatan:</strong> Dokumen ini merupakan bukti pembayaran sah yang diterbitkan secara elektronik oleh sistem <strong>SITEMAN - KOS</strong>, telah diverifikasi lunas, dan berlaku sampai dengan tanggal <strong><?= htmlspecialchars($invoice['berlaku_sampai'] ?? '-'); ?></strong>.
         </div>
 
         <!-- KOLOM PENGESAHAN -->
@@ -175,5 +176,15 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
         </div>
     </div>
 
+    <script>
+        window.addEventListener('load', function () {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('auto_print') === '1') {
+                setTimeout(function () {
+                    window.print();
+                }, 250);
+            }
+        });
+    </script>
 </body>
 </html>

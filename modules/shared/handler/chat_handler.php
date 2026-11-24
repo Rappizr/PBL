@@ -18,8 +18,8 @@ if (!function_exists('buatLinkWaSapaan')) {
         $kamar    = $p['kamar'] ?? '-';
         $pengirim = ($role_pengirim === 'pemilik') ? 'Pemilik SITEMAN - KOS' : 'Penghuni / Pengurus SITEMAN - KOS';
 
-        $pesan = "Halo *{$nama}* (Kamar {$kamar}), salam dari {$pengirim}. 🙏";
-        return "https://wa.me/{$nomor}?text=" . rawurlencode($pesan);
+        $pesan = "Halo *{$nama}* (Kamar {$kamar}), salam dari {$pengirim}. \u{1F64F}";
+        return "https://api.whatsapp.com/send?phone={$nomor}&text=" . rawurlencode($pesan);
     }
 }
 

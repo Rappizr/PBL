@@ -1,8 +1,8 @@
 <?php
 /**
- * HELPER PENGINGAT JATUH TEMPO IURAN, MASA TENGGANG (+7 HARI), & AUTO-FREEZE IURAN
- * Mendukung akumulasi tunggakan lintas periode, cicilan, cache session 30 detik, dan prioritas pengajuan janji bayar.
- * Lokasi: modules/shared/handler/iuran_reminder_helper.php
+- HELPER PENGINGAT JATUH TEMPO IURAN, MASA TENGGANG (+7 HARI), & AUTO-FREEZE IURAN
+- Mendukung auto-rollover periode saat ganti bulan, akumulasi tunggakan lintas periode, cicilan, cache session 30 detik, dan prioritas pengajuan janji bayar.
+- Lokasi: modules/shared/handler/iuran_reminder_helper.php
  */
 
 if (!function_exists('bersihkanCacheNotifSiteman')) {
@@ -25,6 +25,62 @@ if (!function_exists('bersihkanCacheNotifSiteman')) {
     }
 }
 
+if (!function_exists('majukanPeriodeIuranOtomatisJikaGantiBulan')) {
+    function majukanPeriodeIuranOtomatisJikaGantiBulan(PDO $pdo, array $ki): array
+    {
+        if (empty($ki['id']) || empty($ki['tanggal_mulai']) || empty($ki['tanggal_selesai'])) {
+            return $ki;
+        }
+
+        $todayYm   = date('Y-m');
+        $periodeYm = date('Y-m', strtotime($ki['tanggal_mulai']));
+
+        // Jika bulan periode aktif masih sama atau di masa depan, tidak perlu dimajukan
+        if ($periodeYm >= $todayYm) {
+            return $ki;
+        }
+
+        $dtMulai   = new DateTime($ki['tanggal_mulai']);
+        $dtSelesai = new DateTime($ki['tanggal_selesai']);
+        $selisihHariPeriode = (int)$dtMulai->diff($dtSelesai)->days;
+
+        // Majukan bulan per bulan (+1 month) sampai masuk ke bulan kalender berjalan (Y-m)
+        while ($dtMulai->format('Y-m') < $todayYm) {
+            $dtMulai->modify('+1 month');
+        }
+
+        $tglMulaiBaru   = $dtMulai->format('Y-m-d');
+        $tglSelesaiBaru = (clone $dtMulai)->modify("+{$selisihHariPeriode} days")->format('Y-m-d');
+
+        $stmtUpd = $pdo->prepare("
+            UPDATE kategori_iuran
+            SET tanggal_mulai = :tgl_m,
+                tanggal_selesai = :tgl_s
+            WHERE id = :id
+        ");
+        $stmtUpd->execute([
+            ':tgl_m' => $tglMulaiBaru,
+            ':tgl_s' => $tglSelesaiBaru,
+            ':id'    => (int)$ki['id'],
+        ]);
+
+        // Reset flag reminder untuk tagihan yang masih belum lunas agar reminder periode baru bisa terkirim
+        $pdo->exec("
+            UPDATE tagihan
+            SET reminder_sent_by = NULL, reminder_sent_at = NULL, reminder_fase = NULL
+            WHERE kategori_iuran_id IS NOT NULL
+              AND LOWER(TRIM(status_tagihan)) <> 'lunas'
+        ");
+
+        bersihkanCacheNotifSiteman();
+
+        $ki['tanggal_mulai']   = $tglMulaiBaru;
+        $ki['tanggal_selesai'] = $tglSelesaiBaru;
+
+        return $ki;
+    }
+}
+
 if (!function_exists('sinkronTagihanIuranPeriodeAktif')) {
     function sinkronTagihanIuranPeriodeAktif(PDO $pdo, array $ki): void
     {
@@ -35,7 +91,41 @@ if (!function_exists('sinkronTagihanIuranPeriodeAktif')) {
         $kiId       = (int)$ki['id'];
         $tglMulai   = $ki['tanggal_mulai'] ?? date('Y-m-01');
         $tglSelesai = $ki['tanggal_selesai'];
+        $periodeYm  = date('Y-m', strtotime($tglSelesai));
 
+        // 0. Jika admin sempat menggeser periode ke bulan depan lalu mengembalikannya ke bulan lebih awal,
+        //    hapus tagihan bulan setelah periode aktif yang belum lunas & belum memiliki riwayat pembayaran.
+        $stmtCleanFuture = $pdo->prepare("
+            DELETE FROM tagihan t
+            WHERE t.kategori_iuran_id = :ki_id
+              AND TO_CHAR(t.tanggal_jatuh_tempo, 'YYYY-MM') > :periode_ym
+              AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
+              AND NOT EXISTS (
+                  SELECT 1 FROM pembayaran p WHERE p.tagihan_id = t.id
+              )
+        ");
+        $stmtCleanFuture->execute([
+            ':ki_id'      => $kiId,
+            ':periode_ym' => $periodeYm,
+        ]);
+
+        // 1. Jika di bulan & tahun yang sama (YYYY-MM) sudah pernah terbit tagihan,
+        //    perbarui tanggal awal & jatuh temponya (berguna saat admin mengedit tanggal periode berjalan)
+        $stmtUpdPeriode = $pdo->prepare("
+            UPDATE tagihan
+            SET tanggal_awal_tagihan = :tgl_m,
+                tanggal_jatuh_tempo  = :tgl_s
+            WHERE kategori_iuran_id = :ki_id
+              AND TO_CHAR(tanggal_jatuh_tempo, 'YYYY-MM') = :periode_ym
+        ");
+        $stmtUpdPeriode->execute([
+            ':tgl_m'      => $tglMulai,
+            ':tgl_s'      => $tglSelesai,
+            ':ki_id'      => $kiId,
+            ':periode_ym' => $periodeYm,
+        ]);
+
+        // 2. Terbitkan tagihan baru untuk penghuni wajib bayar yang belum punya tagihan di bulan (YYYY-MM) ini
         $stmtSync = $pdo->prepare("
             INSERT INTO tagihan (penghuni_kamar_id, kategori_iuran_id, tanggal_awal_tagihan, tanggal_jatuh_tempo, status_tagihan)
             SELECT pk.id, :ki_id, :tgl_m, :tgl_s, 'belum_bayar'
@@ -44,19 +134,21 @@ if (!function_exists('sinkronTagihanIuranPeriodeAktif')) {
             JOIN kamar k ON k.id = pk.kamar_id
             WHERE LOWER(TRIM(k.status_kamar)) = 'terisi'
               AND LOWER(TRIM(COALESCE(p.status_akun, 'aktif'))) IN ('aktif', 'freeze')
+              AND pk.tanggal_masuk <= (:tgl_m_batas::date - INTERVAL '7 days')
               AND NOT EXISTS (
                   SELECT 1 FROM tagihan t
                   WHERE t.penghuni_kamar_id = pk.id
                     AND t.kategori_iuran_id = :ki_id_cek
-                    AND t.tanggal_jatuh_tempo = :tgl_s_cek
+                    AND TO_CHAR(t.tanggal_jatuh_tempo, 'YYYY-MM') = :periode_ym_cek
               )
         ");
         $stmtSync->execute([
-            ':ki_id'     => $kiId,
-            ':tgl_m'     => $tglMulai,
-            ':tgl_s'     => $tglSelesai,
-            ':ki_id_cek' => $kiId,
-            ':tgl_s_cek' => $tglSelesai,
+            ':ki_id'          => $kiId,
+            ':tgl_m'          => $tglMulai,
+            ':tgl_s'          => $tglSelesai,
+            ':tgl_m_batas'    => $tglMulai,
+            ':ki_id_cek'      => $kiId,
+            ':periode_ym_cek' => $periodeYm,
         ]);
     }
 }
@@ -68,14 +160,6 @@ if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
         $isGetRequest = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET');
 
         if ($isGetRequest && $memo !== null) {
-            return $memo;
-        }
-
-        if ($isGetRequest
-            && isset($_SESSION['cache_iuran_all'], $_SESSION['cache_iuran_all_ts'])
-            && (time() - (int)$_SESSION['cache_iuran_all_ts']) < 30
-        ) {
-            $memo = $_SESSION['cache_iuran_all'];
             return $memo;
         }
 
@@ -93,6 +177,17 @@ if (!function_exists('evaluasiStatusIuranSemuaKamar')) {
             if (!$ki || empty($ki['tanggal_selesai'])) {
                 $memo = [];
                 return [];
+            }
+
+            // Pastikan periode otomatis maju ke bulan berjalan jika sudah ganti bulan
+            $ki = majukanPeriodeIuranOtomatisJikaGantiBulan($pdo, $ki);
+
+            if ($isGetRequest
+                && isset($_SESSION['cache_iuran_all'], $_SESSION['cache_iuran_all_ts'])
+                && (time() - (int)$_SESSION['cache_iuran_all_ts']) < 30
+            ) {
+                $memo = $_SESSION['cache_iuran_all'];
+                return $memo;
             }
 
             sinkronTagihanIuranPeriodeAktif($pdo, $ki);
@@ -276,13 +371,13 @@ if (!function_exists('buatLinkWaPengingatIuran')) {
         if ($fase === 'freeze') {
             $pesan = "Halo *{$nama}* (Kamar {$kamar}),\n\n"
                    . "Akun SITEMAN - KOS Anda saat ini *dibekukan (Freeze)* karena sisa tunggakan *{$namaIuran}* sebesar *{$nominalFmt}* telah melewati batas masa tenggang (+7 hari).\n\n"
-                   . "Silakan balas pesan ini untuk konfirmasi rencana pelunasan agar akun dapat kami aktifkan kembali. Terima kasih. 🙏\n\n"
+                   . "Silakan balas pesan ini untuk konfirmasi rencana pelunasan agar akun dapat kami aktifkan kembali. Terima kasih.\n\n"
                    . "_Pengurus / Pemilik SITEMAN - KOS_";
         } else {
             $pesan = "Halo *{$nama}* (Kamar {$kamar}),\n\n"
                    . "Mengingatkan sisa tagihan *{$namaIuran}* (*{$data['label_status']}*) sebesar *{$nominalFmt}*.\n"
-                   . "Mohon segera melakukan pembayaran (lunas/cicilan) sebelum *{$batasFmt}* agar akun SITEMAN - KOS Anda tetap aktif. Terima kasih. 🙏\n\n"
-                   . "_Pengurus / Pemilik SITEMAN - KOS_";
+                   . "Mohon segera melakukan pembayaran (lunas/cicilan) sebelum *{$batasFmt}* agar akun SITEMAN - KOS Anda tetap aktif. Terima kasih.\n\n"
+                   . "_Pengurus / Pemilik SITEMAN - KOS_ ";
         }
 
         return "https://wa.me/{$nomor}?text=" . rawurlencode($pesan);
@@ -334,7 +429,7 @@ if (!function_exists('buatLinkWaPermohonanUnfreezeIuran')) {
         $pesan = "Halo {$sapaan},\n\n"
                . "Saya *{$nama}* penghuni *Kamar {$kamar}*. Akun SITEMAN - KOS saya saat ini ter-freeze karena sisa tunggakan *{$namaIuran}* sebesar *{$nominalFmt}*.\n\n"
                . "Saya memohon kebijaksanaannya untuk membuka akses akun saya sementara, dan saya berjanji akan melunasi iuran tersebut pada tanggal *{$tglJanji}*.\n\n"
-               . "Terima kasih banyak atas pengertiannya. 🙏";
+               . "Terima kasih banyak atas pengertiannya \u{1F64F}.";
 
         return "https://wa.me/{$noWaTujuan}?text=" . rawurlencode($pesan);
     }

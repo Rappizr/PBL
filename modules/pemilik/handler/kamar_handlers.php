@@ -243,31 +243,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
 
         $tgl_jatuh_tempo = date('Y-m-d', strtotime('+7 days', strtotime($tgl_mulai)));
         $stmtTagihanSewa = $pdo->prepare("
-            INSERT INTO tagihan (penghuni_kamar_id, kategori_iuran_id, tanggal_awal_tagihan, tanggal_jatuh_tempo, status_tagihan)
-            VALUES (:pk_id, NULL, :tgl_awal, :tgl_tempo, 'belum_bayar')
+            INSERT INTO tagihan (penghuni_kamar_id, kategori_iuran_id, skema_id, tanggal_awal_tagihan, tanggal_jatuh_tempo, status_tagihan)
+            VALUES (:pk_id, NULL, :skema_id, :tgl_awal, :tgl_tempo, 'belum_bayar')
         ");
         $stmtTagihanSewa->execute([
             ':pk_id'     => $penghuni_kamar_id,
+            ':skema_id'  => ($skema_id > 0 ? $skema_id : null),
             ':tgl_awal'  => $tgl_mulai,
             ':tgl_tempo' => $tgl_jatuh_tempo
         ]);
 
         $stmtIuran = $pdo->query("SELECT id, tanggal_mulai, tanggal_selesai FROM kategori_iuran ORDER BY id ASC LIMIT 1");
         $masterIuran = $stmtIuran ? $stmtIuran->fetch(PDO::FETCH_ASSOC) : null;
-        $iuran_id = $masterIuran ? (int)$masterIuran['id'] : 1;
-        $tgl_awal_iuran = !empty($masterIuran['tanggal_mulai']) ? $masterIuran['tanggal_mulai'] : $tgl_mulai;
-        $tgl_tempo_iuran = !empty($masterIuran['tanggal_selesai']) ? $masterIuran['tanggal_selesai'] : $tgl_jatuh_tempo;
 
-        $stmtTagihanIuran = $pdo->prepare("
-            INSERT INTO tagihan (penghuni_kamar_id, kategori_iuran_id, tanggal_awal_tagihan, tanggal_jatuh_tempo, status_tagihan)
-            VALUES (:pk_id, :iuran_id, :tgl_awal, :tgl_tempo, 'belum_bayar')
-        ");
-        $stmtTagihanIuran->execute([
-            ':pk_id'     => $penghuni_kamar_id,
-            ':iuran_id'  => $iuran_id,
-            ':tgl_awal'  => $tgl_awal_iuran,
-            ':tgl_tempo' => $tgl_tempo_iuran
-        ]);
+        if ($masterIuran && !empty($masterIuran['tanggal_mulai']) && !empty($masterIuran['tanggal_selesai'])) {
+            $iuran_id        = (int)$masterIuran['id'];
+            $tgl_awal_iuran  = $masterIuran['tanggal_mulai'];
+            $tgl_tempo_iuran = $masterIuran['tanggal_selesai'];
+
+            // Hanya buat tagihan iuran periode ini jika penghuni masuk minimal H-7 sebelum tanggal_mulai iuran
+            $batas_masuk_iuran = date('Y-m-d', strtotime('-7 days', strtotime($tgl_awal_iuran)));
+
+            if (strtotime($tgl_mulai) <= strtotime($batas_masuk_iuran)) {
+                $stmtTagihanIuran = $pdo->prepare("
+                    INSERT INTO tagihan (penghuni_kamar_id, kategori_iuran_id, tanggal_awal_tagihan, tanggal_jatuh_tempo, status_tagihan)
+                    VALUES (:pk_id, :iuran_id, :tgl_awal, :tgl_tempo, 'belum_bayar')
+                ");
+                $stmtTagihanIuran->execute([
+                    ':pk_id'     => $penghuni_kamar_id,
+                    ':iuran_id'  => $iuran_id,
+                    ':tgl_awal'  => $tgl_awal_iuran,
+                    ':tgl_tempo' => $tgl_tempo_iuran
+                ]);
+            }
+        }
 
         $pdo->prepare("UPDATE kamar SET status_kamar = 'terisi' WHERE id = :kamar_id")->execute([':kamar_id' => $kamar['id']]);
 
@@ -422,9 +431,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
                 ':pk_id'       => $pk_id
             ]);
 
+            $tgl_jatuh_tempo_baru = date('Y-m-d', strtotime('+7 days', strtotime($tgl_mulai)));
             $stmtTagihan = $pdo->prepare("
                 UPDATE tagihan 
-                SET status_tagihan = :status_bayar 
+                SET status_tagihan = :status_bayar,
+                    tanggal_awal_tagihan = :tgl_awal,
+                    tanggal_jatuh_tempo = :tgl_tempo,
+                    skema_id = CASE 
+                        WHEN LOWER(TRIM(COALESCE(status_tagihan, 'belum_bayar'))) <> 'lunas' 
+                        THEN :skema_id 
+                        ELSE skema_id 
+                    END
                 WHERE id = (
                     SELECT id FROM tagihan 
                     WHERE penghuni_kamar_id = :pk_id 
@@ -434,13 +451,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
             ");
             $stmtTagihan->execute([
                 ':status_bayar' => $status_simpan,
+                ':tgl_awal'     => $tgl_mulai,
+                ':tgl_tempo'    => $tgl_jatuh_tempo_baru,
+                ':skema_id'     => ($skema_id > 0 ? $skema_id : null),
                 ':pk_id'        => $pk_id
             ]);
 
-            if ($status_simpan === 'lunas') {
-                $pdo->prepare("UPDATE penghuni SET status_akun = 'aktif', freeze_reason = NULL WHERE id = :id")
-                    ->execute([':id' => $penghuni_id]);
-            }
+            $pdo->prepare("
+                DELETE FROM tagihan
+                WHERE penghuni_kamar_id = :pk_id
+                  AND kategori_iuran_id IS NOT NULL
+                  AND LOWER(TRIM(COALESCE(status_tagihan, 'belum_bayar'))) <> 'lunas'
+                  AND :tgl_masuk::date > (tanggal_awal_tagihan::date - INTERVAL '7 days')
+            ")->execute([
+                ':pk_id'     => $pk_id,
+                ':tgl_masuk' => $tgl_mulai
+            ]);
+
+            $pdo->prepare("UPDATE penghuni SET status_akun = 'aktif', freeze_reason = NULL WHERE id = :id")
+                ->execute([':id' => $penghuni_id]);
         }
 
         $pdo->commit();

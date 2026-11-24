@@ -20,6 +20,8 @@ $is_filtered       = $is_filtered ?? (!empty($date_range));
 $daftar_verifikasi = $daftar_verifikasi ?? [];
 $pesan_sukses      = $pesan_sukses ?? '';
 $error_verif       = $error_verif ?? '';
+$wa_redirect_tolak = $_SESSION['wa_redirect_tolak'] ?? '';
+unset($_SESSION['wa_redirect_tolak']);
 
 $total_verif = count($daftar_verifikasi);
 
@@ -395,6 +397,19 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
         if (toast) {
             setTimeout(closeToast, 5000);
         }
+
+        // Otomatis buka WhatsApp setelah halaman verifikasi segar ter-load
+        const waUrlTolak = <?= json_encode($wa_redirect_tolak); ?>;
+        if (waUrlTolak) {
+            window.location.href = waUrlTolak;
+        }
+    });
+
+    // Reset modal & spinner loading jika user kembali dari aplikasi WhatsApp (bfcache)
+    window.addEventListener('pageshow', function() {
+        const btn = document.getElementById('btnKonfirSubmit');
+        if (btn) btn.classList.remove('btn-submit-loading');
+        tutupKonfirmasiAksi();
     });
 
     // Pagination Verifikasi Desktop Instan (0 ms)

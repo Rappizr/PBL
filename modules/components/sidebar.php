@@ -88,14 +88,20 @@ if (isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user'])) {
             }
 
             if ($isPemilikInit) {
+                // Menghitung kamar terisi yang tagihan sewanya belum lunas (termasuk penghuni baru) ATAU akunnya freeze
                 $initNotif['kamar'] = (int)$pdo->query("
-                    SELECT COUNT(*) FROM tagihan t
-                    JOIN penghuni_kamar pk ON pk.id = t.penghuni_kamar_id
-                    JOIN kamar k ON k.id = pk.kamar_id
-                    WHERE t.kategori_iuran_id IS NULL
-                      AND LOWER(TRIM(COALESCE(k.status_kamar, 'kosong'))) = 'terisi'
+                    SELECT COUNT(DISTINCT k.id)
+                    FROM kamar k
+                    JOIN penghuni_kamar pk ON pk.kamar_id = k.id
+                    JOIN penghuni p ON p.id = pk.penghuni_id
+                    LEFT JOIN tagihan t ON t.penghuni_kamar_id = pk.id
+                      AND t.kategori_iuran_id IS NULL
                       AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
-                      AND t.tanggal_jatuh_tempo <= CURRENT_DATE
+                    WHERE LOWER(TRIM(COALESCE(k.status_kamar, 'kosong'))) = 'terisi'
+                      AND (
+                          t.id IS NOT NULL
+                          OR LOWER(TRIM(COALESCE(p.status_akun, 'aktif'))) = 'freeze'
+                      )
                 ")->fetchColumn();
             } elseif ($penghuniIdInit > 0) {
                 $stmtInitTag = $pdo->prepare("

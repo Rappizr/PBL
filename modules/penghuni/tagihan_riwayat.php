@@ -31,14 +31,13 @@ unset($_SESSION['pesan_sukses'], $_SESSION['pesan_error']);
 $daftar_tagihan_saya = function_exists('fetchDaftarTagihan') ? fetchDaftarTagihan($pdo, $pk_id) : ($daftar_tagihan_saya ?? []);
 $semua_riwayat       = function_exists('fetchRiwayatTransaksi') ? fetchRiwayatTransaksi($pdo, $pk_id) : ($semua_riwayat ?? []);
 
-// Ambil Rekening Dinamis:
-// - Sewa: selalu dari tabel pemilik (nama_bank, no_rekening + nama)
-// - Iuran: jika ada Ketua Kos aktif -> FULL dari Ketua Kos (TANPA fallback ke pemilik);
-//          jika TIDAK ada Ketua Kos aktif -> diambil alih oleh Pemilik Kos.
+// Ambil Rekening & Data Pengesah Dinamis
 $rekening_sewa      = 'Rekening sewa belum diatur oleh Pemilik Kos';
 $ada_rekening_sewa  = false;
 $rekening_iuran     = 'Rekening kas iuran belum diatur';
 $ada_rekening_iuran = false;
+$pemRow             = null;
+$ketuaRow           = null;
 
 if (isset($pdo) && ($pdo instanceof PDO)) {
     try {
@@ -78,6 +77,11 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
         }
     } catch (Exception $e) {}
 }
+
+$namaPemilikPengesah = !empty(trim((string)($pemRow['nama'] ?? ''))) ? trim((string)$pemRow['nama']) : 'Pemilik Kos';
+$adaKetuaAktif       = ($ketuaRow && !empty(trim((string)($ketuaRow['nama'] ?? ''))));
+$namaKetuaPengesah   = $adaKetuaAktif ? trim((string)$ketuaRow['nama']) : $namaPemilikPengesah;
+$jabatanKetuaPengesah = $adaKetuaAktif ? 'Ketua Kos (Pengelola Iuran),' : 'Pemilik Kos (Pengelola Iuran),';
 
 // 4. Filter Range Tanggal
 $date_range = trim($_GET['date_range'] ?? '');
@@ -148,6 +152,34 @@ if (isset($_GET['invoice_id'])) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
+    <style>
+        .print-only-invoice-sheet {
+            display: none;
+        }
+        @media print {
+            body {
+                background: #ffffff !important;
+            }
+            body * {
+                visibility: hidden !important;
+            }
+            #areaCetakInvoiceResmi,
+            #areaCetakInvoiceResmi * {
+                visibility: visible !important;
+            }
+            #areaCetakInvoiceResmi {
+                display: block !important;
+                position: fixed !important;
+                inset: 0 !important;
+                width: 100% !important;
+                background: #ffffff !important;
+                padding: 20px 28px !important;
+                z-index: 999999 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
 </head>
 
 <body class="dashboard-body">
@@ -315,8 +347,11 @@ if (isset($_GET['invoice_id'])) {
                             'judul'          => $r['judul'],
                             'nomor_invoice'  => $r['nomor_invoice'],
                             'no_kamar'       => $r['no_kamar'],
+                            'tanggal'        => $r['tanggal'] ?? '',
+                            'tanggal_masuk'  => $r['tanggal_masuk'] ?? '-',
                             'tanggal_terbit' => $r['tanggal_terbit'],
                             'jatuh_tempo'    => $r['jatuh_tempo'],
+                            'berlaku_sampai' => $r['berlaku_sampai'] ?? '-',
                             'periode_sewa'   => $r['periode_sewa'],
                             'tanggal_bayar'  => $r['tanggal_bayar'],
                             'nominal_fmt'    => $nominalFmt
@@ -336,7 +371,10 @@ if (isset($_GET['invoice_id'])) {
                             </div>
                         </div>
                         <div class="item-tagihan-body">
-                            <div class="item-tagihan-left"><span><?= htmlspecialchars($r['tanggal']); ?></span></div>
+                            <div class="item-tagihan-left">
+                                <span><?= htmlspecialchars($r['tanggal']); ?></span>
+                                <span>Berlaku s/d: <strong><?= htmlspecialchars($r['berlaku_sampai'] ?? '-'); ?></strong></span>
+                            </div>
                             <div class="item-tagihan-right"><span class="nominal-highlight"><?= $nominalFmt; ?></span></div>
                         </div>
                     </div>
@@ -491,8 +529,11 @@ if (isset($_GET['invoice_id'])) {
                         'judul'          => $r['judul'],
                         'nomor_invoice'  => $r['nomor_invoice'],
                         'no_kamar'       => $r['no_kamar'],
+                        'tanggal'        => $r['tanggal'] ?? '',
+                        'tanggal_masuk'  => $r['tanggal_masuk'] ?? '-',
                         'tanggal_terbit' => $r['tanggal_terbit'],
                         'jatuh_tempo'    => $r['jatuh_tempo'],
+                        'berlaku_sampai' => $r['berlaku_sampai'] ?? '-',
                         'periode_sewa'   => $r['periode_sewa'],
                         'tanggal_bayar'  => $r['tanggal_bayar'],
                         'nominal_fmt'    => $nominalFmt
@@ -502,7 +543,9 @@ if (isset($_GET['invoice_id'])) {
                      data-page-d="<?= $page_d; ?>">
                     <div class="desktop-riwayat-info">
                         <h4 class="desktop-riwayat-title"><?= htmlspecialchars($r['judul']); ?></h4>
-                        <span class="desktop-riwayat-date"><?= htmlspecialchars($r['tanggal']); ?></span>
+                        <span class="desktop-riwayat-date">
+                            <?= htmlspecialchars($r['tanggal']); ?> &bull; Berlaku s/d <strong><?= htmlspecialchars($r['berlaku_sampai'] ?? '-'); ?></strong>
+                        </span>
                     </div>
                     <div class="desktop-riwayat-right">
                         <div class="riwayat-status-actions">
@@ -566,6 +609,8 @@ if (isset($_GET['invoice_id'])) {
                     <div class="meta-col-title">Ditagihkan Kepada</div>
                     <h3 class="meta-text-strong"><?= htmlspecialchars($nama_penghuni); ?></h3>
                     <p class="meta-text-muted"><i class="fa-solid fa-door-open"></i> Kamar <span id="invModalKamar"><?= htmlspecialchars($invoice_dipilih['no_kamar'] ?? '-'); ?></span></p>
+                    <p class="meta-text-muted"><strong>Tanggal Masuk:</strong> <span id="invModalTglMasuk"><?= htmlspecialchars($invoice_dipilih['tanggal_masuk'] ?? '-'); ?></span></p>
+                    <p class="meta-text-muted"><strong>Berlaku Sampai:</strong> <span id="invModalBerlakuSampai"><?= htmlspecialchars($invoice_dipilih['berlaku_sampai'] ?? '-'); ?></span></p>
                 </div>
                 <div class="text-right">
                     <div class="meta-col-title">Detail Waktu</div>
@@ -587,7 +632,9 @@ if (isset($_GET['invoice_id'])) {
                     <tr>
                         <td>
                             <p class="item-name" id="invModalItemName"><?= htmlspecialchars($invoice_dipilih['judul'] ?? ''); ?></p>
-                            <p class="item-desc" id="invModalItemDesc"><?= htmlspecialchars($invoice_dipilih['periode_sewa'] ?? ''); ?></p>
+                            <p class="item-desc" id="invModalItemDesc">
+                                <?= htmlspecialchars($invoice_dipilih['periode_sewa'] ?? ''); ?> &bull; Berlaku s/d <?= htmlspecialchars($invoice_dipilih['berlaku_sampai'] ?? '-'); ?>
+                            </p>
                         </td>
                         <td id="invModalItemNominal"><?= $invoice_dipilih ? 'Rp ' . number_format($invoice_dipilih['nominal'], 0, ',', '.') : 'Rp 0'; ?></td>
                     </tr>
@@ -603,7 +650,82 @@ if (isset($_GET['invoice_id'])) {
 
             <div class="invoice-actions">
                 <button type="button" onclick="tutupModalTagihanInstan(event)" class="btn-invoice-back"><i class="fa-solid fa-xmark"></i> Tutup</button>
-                <button type="button" onclick="window.print()" class="btn-invoice-print"><i class="fa-solid fa-print"></i> Cetak / Simpan PDF</button>
+                <button type="button"
+                        id="btnCetakInvoiceResmi"
+                        onclick="cetakInvoiceLangsung()"
+                        class="btn-invoice-print">
+                    <i class="fa-solid fa-print"></i> Cetak / Simpan PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AREA CETAK INVOICE RESMI (TAMPIL HANYA SAAT PRINT / SAVE PDF) -->
+    <?php
+        $judul_dok_init = $is_sewa_init ? 'KWITANSI / INVOICE SEWA KAMAR' : 'KWITANSI / INVOICE IURAN KOS';
+        $pengesah_init  = $is_sewa_init ? $namaPemilikPengesah : $namaKetuaPengesah;
+        $jabatan_init   = $is_sewa_init ? 'Pemilik Kos,' : $jabatanKetuaPengesah;
+    ?>
+    <div id="areaCetakInvoiceResmi" class="print-only-invoice-sheet" aria-hidden="true">
+        <div class="laporan-kop-surat">
+            <h1 class="laporan-kop-title">SITEMAN - KOS</h1>
+            <p class="laporan-kop-sub">Sistem Manajemen Operasional &amp; Hunian Kos Terpadu</p>
+            <div class="laporan-kop-heading" id="printInvHeading"><?= htmlspecialchars($judul_dok_init); ?></div>
+        </div>
+
+        <div class="laporan-meta-card">
+            <div class="laporan-meta-col">
+                <span><strong>Nomor Invoice:</strong> <span id="printInvNomor"><?= htmlspecialchars($invoice_dipilih['nomor_invoice'] ?? ''); ?></span></span>
+                <span><strong>Ditagihkan Kepada:</strong> <?= htmlspecialchars($nama_penghuni); ?> (Kamar <span id="printInvKamar"><?= htmlspecialchars($invoice_dipilih['no_kamar'] ?? '-'); ?></span>)</span>
+                <span><strong>Tanggal Masuk:</strong> <span id="printInvTglMasuk"><?= htmlspecialchars($invoice_dipilih['tanggal_masuk'] ?? '-'); ?></span></span>
+                <span><strong>Periode Tagihan:</strong> <span id="printInvPeriode"><?= htmlspecialchars($invoice_dipilih['periode_sewa'] ?? ''); ?></span></span>
+                <span><strong>Berlaku Sampai:</strong> <span id="printInvBerlaku"><?= htmlspecialchars($invoice_dipilih['berlaku_sampai'] ?? '-'); ?></span></span>
+            </div>
+            <div class="laporan-meta-col invoice-meta-col-right">
+                <span><strong>Tanggal Terbit:</strong> <span id="printInvTglTerbit"><?= htmlspecialchars($invoice_dipilih['tanggal_terbit'] ?? ''); ?></span></span>
+                <span><strong>Jatuh Tempo:</strong> <span id="printInvJatuhTempo"><?= htmlspecialchars($invoice_dipilih['jatuh_tempo'] ?? ''); ?></span></span>
+                <span><strong>Waktu Pembayaran:</strong> <span id="printInvTglBayar"><?= htmlspecialchars($invoice_dipilih['tanggal_bayar'] ?? ''); ?></span></span>
+                <span class="invoice-status-wrap">
+                    <span class="badge-invoice-lunas-pill">
+                        <i class="fa-solid fa-circle-check"></i> STATUS: LUNAS
+                    </span>
+                </span>
+            </div>
+        </div>
+
+        <table class="laporan-data-table">
+            <thead>
+                <tr>
+                    <th class="invoice-col-no">No</th>
+                    <th>Deskripsi Pembayaran</th>
+                    <th>Keterangan &amp; Masa Berlaku</th>
+                    <th class="invoice-col-nominal">Nominal</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="invoice-cell-center">1</td>
+                    <td><strong id="printInvJudulItem"><?= htmlspecialchars($invoice_dipilih['judul'] ?? ''); ?></strong></td>
+                    <td id="printInvKetItem"><?= htmlspecialchars($invoice_dipilih['periode_sewa'] ?? ''); ?> (Berlaku s/d <?= htmlspecialchars($invoice_dipilih['berlaku_sampai'] ?? '-'); ?>)</td>
+                    <td class="invoice-cell-nominal" id="printInvNominalItem"><?= $invoice_dipilih ? 'Rp ' . number_format($invoice_dipilih['nominal'], 0, ',', '.') : 'Rp 0'; ?></td>
+                </tr>
+                <tr class="laporan-row-saldo-bersih">
+                    <td colspan="3" class="invoice-total-label-cell">TOTAL PEMBAYARAN DITERIMA</td>
+                    <td class="invoice-total-val-cell" id="printInvTotalItem"><?= $invoice_dipilih ? 'Rp ' . number_format($invoice_dipilih['nominal'], 0, ',', '.') : 'Rp 0'; ?></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="invoice-footer-note">
+            <strong>Catatan:</strong> Dokumen ini merupakan bukti pembayaran sah yang diterbitkan secara elektronik oleh sistem <strong>SITEMAN - KOS</strong>, telah diverifikasi lunas, dan berlaku sampai dengan tanggal <strong id="printInvBerlakuNote"><?= htmlspecialchars($invoice_dipilih['berlaku_sampai'] ?? '-'); ?></strong>.
+        </div>
+
+        <div class="laporan-ttd-wrapper">
+            <div class="laporan-ttd-box">
+                <p class="invoice-ttd-date">Malang, <span id="printInvTglTtd"><?= htmlspecialchars($invoice_dipilih['tanggal'] ?? ''); ?></span></p>
+                <p class="invoice-ttd-jabatan" id="printInvJabatanTtd"><?= htmlspecialchars($jabatan_init); ?></p>
+                <p class="laporan-ttd-nama" id="printInvNamaTtd"><?= htmlspecialchars($pengesah_init); ?></p>
+                <p class="laporan-ttd-role">Terverifikasi Otomatis oleh Sistem</p>
             </div>
         </div>
     </div>
@@ -712,6 +834,15 @@ if (isset($_GET['invoice_id'])) {
 
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
+    const PENGESAH_SEWA = <?= json_encode([
+        'nama'    => $namaPemilikPengesah,
+        'jabatan' => 'Pemilik Kos,'
+    ]); ?>;
+    const PENGESAH_IURAN = <?= json_encode([
+        'nama'    => $namaKetuaPengesah,
+        'jabatan' => $jabatanKetuaPengesah
+    ]); ?>;
+
     document.addEventListener("DOMContentLoaded", function() {
         flatpickr(".flatpickr-range-input", {
             mode: "range",
@@ -799,18 +930,45 @@ if (isset($_GET['invoice_id'])) {
     function bukaModalInvoiceInstan(e, data) {
         if (e) e.preventDefault();
 
-        const isSewa = (data.judul || '').toLowerCase().includes('sewa');
+        const isSewa   = (data.judul || '').toLowerCase().includes('sewa');
+        const berlaku  = data.berlaku_sampai || '-';
+        const periode  = data.periode_sewa || '';
+        const nomFmt   = data.nominal_fmt || 'Rp 0';
+        const pengesah = isSewa ? PENGESAH_SEWA : PENGESAH_IURAN;
+
+        // Sinkronisasi tampilan Modal
         document.getElementById('invModalTitle').textContent = isSewa ? 'INVOICE SEWA' : 'INVOICE IURAN';
         document.getElementById('invModalNomor').textContent = data.nomor_invoice || '';
         document.getElementById('invModalKamar').textContent = data.no_kamar || '-';
+        document.getElementById('invModalTglMasuk').textContent = data.tanggal_masuk || '-';
+        document.getElementById('invModalBerlakuSampai').textContent = berlaku;
         document.getElementById('invModalTglTerbit').textContent = data.tanggal_terbit || '';
         document.getElementById('invModalJatuhTempo').textContent = data.jatuh_tempo || '';
-        document.getElementById('invModalPeriode').textContent = data.periode_sewa || '';
+        document.getElementById('invModalPeriode').textContent = periode;
         document.getElementById('invModalTglBayar').textContent = data.tanggal_bayar || '';
         document.getElementById('invModalItemName').textContent = data.judul || '';
-        document.getElementById('invModalItemDesc').textContent = data.periode_sewa || '';
-        document.getElementById('invModalItemNominal').textContent = data.nominal_fmt || 'Rp 0';
-        document.getElementById('invModalTotal').textContent = data.nominal_fmt || 'Rp 0';
+        document.getElementById('invModalItemDesc').textContent = periode + ' • Berlaku s/d ' + berlaku;
+        document.getElementById('invModalItemNominal').textContent = nomFmt;
+        document.getElementById('invModalTotal').textContent = nomFmt;
+
+        // Sinkronisasi Sheet Cetak Resmi
+        document.getElementById('printInvHeading').textContent = isSewa ? 'KWITANSI / INVOICE SEWA KAMAR' : 'KWITANSI / INVOICE IURAN KOS';
+        document.getElementById('printInvNomor').textContent = data.nomor_invoice || '';
+        document.getElementById('printInvKamar').textContent = data.no_kamar || '-';
+        document.getElementById('printInvTglMasuk').textContent = data.tanggal_masuk || '-';
+        document.getElementById('printInvPeriode').textContent = periode;
+        document.getElementById('printInvBerlaku').textContent = berlaku;
+        document.getElementById('printInvTglTerbit').textContent = data.tanggal_terbit || '';
+        document.getElementById('printInvJatuhTempo').textContent = data.jatuh_tempo || '';
+        document.getElementById('printInvTglBayar').textContent = data.tanggal_bayar || '';
+        document.getElementById('printInvJudulItem').textContent = data.judul || '';
+        document.getElementById('printInvKetItem').textContent = periode + ' (Berlaku s/d ' + berlaku + ')';
+        document.getElementById('printInvNominalItem').textContent = nomFmt;
+        document.getElementById('printInvTotalItem').textContent = nomFmt;
+        document.getElementById('printInvBerlakuNote').textContent = berlaku;
+        document.getElementById('printInvTglTtd').textContent = data.tanggal || (data.tanggal_bayar || '').split(',')[0] || '';
+        document.getElementById('printInvJabatanTtd').textContent = pengesah.jabatan;
+        document.getElementById('printInvNamaTtd').textContent = pengesah.nama;
 
         document.getElementById('modalInvoicePenghuni').classList.add('active');
 
@@ -818,6 +976,28 @@ if (isset($_GET['invoice_id'])) {
         url.searchParams.set('invoice_id', data.id);
         url.searchParams.delete('bayar_id');
         window.history.replaceState({}, '', url);
+    }
+
+function cetakInvoiceLangsung() {
+        const btn = document.getElementById('btnCetakInvoiceResmi');
+        const nomor = document.getElementById('invModalNomor')?.textContent?.trim() || 'Invoice';
+        const judulAsli = document.title;
+
+        if (btn) {
+            btn.classList.add('is-pressed');
+        }
+
+        setTimeout(function () {
+            document.title = 'Invoice_' + nomor.replace(/[^a-zA-Z0-9_-]/g, '_');
+            window.print();
+
+            setTimeout(function () {
+                document.title = judulAsli;
+                if (btn) {
+                    btn.classList.remove('is-pressed');
+                }
+            }, 300);
+        }, 170);
     }
 
     function tutupModalTagihanInstan(e) {

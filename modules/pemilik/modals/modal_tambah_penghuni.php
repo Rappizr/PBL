@@ -15,8 +15,8 @@ $ketuaAktif          = $ketuaAktif ?? null;
             <span id="modalAlertText"></span>
         </div>
 
-        <form action="?page=<?= htmlspecialchars($current_page) ?>" method="POST" enctype="multipart/form-data"
-            class="form-penghuni-custom" id="formTambahPenghuni">
+<form action="?page=<?= htmlspecialchars($current_page) ?>" method="POST" enctype="multipart/form-data"
+            class="form-penghuni-custom" id="formTambahPenghuni" novalidate>
 
             <!-- Nama Lengkap -->
             <div class="field-group-custom">
@@ -231,21 +231,77 @@ document.addEventListener('DOMContentLoaded', function() {
 
     hitungTanggalSelesaiDinamis();
 
+function tampilkanErrorModalPenghuni(pesan, fokusEl = null) {
+        if (alertText && alertBox) {
+            alertText.textContent = pesan;
+            alertBox.classList.add('show-flex');
+            const modalCard = alertBox.closest('.modal-card-penghuni-custom');
+            if (modalCard) {
+                modalCard.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+        if (fokusEl && typeof fokusEl.focus === 'function') {
+            fokusEl.focus();
+        }
+    }
+
     if (formTambah) {
         formTambah.addEventListener('submit', function(e) {
             e.preventDefault();
 
-            const fotoKtpInput = document.getElementById('fotoKtpInput');
-            if (!fotoKtpInput || !fotoKtpInput.files || fotoKtpInput.files.length === 0) {
-                if (alertText && alertBox) {
-                    alertText.textContent = 'Foto KTP wajib diunggah terlebih dahulu.';
-                    alertBox.classList.add('show-flex');
-                }
+            const kamarEl    = document.getElementById('pilihKamar');
+            const emailEl    = document.getElementById('emailPenghuni');
+            const skemaEl    = document.getElementById('durasiSewaDinamis');
+            const tglMulaiEl = document.getElementById('tglMulai');
+            const fotoKtpEl  = document.getElementById('fotoKtpInput');
+
+            const namaVal    = (namaInput?.value || '').trim();
+            const kamarVal   = (kamarEl?.value || '').trim();
+            const waVal      = (waInput?.value || '').trim();
+            const emailVal   = (emailEl?.value || '').trim();
+            const waliVal    = (waliInput?.value || '').trim();
+            const pinVal     = (pinInput?.value || '').trim();
+            const skemaVal   = (skemaEl?.value || '').trim();
+            const tglVal     = (tglMulaiEl?.value || '').trim();
+
+            if (!namaVal) {
+                tampilkanErrorModalPenghuni('Nama lengkap wajib diisi.', namaInput);
                 return;
             }
-
-            if (!formTambah.checkValidity()) {
-                formTambah.reportValidity();
+            if (!kamarVal) {
+                tampilkanErrorModalPenghuni('Nomor kamar wajib dipilih.', kamarEl);
+                return;
+            }
+            if (!waVal) {
+                tampilkanErrorModalPenghuni('No. HP / WhatsApp wajib diisi.', waInput);
+                return;
+            }
+            if (!/^08[0-9]{8,13}$/.test(waVal)) {
+                tampilkanErrorModalPenghuni('Nomor WA harus diawali 08 dan berjumlah 10–15 digit.', waInput);
+                return;
+            }
+            if (emailVal !== '' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+                tampilkanErrorModalPenghuni('Format alamat email tidak valid.', emailEl);
+                return;
+            }
+            if (waliVal !== '' && !/^08[0-9]{8,13}$/.test(waliVal)) {
+                tampilkanErrorModalPenghuni('Nomor Kontak Wali harus diawali 08 dan berjumlah 10–15 digit.', waliInput);
+                return;
+            }
+            if (!/^[0-9]{6}$/.test(pinVal)) {
+                tampilkanErrorModalPenghuni('PIN Akun wajib diisi 6 digit angka.', pinInput);
+                return;
+            }
+            if (!skemaVal) {
+                tampilkanErrorModalPenghuni('Pilihan durasi sewa wajib dipilih.', skemaEl);
+                return;
+            }
+            if (!tglVal) {
+                tampilkanErrorModalPenghuni('Tanggal mulai sewa wajib diisi.', tglMulaiEl);
+                return;
+            }
+            if (!fotoKtpEl || !fotoKtpEl.files || fotoKtpEl.files.length === 0) {
+                tampilkanErrorModalPenghuni('Foto KTP wajib diunggah terlebih dahulu.');
                 return;
             }
 
@@ -276,10 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.status === 'success') {
                         window.location.href = '?page=<?= urlencode($current_page) ?>';
                     } else {
-                        if (alertText && alertBox) {
-                            alertText.textContent = data.message || 'Terjadi kesalahan sistem.';
-                            alertBox.classList.add('show-flex');
-                        }
+                        tampilkanErrorModalPenghuni(data.message || 'Terjadi kesalahan sistem.');
                         if (btnSimpan) {
                             btnSimpan.disabled = false;
                             btnSimpan.classList.remove('kamar-btn-disabled');
@@ -291,11 +344,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (btnSimpanText) btnSimpanText.textContent = 'Simpan';
                     }
                 })
-                .catch(err => {
-                    if (alertText && alertBox) {
-                        alertText.textContent = 'Gagal terhubung ke server. Silakan coba lagi.';
-                        alertBox.classList.add('show-flex');
-                    }
+                .catch(() => {
+                    tampilkanErrorModalPenghuni('Gagal terhubung ke server. Silakan coba lagi.');
                     if (btnSimpan) {
                         btnSimpan.disabled = false;
                         btnSimpan.classList.remove('kamar-btn-disabled');

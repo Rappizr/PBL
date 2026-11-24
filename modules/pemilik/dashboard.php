@@ -45,9 +45,19 @@ if (isset($pdo) && $pdo instanceof PDO) {
     } catch (Exception $e) {}
 }
 
+if (($_SESSION['user']['role'] ?? '') === 'pemilik' && isset($pdo) && $pdo instanceof PDO) {
+    $stmtRek = $pdo->prepare("SELECT nama_bank, no_rekening FROM pemilik WHERE id = :id LIMIT 1");
+    $stmtRek->execute([':id' => (int)($_SESSION['user']['id'] ?? 1)]);
+    $rowRek = $stmtRek->fetch(PDO::FETCH_ASSOC);
+    if ($rowRek) {
+        $_SESSION['user']['nama_bank']   = trim((string)($rowRek['nama_bank'] ?? ''));
+        $_SESSION['user']['no_rekening'] = trim((string)($rowRek['no_rekening'] ?? ''));
+    }
+}
+
 $pemilikBelumIsiRek = (($_SESSION['user']['role'] ?? '') === 'pemilik')
     && (empty(trim((string)($_SESSION['user']['nama_bank'] ?? ''))) || empty(trim((string)($_SESSION['user']['no_rekening'] ?? ''))));
-?>
+    ?>
 <!DOCTYPE html>
 <html lang="id">
 

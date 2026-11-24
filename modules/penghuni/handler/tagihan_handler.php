@@ -57,6 +57,68 @@ function resolvePenghuniKamarId(PDO $pdo, array $sessionUser): int {
     return 0;
 }
 
+function formatTanggalIndonesia(string $ymd): string {
+    if (empty($ymd)) return '-';
+    $ts = strtotime($ymd);
+    if ($ts === false) return $ymd;
+
+    $bulan = [
+        1 => 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    $hari  = date('d', $ts);
+    $bln   = $bulan[(int)date('n', $ts)] ?? date('F', $ts);
+    $tahun = date('Y', $ts);
+
+    return "{$hari} {$bln} {$tahun}";
+}
+
+function hitungBerlakuSampai(string $tglMulaiYmd, string $tglJatuhTempoYmd, string $namaSkema, bool $isIuran): string {
+    $baseStr = !empty($tglMulaiYmd) ? $tglMulaiYmd : $tglJatuhTempoYmd;
+    if (empty($baseStr)) return '-';
+
+    try {
+        $dt = new DateTime($baseStr);
+        $skemaLower = strtolower(trim($namaSkema));
+
+        if ($isIuran) {
+            if (strpos($skemaLower, 'tahun') !== false) {
+                $dt->modify('+1 year')->modify('-1 day');
+            } else {
+                $dt->modify('last day of this month');
+            }
+            return formatTanggalIndonesia($dt->format('Y-m-d'));
+        }
+
+        if (preg_match('/(\d+)\s*tahun/', $skemaLower, $m)) {
+            $dt->modify('+' . (int)$m[1] . ' year')->modify('-1 day');
+        } elseif (strpos($skemaLower, 'tahunan') !== false) {
+            $dt->modify('+1 year')->modify('-1 day');
+        } elseif (preg_match('/(\d+)\s*bulan/', $skemaLower, $m)) {
+            $dt->modify('+' . (int)$m[1] . ' month')->modify('-1 day');
+        } elseif (strpos($skemaLower, 'semester') !== false) {
+            $dt->modify('+6 month')->modify('-1 day');
+        } elseif (strpos($skemaLower, 'triwulan') !== false) {
+            $dt->modify('+3 month')->modify('-1 day');
+        } elseif (preg_match('/(\d+)\s*minggu/', $skemaLower, $m)) {
+            $dt->modify('+' . (int)$m[1] . ' week')->modify('-1 day');
+        } elseif (strpos($skemaLower, 'mingguan') !== false) {
+            $dt->modify('+7 day')->modify('-1 day');
+        } elseif (preg_match('/(\d+)\s*hari/', $skemaLower, $m)) {
+            $dt->modify('+' . (int)$m[1] . ' day')->modify('-1 day');
+        } elseif (strpos($skemaLower, 'harian') !== false) {
+            // 1 hari penuh
+        } else {
+            // Default bulanan
+            $dt->modify('+1 month')->modify('-1 day');
+        }
+
+        return formatTanggalIndonesia($dt->format('Y-m-d'));
+    } catch (Exception $e) {
+        return !empty($tglJatuhTempoYmd) ? formatTanggalIndonesia($tglJatuhTempoYmd) : '-';
+    }
+}
+
 function fetchDaftarTagihan(PDO $pdo, int $pk_id): array {
     if ($pk_id <= 0) return [];
 
@@ -73,12 +135,15 @@ function fetchDaftarTagihan(PDO $pdo, int $pk_id): array {
                 GREATEST(0, COALESCE(ki.nominal, s.nominal, 5500000) - COALESCE(bayar_ok.total_diterima, 0)) AS nominal,
                 TO_CHAR(t.tanggal_jatuh_tempo, 'DD-MM-YY') AS jatuh_tempo,
                 t.status_tagihan,
-                LOWER(TRIM(COALESCE(pem.status_verifikasi, ''))) AS status_verif,
-                pem.jumlah_bayar AS nominal_pending,
+                CASE
+                    WHEN COALESCE(pend.total_pending, 0) > 0 THEN 'pending'
+                    ELSE LOWER(TRIM(COALESCE(pem.status_verifikasi, '')))
+                END AS status_verif,
+                COALESCE(pend.total_pending, pem.jumlah_bayar, 0) AS nominal_pending,
                 pem.alasan_penolakan
             FROM tagihan t
             JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
-            LEFT JOIN skema_sewa s ON pk.skema_id = s.id
+            LEFT JOIN skema_sewa s ON COALESCE(t.skema_id, pk.skema_id) = s.id
             LEFT JOIN kategori_iuran ki ON t.kategori_iuran_id = ki.id
             LEFT JOIN (
                 SELECT tagihan_id, SUM(jumlah_bayar) AS total_diterima
@@ -86,6 +151,12 @@ function fetchDaftarTagihan(PDO $pdo, int $pk_id): array {
                 WHERE LOWER(TRIM(status_verifikasi)) = 'diterima'
                 GROUP BY tagihan_id
             ) bayar_ok ON bayar_ok.tagihan_id = t.id
+            LEFT JOIN (
+                SELECT tagihan_id, SUM(jumlah_bayar) AS total_pending
+                FROM pembayaran
+                WHERE LOWER(TRIM(status_verifikasi)) = 'pending'
+                GROUP BY tagihan_id
+            ) pend ON pend.tagihan_id = t.id
             LEFT JOIN (
                 SELECT tagihan_id, MAX(id) AS max_pem_id
                 FROM pembayaran
@@ -119,24 +190,28 @@ function fetchRiwayatTransaksi(PDO $pdo, int $pk_id): array {
                 -- 1. Riwayat dari tabel pembayaran (upload bukti / tunai yang diterima)
                 SELECT 
                     p.id AS id,
+                    (ki.id IS NOT NULL) AS is_iuran,
                     CASE 
                         WHEN ki.nama_iuran IS NOT NULL THEN ki.nama_iuran
                         ELSE 'Sewa ' || COALESCE(s.nama_skema, 'Bulanan')
                     END AS judul,
-                    TO_CHAR(COALESCE(p.tanggal_bayar, NOW()), 'DD Month YYYY') AS tanggal,
+                    TO_CHAR(COALESCE(p.tanggal_bayar, NOW()), 'YYYY-MM-DD') AS tanggal_ymd,
                     TO_CHAR(COALESCE(p.tanggal_bayar, NOW()), 'YYYY-MM-DD') AS tanggal_filter,
                     p.jumlah_bayar AS nominal,
                     COALESCE(p.no_kwitansi, 'INV-' || p.id) AS nomor_invoice,
-                    TO_CHAR(COALESCE(t.tanggal_awal_tagihan, p.tanggal_bayar, NOW()), 'DD Month YYYY') AS tanggal_terbit,
-                    TO_CHAR(COALESCE(t.tanggal_jatuh_tempo, p.tanggal_bayar, NOW()), 'DD Month YYYY') AS jatuh_tempo,
-                    TO_CHAR(COALESCE(p.tanggal_bayar, NOW()), 'DD Month YYYY, HH24:MI') || ' WIB' AS tanggal_bayar,
+                    TO_CHAR(pk.tanggal_masuk, 'YYYY-MM-DD') AS tanggal_masuk_ymd,
+                    TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, p.tanggal_bayar, NOW()), 'YYYY-MM-DD') AS tanggal_terbit_ymd,
+                    TO_CHAR(COALESCE(t.tanggal_jatuh_tempo, p.tanggal_bayar, NOW()), 'YYYY-MM-DD') AS jatuh_tempo_ymd,
+                    TO_CHAR(COALESCE(p.tanggal_bayar, NOW()), 'YYYY-MM-DD') AS tanggal_bayar_ymd,
+                    TO_CHAR(COALESCE(p.tanggal_bayar, NOW()), 'HH24:MI') AS jam_bayar,
                     COALESCE(s.nama_skema, 'Bulanan') AS periode_sewa,
                     COALESCE(k.no_kamar, '-') AS no_kamar,
-                    COALESCE(p.tanggal_bayar, NOW()) AS sort_date
+                    COALESCE(p.tanggal_bayar, NOW()) AS sort_date,
+                    FALSE AS is_lunas_langsung
                 FROM pembayaran p
                 JOIN tagihan t ON p.tagihan_id = t.id
                 JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
-                LEFT JOIN skema_sewa s ON pk.skema_id = s.id
+                LEFT JOIN skema_sewa s ON COALESCE(t.skema_id, pk.skema_id) = s.id
                 LEFT JOIN kategori_iuran ki ON t.kategori_iuran_id = ki.id
                 LEFT JOIN kamar k ON pk.kamar_id = k.id
                 WHERE {$whereUser}
@@ -147,23 +222,27 @@ function fetchRiwayatTransaksi(PDO $pdo, int $pk_id): array {
                 -- 2. Riwayat dari tagihan yang langsung dilunasi pemilik kos (tanpa record pembayaran diterima)
                 SELECT 
                     (t.id + 1000000) AS id,
+                    (ki.id IS NOT NULL) AS is_iuran,
                     CASE 
                         WHEN ki.nama_iuran IS NOT NULL THEN ki.nama_iuran
                         ELSE 'Sewa ' || COALESCE(s.nama_skema, 'Bulanan')
                     END AS judul,
-                    TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, CURRENT_DATE), 'DD Month YYYY') AS tanggal,
+                    TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, CURRENT_DATE), 'YYYY-MM-DD') AS tanggal_ymd,
                     TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, CURRENT_DATE), 'YYYY-MM-DD') AS tanggal_filter,
                     COALESCE(ki.nominal, s.nominal, 0) AS nominal,
                     'INV-SYS-' || t.id AS nomor_invoice,
-                    TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, CURRENT_DATE), 'DD Month YYYY') AS tanggal_terbit,
-                    TO_CHAR(COALESCE(t.tanggal_jatuh_tempo, CURRENT_DATE), 'DD Month YYYY') AS jatuh_tempo,
-                    TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, CURRENT_DATE), 'DD Month YYYY') || ' (Lunas Langsung)' AS tanggal_bayar,
+                    TO_CHAR(pk.tanggal_masuk, 'YYYY-MM-DD') AS tanggal_masuk_ymd,
+                    TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, CURRENT_DATE), 'YYYY-MM-DD') AS tanggal_terbit_ymd,
+                    TO_CHAR(COALESCE(t.tanggal_jatuh_tempo, CURRENT_DATE), 'YYYY-MM-DD') AS jatuh_tempo_ymd,
+                    TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, CURRENT_DATE), 'YYYY-MM-DD') AS tanggal_bayar_ymd,
+                    '' AS jam_bayar,
                     COALESCE(s.nama_skema, 'Bulanan') AS periode_sewa,
                     COALESCE(k.no_kamar, '-') AS no_kamar,
-                    COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, CURRENT_DATE)::timestamp AS sort_date
+                    COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, CURRENT_DATE)::timestamp AS sort_date,
+                    TRUE AS is_lunas_langsung
                 FROM tagihan t
                 JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
-                LEFT JOIN skema_sewa s ON pk.skema_id = s.id
+                LEFT JOIN skema_sewa s ON COALESCE(t.skema_id, pk.skema_id) = s.id
                 LEFT JOIN kategori_iuran ki ON t.kategori_iuran_id = ki.id
                 LEFT JOIN kamar k ON pk.kamar_id = k.id
                 WHERE {$whereUser}
@@ -179,10 +258,44 @@ function fetchRiwayatTransaksi(PDO $pdo, int $pk_id): array {
 
         $stmt = $pdo->prepare($sqlRiwayat);
         $stmt->execute([':uid' => ($penghuniId > 0 ? $penghuniId : $pk_id)]);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($rows as &$row) {
+            $isIuran        = (bool)($row['is_iuran'] ?? false);
+            $tglMasukYmd    = $row['tanggal_masuk_ymd'] ?? '';
+            $tglTerbitYmd   = $row['tanggal_terbit_ymd'] ?? '';
+            $jatuhTempoYmd  = $row['jatuh_tempo_ymd'] ?? '';
+            $tglBayarYmd    = $row['tanggal_bayar_ymd'] ?? '';
+            $tglYmd         = $row['tanggal_ymd'] ?? '';
+            $jamBayar       = trim((string)($row['jam_bayar'] ?? ''));
+            $lunasLangsung  = (bool)($row['is_lunas_langsung'] ?? false);
+
+            $row['tanggal']        = formatTanggalIndonesia($tglYmd);
+            $row['tanggal_masuk']  = !empty($tglMasukYmd) ? formatTanggalIndonesia($tglMasukYmd) : '-';
+            $row['tanggal_terbit'] = formatTanggalIndonesia($tglTerbitYmd);
+            $row['jatuh_tempo']    = formatTanggalIndonesia($jatuhTempoYmd);
+            $row['berlaku_sampai'] = hitungBerlakuSampai($tglTerbitYmd, $jatuhTempoYmd, (string)($row['periode_sewa'] ?? 'Bulanan'), $isIuran);
+            $row['tanggal_bayar']  = $lunasLangsung
+                ? formatTanggalIndonesia($tglBayarYmd) . ' (Lunas Langsung)'
+                : formatTanggalIndonesia($tglBayarYmd) . ($jamBayar !== '' ? ', ' . $jamBayar . ' WIB' : '');
+        }
+        unset($row);
+
+        return $rows;
     } catch (Exception $e) {
         return [];
     }
+}
+
+function redirectTagihanRiwayat(string $pesanSukses = '', string $pesanError = ''): never {
+    if ($pesanSukses !== '') {
+        $_SESSION['pesan_sukses'] = $pesanSukses;
+    }
+    if ($pesanError !== '') {
+        $_SESSION['pesan_error'] = $pesanError;
+    }
+    header('Location: /?page=tagihan_riwayat');
+    exit;
 }
 
 function handleUploadBuktiBayar(PDO $pdo): array {
@@ -200,7 +313,18 @@ function handleUploadBuktiBayar(PDO $pdo): array {
     $nominal_input = (float)$nominal_raw;
 
     try {
-        // Hitung sisa tagihan aktual sebelum menyimpan pembayaran
+        // Cegah pengiriman baru jika masih ada transaksi yang sedang menunggu verifikasi pada tagihan ini
+        $stmtCekPending = $pdo->prepare("
+            SELECT COUNT(id)
+            FROM pembayaran
+            WHERE tagihan_id = :tid
+              AND LOWER(TRIM(status_verifikasi)) = 'pending'
+        ");
+        $stmtCekPending->execute([':tid' => $tagihan_id]);
+        if ((int)$stmtCekPending->fetchColumn() > 0) {
+            redirectTagihanRiwayat('', 'Pembayaran sebelumnya masih menunggu verifikasi.');
+        }
+
         $stmtTag = $pdo->prepare("
             SELECT 
                 t.id, 
@@ -211,7 +335,7 @@ function handleUploadBuktiBayar(PDO $pdo): array {
                 ), 0) AS sudah_dibayar
             FROM tagihan t
             JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
-            LEFT JOIN skema_sewa s ON pk.skema_id = s.id
+            LEFT JOIN skema_sewa s ON COALESCE(t.skema_id, pk.skema_id) = s.id
             LEFT JOIN kategori_iuran ki ON t.kategori_iuran_id = ki.id
             WHERE t.id = ? LIMIT 1
         ");
@@ -219,26 +343,26 @@ function handleUploadBuktiBayar(PDO $pdo): array {
         $tagData = $stmtTag->fetch(PDO::FETCH_ASSOC);
 
         if (!$tagData) {
-            return ['sukses' => '', 'error' => 'Data tagihan tidak ditemukan.'];
+            redirectTagihanRiwayat('', 'Data tagihan tidak ditemukan.');
         }
 
         $sisa_tagihan = max(0, (float)$tagData['total_tagihan'] - (float)$tagData['sudah_dibayar']);
         if ($sisa_tagihan <= 0) {
-            return ['sukses' => '', 'error' => 'Tagihan ini sudah lunas.'];
+            redirectTagihanRiwayat('', 'Tagihan ini sudah lunas.');
         }
 
         $jumlah_bayar = ($nominal_input > 0) ? $nominal_input : $sisa_tagihan;
         if ($jumlah_bayar < 1000) {
-            return ['sukses' => '', 'error' => 'Nominal pembayaran/cicilan minimal Rp 1.000.'];
+            redirectTagihanRiwayat('', 'Nominal pembayaran/cicilan minimal Rp 1.000.');
         }
         if ($jumlah_bayar > $sisa_tagihan) {
-            return ['sukses' => '', 'error' => 'Nominal bayar tidak boleh melebihi sisa tagihan (Rp ' . number_format($sisa_tagihan, 0, ',', '.') . ').'];
+            redirectTagihanRiwayat('', 'Nominal bayar tidak boleh melebihi sisa tagihan (Rp ' . number_format($sisa_tagihan, 0, ',', '.') . ').');
         }
 
         $new_filename = null;
         if ($metode_bayar === 'transfer') {
             if (!isset($_FILES['bukti_transfer']) || $_FILES['bukti_transfer']['error'] !== UPLOAD_ERR_OK) {
-                return ['sukses' => '', 'error' => 'Harap lampirkan file foto bukti transfer.'];
+                redirectTagihanRiwayat('', 'Harap lampirkan file foto bukti transfer.');
             }
 
             $file_tmp  = $_FILES['bukti_transfer']['tmp_name'];
@@ -253,18 +377,17 @@ function handleUploadBuktiBayar(PDO $pdo): array {
             }
 
             if (!move_uploaded_file($file_tmp, $upload_dir . $new_filename)) {
-                return ['sukses' => '', 'error' => 'Gagal mengunggah file foto bukti transfer.'];
+                redirectTagihanRiwayat('', 'Gagal mengunggah file foto bukti transfer.');
             }
         }
 
         $pdo->beginTransaction();
 
-        // Hanya perbarui baris pembayaran jika masih berstatus 'pending' atau 'ditolak' (pembayaran yang sudah 'diterima' tetap tersimpan sebagai riwayat cicilan!)
         $stmtCek = $pdo->prepare("
             SELECT id 
             FROM pembayaran 
             WHERE tagihan_id = :tid 
-              AND LOWER(TRIM(status_verifikasi)) IN ('pending', 'ditolak')
+              AND LOWER(TRIM(status_verifikasi)) = 'ditolak'
             ORDER BY id DESC LIMIT 1
         ");
         $stmtCek->execute([':tid' => $tagihan_id]);
@@ -304,15 +427,21 @@ function handleUploadBuktiBayar(PDO $pdo): array {
 
         $pdo->commit();
 
+        if (function_exists('bersihkanCacheNotifSiteman')) {
+            bersihkanCacheNotifSiteman();
+        }
+
         $is_cicilan = ($jumlah_bayar < $sisa_tagihan);
         $labelJenis = $is_cicilan ? 'cicilan Rp ' . number_format($jumlah_bayar, 0, ',', '.') : 'pelunasan';
         $pesan = ($metode_bayar === 'tunai')
             ? "Konfirmasi bayar tunai ({$labelJenis}) berhasil dikirim! Silakan serahkan uang ke pemilik/pengurus kos."
             : "Bukti pembayaran transfer ({$labelJenis}) berhasil dikirim! Menunggu konfirmasi verifikasi.";
 
-        return ['sukses' => $pesan, 'error' => ''];
+        redirectTagihanRiwayat($pesan, '');
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
-        return ['sukses' => '', 'error' => 'Gagal memproses pembayaran: ' . $e->getMessage()];
+        redirectTagihanRiwayat('', 'Gagal memproses pembayaran: ' . $e->getMessage());
     }
+
+    return ['sukses' => '', 'error' => ''];
 }

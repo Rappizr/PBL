@@ -1,8 +1,8 @@
 <?php
 /**
- * HANDLER LOGIK & DATABASE KELOLA / MONITORING IURAN
- * Mendukung akumulasi tunggakan lintas periode (+) & pembayaran cicilan.
- * Lokasi: modules/shared/handler/iuran_handler.php
+- HANDLER LOGIK & DATABASE KELOLA / MONITORING IURAN
+- Mendukung akumulasi tunggakan lintas periode (+) & pembayaran cicilan.
+- Lokasi: modules/shared/handler/iuran_handler.php
  */
 
 date_default_timezone_set('Asia/Jakarta');
@@ -70,10 +70,13 @@ if (!function_exists('buatLinkWaIuran')) {
             ? date('d/m/Y', strtotime($tgl_batas_freeze))
             : date('d/m/Y', strtotime($tgl_selesai . ' +7 days'));
 
+        $belum_wajib  = !empty($p['belum_wajib']);
         $is_lunas     = !empty($p['is_lunas']);
         $status_verif = strtolower(trim($p['status_verifikasi'] ?? ''));
 
-        if ($is_lunas) {
+        if ($belum_wajib) {
+            $pesan = "Halo *{$nama}* (Kamar {$kamar}), selamat bergabung! Untuk periode *{$nama_iuran}* saat ini tagihan Anda masih *Rp 0* (baru mulai dikenakan pada periode bulan berikutnya). 🙏\n\n_{$pengirim_label} SITEMAN - KOS_";
+        } elseif ($is_lunas) {
             $pesan = "Halo *{$nama}* (Kamar {$kamar}), terima kasih seluruh tagihan *{$nama_iuran}* Anda sudah terverifikasi *LUNAS* (Sisa Rp 0). 🙏\n\n_{$pengirim_label} SITEMAN - KOS_";
         } elseif ($status_verif === 'pending') {
             $pesan = "Halo *{$nama}* (Kamar {$kamar}), bukti pembayaran *{$nama_iuran}* sudah masuk dan sedang kami proses verifikasi ya (sisa tagihan sebelum verifikasi: *Rp {$nominal}*). Terima kasih. 🙏\n\n_{$pengirim_label} SITEMAN - KOS_";
@@ -153,6 +156,9 @@ try {
     $rowIuran = $stmtGetSetting->fetch(PDO::FETCH_ASSOC);
 
     if ($rowIuran) {
+        // Otomatis majukan periode ke bulan berjalan jika pemilik/ketua kos tidak set ulang
+        $rowIuran = majukanPeriodeIuranOtomatisJikaGantiBulan($pdo, $rowIuran);
+
         $id_kategori_iuran      = (int)$rowIuran['id'];
         $nama_iuran_saat_ini    = !empty($rowIuran['nama_iuran']) ? $rowIuran['nama_iuran'] : 'Iuran Kebersihan & Keamanan';
         $nominal_iuran_saat_ini = (float) $rowIuran['nominal'];
@@ -167,7 +173,7 @@ try {
         $id_kategori_iuran = (int) $pdo->lastInsertId();
     }
 
-    // Pastikan seluruh penghuni aktif sudah memiliki tagihan untuk periode berjalan
+    // Pastikan seluruh penghuni yang memenuhi syarat sudah memiliki tagihan untuk periode berjalan
     sinkronTagihanIuranPeriodeAktif($pdo, [
         'id'              => $id_kategori_iuran,
         'tanggal_mulai'   => $tgl_mulai_iuran,
@@ -316,6 +322,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmtUnfreeze->execute([':pid' => $targetPid]);
 
                     $pdo->commit();
+                    bersihkanCacheNotifSiteman();
                     $_SESSION['pesan_sukses_iuran'] = "Akun penghuni Kamar {$nomorKamar} berhasil diaktifkan kembali hingga janji bayar " . date('d/m/Y', strtotime($tanggalJanji)) . ".";
                     header('Location: ' . urlIuran($current_page));
                     exit;
@@ -357,6 +364,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':pid'     => $targetPid
                 ]);
 
+                bersihkanCacheNotifSiteman();
                 $_SESSION['pesan_sukses_iuran'] = "Pengajuan janji bayar Kamar {$nomorKamar} ditolak. Akun tetap dalam status Freeze.";
                 header('Location: ' . urlIuran($current_page));
                 exit;
@@ -423,6 +431,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error_modal = 'Nominal iuran harus berupa angka valid.';
         } elseif (empty($tgl_m_baru) || empty($tgl_s_baru)) {
             $error_modal = 'Pilih rentang tanggal iuran yang valid (Tanggal Mulai s.d Selesai).';
+        } elseif ($tgl_s_baru < $tgl_m_baru) {
+            $error_modal = 'Tanggal selesai tidak boleh lebih awal dari tanggal mulai.';
+        } elseif (date('Y-m', strtotime($tgl_m_baru)) > date('Y-m', strtotime('+1 month'))) {
+            $error_modal = 'Periode iuran maksimal hanya dapat diatur untuk bulan berjalan atau 1 bulan berikutnya.';
         } else {
             try {
                 $pdo->beginTransaction();
@@ -454,7 +466,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $id_kategori_iuran = (int)$pdo->lastInsertId();
                 }
 
-                // Terbitkan baris tagihan baru untuk periode ini (jika tanggal jatuh temponya baru, tunggakan bulan lalu tetap diakumulasi)
+                // Terbitkan baris tagihan baru untuk periode ini (tunggakan bulan lalu tetap diakumulasi)
                 sinkronTagihanIuranPeriodeAktif($pdo, [
                     'id'              => $id_kategori_iuran,
                     'tanggal_mulai'   => $tgl_m_baru,
@@ -464,6 +476,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->exec("UPDATE tagihan SET reminder_sent_by = NULL, reminder_sent_at = NULL, reminder_fase = NULL WHERE kategori_iuran_id IS NOT NULL AND LOWER(TRIM(status_tagihan)) != 'lunas'");
 
                 $pdo->commit();
+                bersihkanCacheNotifSiteman();
                 $_SESSION['pesan_sukses_iuran'] = 'Pengaturan periode & nominal iuran berhasil disimpan.';
                 header('Location: ' . urlIuran($current_page));
                 exit;
@@ -558,6 +571,7 @@ if (!in_array($filter_status, ['semua', 'belum_bayar', 'verifikasi'], true)) {
 }
 
 $total_penghuni      = 0;
+$total_wajib_bayar   = 0;
 $sudah_bayar         = 0;
 $count_belum         = 0;
 $count_verifikasi    = 0;
@@ -566,7 +580,7 @@ $daftar_freeze_iuran = [];
 
 if ($can_manage) {
     try {
-        // Akumulasi seluruh sisa tagihan iuran (bulan lalu + bulan ini - cicilan diterima) per penghuni
+        // Akumulasi seluruh sisa tagihan iuran per penghuni aktif (termasuk penghuni baru yg belum kena wajib periode ini)
         $sqlPenghuni = "
             SELECT 
                 pk.id AS penghuni_kamar_id,
@@ -576,6 +590,7 @@ if ($can_manage) {
                 LOWER(COALESCE(pen.status_akun, 'aktif')) AS status_akun,
                 LOWER(TRIM(COALESCE(pen.freeze_reason, ''))) AS freeze_reason,
                 COALESCE(k.no_kamar, '-') AS kamar,
+                COUNT(t.id) AS jml_tagihan_iuran,
                 COALESCE(SUM(
                     CASE 
                         WHEN t.id IS NOT NULL AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
@@ -616,21 +631,28 @@ if ($can_manage) {
         $rows = $stmtP->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($rows as $r) {
-            $sisaNominal = (float)($r['nominal'] ?? 0);
-            $hasPending  = ((int)($r['jml_pending'] ?? 0) > 0);
+            $sisaNominal  = (float)($r['nominal'] ?? 0);
+            $hasPending   = ((int)($r['jml_pending'] ?? 0) > 0);
+            $punyaTagihan = ((int)($r['jml_tagihan_iuran'] ?? 0) > 0);
 
             $r['nominal']           = $sisaNominal;
-            $r['is_lunas']          = ($sisaNominal <= 0);
+            $r['belum_wajib']       = !$punyaTagihan;
+            $r['is_lunas']          = ($punyaTagihan && $sisaNominal <= 0);
             $r['is_verifikasi']     = $hasPending;
-            $r['status_tagihan']    = $r['is_lunas'] ? 'lunas' : 'belum_bayar';
+            $r['status_tagihan']    = !$punyaTagihan ? 'belum_wajib' : ($r['is_lunas'] ? 'lunas' : 'belum_bayar');
             $r['status_verifikasi'] = $hasPending ? 'pending' : ($r['is_lunas'] ? 'diterima' : '');
 
             $total_penghuni++;
-            if ($r['is_lunas']) {
-                $sudah_bayar++;
-            } else {
-                $count_belum++;
+
+            if ($punyaTagihan) {
+                $total_wajib_bayar++;
+                if ($r['is_lunas']) {
+                    $sudah_bayar++;
+                } else {
+                    $count_belum++;
+                }
             }
+
             if ($hasPending) {
                 $count_verifikasi++;
             }
@@ -641,7 +663,8 @@ if ($can_manage) {
             }
 
             $r['sudah_diingatkan'] = (
-                !$r['is_lunas']
+                $punyaTagihan
+                && !$r['is_lunas']
                 && !empty($r['reminder_sent_by'])
                 && ($r['reminder_fase'] ?? '') === $fase_reminder_sekarang
             );

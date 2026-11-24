@@ -48,9 +48,10 @@ $catatanTunggakan = trim((string)($infoFreeze['catatan_tunggakan'] ?? ''));
 $isJanjiDitolak   = str_starts_with($catatanTunggakan, '[Ditolak]');
 $alasanDitolakTxt = $isJanjiDitolak ? trim(substr($catatanTunggakan, strlen('[Ditolak]'))) : '';
 
+// Default kosong jika belum ada pengajuan aktif atau pengajuan sebelumnya ditolak
 $defaultJanji = ($tglJanjiDiajukan !== '' && !$isJanjiDitolak)
     ? $tglJanjiDiajukan
-    : date('Y-m-d', strtotime('+3 days'));
+    : '';
 
 $noWaPemilik = '';
 try {
@@ -63,9 +64,11 @@ try {
     $noWaPemilik = '';
 }
 
-$waUrlAwal = $isFreezeIuran
-    ? buatLinkWaPermohonanUnfreezeIuran($pdo, $infoFreeze, $defaultJanji)
-    : buatLinkWaPermohonanUnfreeze($pdo, $infoFreeze, $defaultJanji);
+$waUrlAwal = ($defaultJanji !== '')
+    ? ($isFreezeIuran
+        ? buatLinkWaPermohonanUnfreezeIuran($pdo, $infoFreeze, $defaultJanji)
+        : buatLinkWaPermohonanUnfreeze($pdo, $infoFreeze, $defaultJanji))
+    : '#';
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -75,6 +78,7 @@ $waUrlAwal = $isFreezeIuran
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Akun Dibekukan (Freeze)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
     <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
@@ -139,23 +143,27 @@ $waUrlAwal = $isFreezeIuran
             <?php endif; ?>
         </div>
 
-        <!-- Input Tanggal Rencana Bayar -->
+        <!-- Input Tanggal Rencana Bayar (Flatpickr - Konsisten Desktop & HP) -->
         <div class="freeze-date-group">
             <label for="inputTglJanjiFreeze" class="freeze-date-label">
                 Pilih Tanggal Rencana Pelunasan:
             </label>
-            <input type="date" id="inputTglJanjiFreeze"
-                   min="<?= date('Y-m-d'); ?>"
-                   value="<?= htmlspecialchars($defaultJanji); ?>"
-                   onchange="perbaruiLinkWaFreeze()"
-                   class="freeze-date-input">
+            <div class="modal-input-icon-wrapper">
+                <i class="fa-regular fa-calendar modal-input-icon"></i>
+                <input type="text"
+                       id="inputTglJanjiFreeze"
+                       value="<?= htmlspecialchars($defaultJanji); ?>"
+                       placeholder="Pilih tanggal rencana pelunasan..."
+                       class="freeze-date-input modal-input-with-icon"
+                       readonly>
+            </div>
             <small class="freeze-date-hint">
                 Tanggal ini akan otomatis tersimpan dan dicantumkan ke dalam pesan WhatsApp kepada Pemilik Kos.
             </small>
         </div>
 
         <a href="<?= htmlspecialchars($waUrlAwal); ?>" target="_blank" id="btnWaUnfreeze"
-           onclick="kirimPermohonanUnfreeze()"
+           onclick="return kirimPermohonanUnfreeze(event)"
            class="btn-submit btn-as-link freeze-btn-wa">
             <i class="fa-brands fa-whatsapp freeze-btn-wa-icon"></i>
             <span><?= $isJanjiDitolak ? 'Ajukan Ulang via WA' : 'Hubungi Pemilik Kos via WA'; ?></span>
@@ -170,7 +178,34 @@ $waUrlAwal = $isFreezeIuran
 
     <?php require_once __DIR__ . '/../components/footer.php'; ?>
 
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script>
+        let fpJanjiFreeze = null;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            fpJanjiFreeze = flatpickr("#inputTglJanjiFreeze", {
+                dateFormat: "Y-m-d",
+                altInput: true,
+                altFormat: "d / m / Y",
+                altInputClass: "freeze-date-input modal-input-with-icon",
+                minDate: "today",
+                disableMobile: true,
+                onReady: function (selectedDates, dateStr, instance) {
+                    if (instance.altInput) {
+                        instance.altInput.placeholder = "Pilih tanggal rencana pelunasan...";
+                        instance.altInput.readOnly = true;
+                    }
+                },
+                onChange: function () {
+                    perbaruiLinkWaFreeze();
+                }
+            });
+
+            if (document.getElementById('inputTglJanjiFreeze')?.value) {
+                perbaruiLinkWaFreeze();
+            }
+        });
+
         function perbaruiLinkWaFreeze() {
             const noWaPemilik   = <?= json_encode($noWaPemilik); ?>;
             const isFreezeIuran = <?= json_encode($isFreezeIuran); ?>;
@@ -178,12 +213,15 @@ $waUrlAwal = $isFreezeIuran
             const inputTgl      = document.getElementById('inputTglJanjiFreeze');
             if (!noWaPemilik || !btnWa || !inputTgl) return;
 
-            let tglFmt = '[Isi Tanggal Bayar]';
-            if (inputTgl.value) {
-                const parts = inputTgl.value.split('-');
-                if (parts.length === 3) {
-                    tglFmt = `${parts[2]}/${parts[1]}/${parts[0]}`;
-                }
+            if (!inputTgl.value) {
+                btnWa.href = '#';
+                return;
+            }
+
+            let tglFmt = '';
+            const parts = inputTgl.value.split('-');
+            if (parts.length === 3) {
+                tglFmt = `${parts[2]}/${parts[1]}/${parts[0]}`;
             }
 
             const nama       = <?= json_encode($infoFreeze['nama_penghuni']); ?>;
@@ -197,22 +235,34 @@ $waUrlAwal = $isFreezeIuran
                 pesan = `Halo Bapak/Ibu Pemilik Kos,\n\n`
                       + `Saya *${nama}* penghuni *Kamar ${kamar}*. Akun SITEMAN - KOS saya saat ini ter-freeze karena tunggakan *${namaIuran}* sebesar *${nominalFmt}*.\n\n`
                       + `Saya memohon kebijaksanaannya untuk membuka akses akun saya sementara, dan saya berjanji akan melunasi iuran tersebut pada tanggal *${tglFmt}*.\n\n`
-                      + `Terima kasih banyak atas pengertiannya. 🙏`;
+                      + `Terima kasih banyak atas pengertiannya.`;
             } else {
                 pesan = `Halo Bapak/Ibu Pemilik Kos,\n\n`
                       + `Saya *${nama}* penghuni *Kamar ${kamar}*. Akun SITEMAN - KOS saya saat ini ter-freeze karena menunggak sewa selama *${jmlBulan} bulan* dengan total *${nominalFmt}*.\n\n`
                       + `Saya memohon kebijaksanaannya untuk membuka akses akun saya sementara, dan saya berjanji akan melunasi tunggakan tersebut pada tanggal *${tglFmt}*.\n\n`
-                      + `Terima kasih banyak atas pengertiannya. 🙏`;
+                      + `Terima kasih banyak atas pengertiannya.`;
             }
 
             btnWa.href = `https://wa.me/${noWaPemilik}?text=${encodeURIComponent(pesan)}`;
         }
 
-        function kirimPermohonanUnfreeze() {
+        function kirimPermohonanUnfreeze(e) {
             const inputTgl      = document.getElementById('inputTglJanjiFreeze');
             const isFreezeIuran = <?= json_encode($isFreezeIuran); ?>;
             const statusBox     = document.getElementById('boxStatusPengajuan');
-            if (!inputTgl || !inputTgl.value) return;
+
+            if (!inputTgl || !inputTgl.value) {
+                if (e) e.preventDefault();
+                if (statusBox) {
+                    statusBox.innerHTML = `<div class="alert-error"><i class="fa-solid fa-circle-exclamation"></i> Silakan pilih <strong>tanggal rencana pelunasan</strong> terlebih dahulu sebelum menghubungi Pemilik Kos.</div>`;
+                }
+                if (fpJanjiFreeze) {
+                    fpJanjiFreeze.open();
+                }
+                return false;
+            }
+
+            perbaruiLinkWaFreeze();
 
             const formData = new FormData();
             formData.append('tanggal_janji_bayar', inputTgl.value);
@@ -233,6 +283,8 @@ $waUrlAwal = $isFreezeIuran
                 const tglFmt = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : inputTgl.value;
                 statusBox.innerHTML = `<div class="alert-success"><i class="fa-solid fa-clock"></i> Pengajuan tanggal <strong>${tglFmt}</strong> telah terkirim dan menunggu persetujuan Pemilik Kos.</div>`;
             }
+
+            return true;
         }
     </script>
 </body>

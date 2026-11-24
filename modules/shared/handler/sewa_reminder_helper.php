@@ -64,10 +64,10 @@ if (!function_exists('evaluasiStatusSewaSemuaKamar')) {
             FROM kamar k
             INNER JOIN penghuni_kamar pk ON pk.kamar_id = k.id
             INNER JOIN penghuni p ON p.id = pk.penghuni_id
-            LEFT JOIN skema_sewa s ON pk.skema_id = s.id
             LEFT JOIN tagihan t ON t.penghuni_kamar_id = pk.id
                 AND t.kategori_iuran_id IS NULL
                 AND LOWER(TRIM(t.status_tagihan)) != 'lunas'
+            LEFT JOIN skema_sewa s ON COALESCE(t.skema_id, pk.skema_id) = s.id
             LEFT JOIN (
                 SELECT tagihan_id, SUM(jumlah_bayar) AS total_diterima
                 FROM pembayaran
@@ -115,9 +115,11 @@ if (!function_exists('evaluasiStatusSewaSemuaKamar')) {
             $diffJatuhTempo = (int)$today->diff($dtJatuhTempo)->format('%r%a');
             $sisaHariFreeze = (int)$today->diff($dtBatasFreeze)->format('%r%a');
 
-            $fase = null;
-            $labelStatus = '';
-            $pesanRingkas = '';
+            $fase              = null;
+            $labelStatus       = '';
+            $pesanRingkas      = '';
+            $adaPengajuanJanji = false;
+            $tglJanjiFmt       = !empty($janjiBayar) ? (new DateTimeImmutable($janjiBayar))->format('d/m/Y') : '';
 
             if ($sisaHariFreeze < 0 || ($statusAkun === 'freeze' && $freezeReason === 'sewa')) {
                 if ($statusAkun !== 'freeze') {
@@ -125,34 +127,43 @@ if (!function_exists('evaluasiStatusSewaSemuaKamar')) {
                     $statusAkun = 'freeze';
                 }
                 $fase = 'freeze';
-                $labelStatus = 'Akun Dibekukan (Sewa)';
-                $pesanRingkas = "Menunggak {$jmlNunggak} periode sewa (melewati batas tenggang).";
+
+                if (!empty($janjiBayar)) {
+                    $adaPengajuanJanji = true;
+                    $labelStatus       = 'Pengajuan Janji Bayar (Freeze)';
+                    $pesanRingkas      = "Mengajukan janji bayar pada {$tglJanjiFmt}. Menunggu tinjauan pemilik.";
+                } else {
+                    $labelStatus       = 'Akun Dibekukan (Sewa)';
+                    $pesanRingkas      = "Menunggak {$jmlNunggak} periode sewa (melewati batas tenggang).";
+                }
             } elseif ($diffJatuhTempo < 0) {
-                $hariTelat = abs($diffJatuhTempo);
-                $fase = 'tenggang';
-                $labelStatus = "Sewa Telat {$hariTelat} Hari (Sisa {$sisaHariFreeze} hari)";
+                $hariTelat    = abs($diffJatuhTempo);
+                $fase         = 'tenggang';
+                $labelStatus  = "Sewa Telat {$hariTelat} Hari (Sisa {$sisaHariFreeze} hari)";
                 $pesanRingkas = "Masa tenggang sewa berjalan hingga " . $dtBatasFreeze->format('d/m/Y') . ".";
             } elseif ($diffJatuhTempo === 0) {
-                $fase = 'pengingat';
-                $labelStatus = 'Hari H Jatuh Tempo Sewa';
+                $fase         = 'pengingat';
+                $labelStatus  = 'Hari H Jatuh Tempo Sewa';
                 $pesanRingkas = 'Jatuh tempo pembayaran sewa hari ini (' . $dtJatuhTempo->format('d/m/Y') . ').';
             } elseif ($diffJatuhTempo <= 2) {
-                $fase = 'pengingat';
-                $labelStatus = "H-{$diffJatuhTempo} Jatuh Tempo Sewa";
+                $fase         = 'pengingat';
+                $labelStatus  = "H-{$diffJatuhTempo} Jatuh Tempo Sewa";
                 $pesanRingkas = "Jatuh tempo sewa {$diffJatuhTempo} hari lagi (" . $dtJatuhTempo->format('d/m/Y') . ').';
             }
 
             if ($fase !== null) {
-                $row['jenis_tunggakan']  = 'sewa';
-                $row['status_akun']      = $statusAkun;
-                $row['fase']             = $fase;
-                $row['label_status']     = $labelStatus;
-                $row['pesan_ringkas']    = $pesanRingkas;
-                $row['diff_jatuh_tempo'] = $diffJatuhTempo;
-                $row['sisa_hari_freeze'] = $sisaHariFreeze;
-                $row['batas_freeze_fmt'] = $dtBatasFreeze->format('d/m/Y');
-                $row['jatuh_tempo_fmt']  = $dtJatuhTempo->format('d/m/Y');
-                $row['wa_pengingat_url'] = buatLinkWaPengingatSewa($row);
+                $row['jenis_tunggakan']     = 'sewa';
+                $row['status_akun']         = $statusAkun;
+                $row['fase']                = $fase;
+                $row['ada_pengajuan_janji'] = $adaPengajuanJanji;
+                $row['janji_bayar_fmt']     = $tglJanjiFmt;
+                $row['label_status']        = $labelStatus;
+                $row['pesan_ringkas']       = $pesanRingkas;
+                $row['diff_jatuh_tempo']    = $diffJatuhTempo;
+                $row['sisa_hari_freeze']    = $sisaHariFreeze;
+                $row['batas_freeze_fmt']    = $dtBatasFreeze->format('d/m/Y');
+                $row['jatuh_tempo_fmt']     = $dtJatuhTempo->format('d/m/Y');
+                $row['wa_pengingat_url']    = buatLinkWaPengingatSewa($row);
                 $hasil[] = $row;
             }
         }
@@ -192,26 +203,33 @@ if (!function_exists('buatLinkWaPengingatSewa')) {
             $nomor = '62' . substr($nomor, 1);
         }
 
-        $nama       = $data['nama_penghuni'] ?? 'Penghuni';
-        $kamar      = $data['no_kamar'] ?? '-';
-        $jmlBulan   = (int)($data['jumlah_bulan_nunggak'] ?? 1);
-        $nominalFmt = 'Rp ' . number_format((float)($data['total_tunggakan'] ?? 0), 0, ',', '.');
-        $batasFmt   = $data['batas_freeze_fmt'] ?? '-';
-        $fase       = $data['fase'] ?? 'pengingat';
+        $nama          = $data['nama_penghuni'] ?? 'Penghuni';
+        $kamar         = $data['no_kamar'] ?? '-';
+        $jmlBulan      = (int)($data['jumlah_bulan_nunggak'] ?? 1);
+        $nominalFmt    = 'Rp ' . number_format((float)($data['total_tunggakan'] ?? 0), 0, ',', '.');
+        $batasFmt      = $data['batas_freeze_fmt'] ?? '-';
+        $fase          = $data['fase'] ?? 'pengingat';
+        $adaPengajuan  = !empty($data['ada_pengajuan_janji']);
+        $tglJanjiFmt   = $data['janji_bayar_fmt'] ?? '-';
 
-        if ($fase === 'freeze') {
+        if ($fase === 'freeze' && $adaPengajuan) {
+            $pesan = "Halo *{$nama}* (Kamar {$kamar}),\n\n"
+                   . "Pengajuan janji pelunasan tunggakan sewa Anda ({$jmlBulan} periode, Total: *{$nominalFmt}*) untuk tanggal *{$tglJanjiFmt}* telah kami terima dan sedang kami tinjau.\n\n"
+                   . "Mohon ditunggu konfirmasinya ya. Terima kasih.\n\n"
+                   . "_Pemilik SITEMAN - KOS_";
+        } elseif ($fase === 'freeze') {
             $pesan = "Halo *{$nama}* (Kamar {$kamar}),\n\n"
                    . "Akun SITEMAN - KOS Anda saat ini *dibekukan (Freeze)* karena sisa tunggakan sewa ({$jmlBulan} periode, Total: *{$nominalFmt}*) telah melewati batas masa tenggang.\n\n"
-                   . "Silakan balas pesan ini untuk mengonfirmasi rencana pelunasan (tanggal bayar) agar akun dapat kami aktifkan kembali. Terima kasih. 🙏\n\n"
+                   . "Silakan ajukan rencana tanggal pelunasan melalui aplikasi atau balas pesan ini agar akun dapat kami tinjau dan aktifkan kembali. Terima kasih.\n\n"
                    . "_Pemilik SITEMAN - KOS_";
         } else {
             $pesan = "Halo *{$nama}* (Kamar {$kamar}),\n\n"
                    . "Mengingatkan sisa tagihan sewa kos Anda (*{$data['label_status']}*) sebesar *{$nominalFmt}*.\n"
-                   . "Mohon segera melakukan pembayaran sebelum *{$batasFmt}* agar akun SITEMAN - KOS Anda tetap aktif. Terima kasih. 🙏\n\n"
+                   . "Mohon segera melakukan pembayaran sebelum *{$batasFmt}* agar akun SITEMAN - KOS Anda tetap aktif. Terima kasih.\n\n"
                    . "_Pemilik SITEMAN - KOS_";
         }
 
-        return "https://wa.me/{$nomor}?text=" . rawurlencode($pesan);
+        return "https://api.whatsapp.com/send?phone={$nomor}&text=" . rawurlencode($pesan);
     }
 }
 
@@ -240,8 +258,8 @@ if (!function_exists('buatLinkWaPermohonanUnfreeze')) {
         $pesan = "Halo Bapak/Ibu Pemilik Kos,\n\n"
                . "Saya *{$nama}* penghuni *Kamar {$kamar}*. Akun SITEMAN - KOS saya saat ini ter-freeze karena sisa tunggakan sewa ({$jmlBulan} periode) dengan total *{$nominalFmt}*.\n\n"
                . "Saya memohon kebijaksanaannya untuk membuka akses akun saya sementara, dan saya berjanji akan melunasi tunggakan tersebut pada tanggal *{$tglJanji}*.\n\n"
-               . "Terima kasih banyak atas pengertiannya. 🙏";
+               . "Terima kasih banyak atas pengertiannya.";
 
-        return "https://wa.me/{$noWaPemilik}?text=" . rawurlencode($pesan);
+        return "https://api.whatsapp.com/send?phone={$noWaPemilik}&text=" . rawurlencode($pesan);
     }
 }

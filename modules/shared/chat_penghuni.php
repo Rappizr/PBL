@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../../config/init.php';
 /** @var PDO $pdo */
 
-require_once __DIR__ . '/../pemilik/handler/chat_handlers.php';
+require_once __DIR__ . '/handler/chat_handler.php';
 
 $penghuniKos  = $penghuniKos ?? [];
 $role_user    = $_SESSION['user']['role'] ?? 'pemilik';

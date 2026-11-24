@@ -73,10 +73,14 @@ $ada_ktp      = ($ktp_url_awal !== '');
                         <div class="row-input-dual">
                             <div class="detail-form-group flex-1">
                                 <label class="detail-freeze-label">Tanggal Janji Bayar</label>
-                                <input type="date" name="tanggal_janji_bayar"
-                                       min="<?= date('Y-m-d'); ?>"
-                                       value="<?= htmlspecialchars($kamar_terpilih['tanggal_janji_bayar'] ?? ''); ?>"
-                                       class="detail-freeze-date-input" required>
+                                <div class="modal-input-icon-wrapper">
+                                    <i class="fa-regular fa-calendar modal-input-icon"></i>
+                                    <input type="text" name="tanggal_janji_bayar"
+                                           id="detailFreezeTglJanji"
+                                           value="<?= htmlspecialchars($kamar_terpilih['tanggal_janji_bayar'] ?? ''); ?>"
+                                           placeholder="Pilih tanggal..."
+                                           class="detail-freeze-date-input modal-input-with-icon" required readonly>
+                                </div>
                             </div>
                             <div class="detail-form-group flex-1">
                                 <label class="detail-freeze-label">Keterangan Tunggakan</label>
@@ -236,8 +240,13 @@ $ada_ktp      = ($ktp_url_awal !== '');
             <div class="detail-row-dates">
                 <div class="detail-form-group detail-col-half">
                     <label class="detail-label" for="detailTglMulai">Tanggal Mulai</label>
-                    <input type="date" id="detailTglMulai" name="tgl_mulai" class="detail-input-pill date-box" 
-                           value="<?= htmlspecialchars($kamar_terpilih['tgl_mulai'] ?? date('Y-m-d')); ?>" required onchange="hitungTanggalSelesaiDetail()">
+                    <div class="modal-input-icon-wrapper">
+                        <i class="fa-regular fa-calendar modal-input-icon"></i>
+                        <input type="text" id="detailTglMulai" name="tgl_mulai"
+                               class="detail-input-pill date-box modal-input-with-icon"
+                               value="<?= htmlspecialchars($kamar_terpilih['tgl_mulai'] ?? date('Y-m-d')); ?>"
+                               placeholder="Pilih tanggal..." required readonly>
+                    </div>
                 </div>
                 <div class="detail-form-group detail-col-half">
                     <label class="detail-label" for="detailTglSelesai">Tanggal Selesai</label>
@@ -420,6 +429,64 @@ $ada_ktp      = ($ktp_url_awal !== '');
     const MIN_DATE_HARI_INI = <?= json_encode(date('Y-m-d')); ?>;
     window.idPenghuniAktifDetail = <?= json_encode((string)($kamar_terpilih['penghuni_id'] ?? '')); ?>;
 
+    let fpDetailTglMulai = null;
+    let fpDetailFreezeJanji = null;
+
+    function initFlatpickrDetailTanggalMulai(defaultVal = null) {
+        const el = document.getElementById('detailTglMulai');
+        if (!el || typeof flatpickr === 'undefined') return;
+
+        if (fpDetailTglMulai) {
+            if (defaultVal !== null) {
+                fpDetailTglMulai.setDate(defaultVal || null, false);
+            }
+            return;
+        }
+
+        fpDetailTglMulai = flatpickr(el, {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d / m / Y",
+            altInputClass: "detail-input-pill date-box modal-input-with-icon",
+            disableMobile: true,
+            onReady: function (selectedDates, dateStr, instance) {
+                if (instance.altInput) {
+                    instance.altInput.placeholder = "Pilih tanggal...";
+                    instance.altInput.readOnly = true;
+                }
+            },
+            onChange: function () {
+                hitungTanggalSelesaiDetail();
+            }
+        });
+    }
+
+    function initFlatpickrDetailFreezeJanji(defaultVal = null) {
+        const el = document.getElementById('detailFreezeTglJanji');
+        if (!el || typeof flatpickr === 'undefined') return;
+
+        if (fpDetailFreezeJanji) {
+            fpDetailFreezeJanji.destroy();
+            fpDetailFreezeJanji = null;
+        }
+
+        fpDetailFreezeJanji = flatpickr(el, {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d / m / Y",
+            altInputClass: "detail-freeze-date-input modal-input-with-icon",
+            minDate: MIN_DATE_HARI_INI,
+            defaultDate: defaultVal !== null ? (defaultVal || null) : (el.value || null),
+            disableMobile: true,
+            onReady: function (selectedDates, dateStr, instance) {
+                if (instance.altInput) {
+                    instance.altInput.placeholder = "Pilih tanggal...";
+                    instance.altInput.readOnly = true;
+                }
+            }
+        });
+    }
+
     function escapeHtmlDetail(str) {
         return String(str ?? '')
             .replace(/&/g, '&amp;')
@@ -438,6 +505,11 @@ $ada_ktp      = ($ktp_url_awal !== '');
     function renderPanelFreezeDetail(kmr, isFreeze) {
         const freezeWrap = document.getElementById('detailFreezeWrapper');
         if (!freezeWrap) return;
+
+        if (fpDetailFreezeJanji) {
+            fpDetailFreezeJanji.destroy();
+            fpDetailFreezeJanji = null;
+        }
 
         const infoSewa = kmr.info_sewa || null;
         if (!isFreeze && !infoSewa) {
@@ -513,10 +585,14 @@ $ada_ktp      = ($ktp_url_awal !== '');
                     <div class="row-input-dual">
                         <div class="detail-form-group flex-1">
                             <label class="detail-freeze-label">Tanggal Janji Bayar</label>
-                            <input type="date" name="tanggal_janji_bayar"
-                                   min="${escapeHtmlDetail(MIN_DATE_HARI_INI)}"
-                                   value="${escapeHtmlDetail(kmr.tanggal_janji_bayar || '')}"
-                                   class="detail-freeze-date-input" required>
+                            <div class="modal-input-icon-wrapper">
+                                <i class="fa-regular fa-calendar modal-input-icon"></i>
+                                <input type="text" name="tanggal_janji_bayar"
+                                       id="detailFreezeTglJanji"
+                                       value="${escapeHtmlDetail(kmr.tanggal_janji_bayar || '')}"
+                                       placeholder="Pilih tanggal..."
+                                       class="detail-freeze-date-input modal-input-with-icon" required readonly>
+                            </div>
                         </div>
                         <div class="detail-form-group flex-1">
                             <label class="detail-freeze-label">Keterangan Tunggakan</label>
@@ -537,6 +613,8 @@ $ada_ktp      = ($ktp_url_awal !== '');
                 </form>
             </div>
         `;
+
+        initFlatpickrDetailFreezeJanji(kmr.tanggal_janji_bayar || '');
     }
 
     function bukaDetailKamarInstan(e, noKamar) {
@@ -587,6 +665,7 @@ $ada_ktp      = ($ktp_url_awal !== '');
             document.getElementById('detailPin').value         = kmr.pin || '123456';
             document.getElementById('detailIsKetuaKos').value  = kmr.is_ketua_kos ? '1' : '0';
             document.getElementById('detailTglMulai').value    = kmr.tgl_mulai || '';
+            initFlatpickrDetailTanggalMulai(kmr.tgl_mulai || '');
             document.getElementById('detailTglSelesai').value  = kmr.tgl_selesai_format || '-';
             document.getElementById('detailStatusBayar').value = (kmr.status_bayar === 'lunas') ? 'lunas' : 'belum_bayar';
 
@@ -793,7 +872,10 @@ $ada_ktp      = ($ktp_url_awal !== '');
 
         if (!tglMulaiVal || !tglSelesaiInput) return;
 
-        const startDate = new Date(tglMulaiVal);
+        const parts = tglMulaiVal.split('-');
+        if (parts.length !== 3) return;
+        const startDate = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+
         if (tipe === 'hari') {
             startDate.setDate(startDate.getDate() + nilai);
         } else {
@@ -847,6 +929,9 @@ $ada_ktp      = ($ktp_url_awal !== '');
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        initFlatpickrDetailTanggalMulai();
+        initFlatpickrDetailFreezeJanji();
+
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('modal') === 'detail_kamar' && urlParams.get('nomor')) {
             bukaDetailKamarInstan(null, urlParams.get('nomor'));

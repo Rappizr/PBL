@@ -45,11 +45,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                 FROM pembayaran p
                 JOIN tagihan t ON p.tagihan_id = t.id
                 LEFT JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
-                LEFT JOIN skema_sewa s ON pk.skema_id = s.id
+                LEFT JOIN skema_sewa s ON COALESCE(t.skema_id, pk.skema_id) = s.id
                 LEFT JOIN kategori_iuran ki ON t.kategori_iuran_id = ki.id
                 LEFT JOIN penghuni pen ON pk.penghuni_id = pen.id
                 LEFT JOIN kamar k ON pk.kamar_id = k.id
                 WHERE p.id = :id AND LOWER(TRIM(p.status_verifikasi)) = 'pending'
+                FOR UPDATE OF p
             ");
             $stmtCek->execute([':id' => $pembayaran_id]);
             $bayar = $stmtCek->fetch(PDO::FETCH_ASSOC);
@@ -110,6 +111,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                     ':status_baru' => $statusBaru,
                     ':tagihan_id'  => $tagihan_id
                 ]);
+
+                // 2b. Jika tagihan sudah LUNAS, otomatis batalkan sisa pengajuan pending duplikat pada tagihan ini
+                if ($statusBaru === 'lunas') {
+                    $stmtTutupDuplikat = $pdo->prepare("
+                        UPDATE pembayaran
+                        SET status_verifikasi = 'ditolak',
+                            alasan_penolakan = 'Dibatalkan otomatis karena tagihan sudah lunas'
+                        WHERE tagihan_id = :tid
+                          AND id != :pid
+                          AND LOWER(TRIM(status_verifikasi)) = 'pending'
+                    ");
+                    $stmtTutupDuplikat->execute([
+                        ':tid' => $tagihan_id,
+                        ':pid' => $pembayaran_id
+                    ]);
+                }
 
                 // 3. Catat ke buku_kas HANYA JIKA IURAN BERSAMA
                 if (!$is_sewa) {
@@ -236,7 +253,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                     bersihkanCacheNotifSiteman();
                 }
 
-                // 3. Langsung redirect ke WhatsApp dengan format alasan penolakan
+                // 3. Simpan link WA ke session lalu redirect ke halaman verifikasi dulu agar UI segar & tidak muter-muter
                 if ($no_wa_pen !== '') {
                     if (str_starts_with($no_wa_pen, '0')) {
                         $no_wa_pen = '62' . substr($no_wa_pen, 1);
@@ -250,10 +267,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['aksi_verifikasi'])) {
                               . "Silakan lakukan pengecekan dan ajukan ulang pembayaran melalui aplikasi SITEMAN - KOS ya. Terima kasih. 🙏\n\n"
                               . "_{$pengirim_role}_";
 
-                    header("Location: https://wa.me/{$no_wa_pen}?text=" . rawurlencode($pesan_wa));
-                    exit;
+                    $_SESSION['wa_redirect_tolak'] = "https://api.whatsapp.com/send?phone={$no_wa_pen}&text=" . rawurlencode($pesan_wa);
                 }
 
+                $_SESSION['pesan_sukses'] = "Pembayaran {$tipe_label} dari {$nama_pen} berhasil ditolak.";
                 header("Location: /?page=verifikasi_bayar");
                 exit;
             }
@@ -280,12 +297,12 @@ if ($date_range !== '') {
     $tgl_selesai = trim($parts[1] ?? $tgl_mulai);
 }
 
-// Query Ambil Data Pending Berdasarkan Role
+// Query Ambil Semua Data Pending Berdasarkan Role
 $daftar_verifikasi = [];
 if (isset($pdo) && ($pdo instanceof PDO)) {
     try {
         $sql = "
-            SELECT DISTINCT ON (p.tagihan_id)
+            SELECT
                 p.id AS pembayaran_id,
                 p.jumlah_bayar,
                 COALESCE(p.tanggal_bayar, NOW()) AS tanggal_bayar,
@@ -318,7 +335,7 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
             $params[':tgl_selesai'] = $tgl_selesai;
         }
 
-        $sql .= " ORDER BY p.tagihan_id, p.id DESC";
+        $sql .= " ORDER BY p.id DESC";
 
         $stmt = $pdo->prepare($sql);
         $stmt->execute($params);

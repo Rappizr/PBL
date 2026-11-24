@@ -89,7 +89,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                     </div>
                     <div class="kelola-stat-card">
                         <span class="kelola-stat-label">Sudah Bayar</span>
-                        <span class="kelola-stat-value"><?= $sudah_bayar . '/' . $total_penghuni; ?></span>
+                        <span class="kelola-stat-value"><?= $sudah_bayar . '/' . ($total_wajib_bayar ?? $total_penghuni); ?></span>
                     </div>
                     <div class="kelola-stat-card">
                         <span class="kelola-stat-label"><?= htmlspecialchars($nama_iuran_saat_ini ?? 'Iuran Aktif'); ?></span>
@@ -235,13 +235,13 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                 <?php endif; ?>
 
                 <div class="kelola-action-row iuran-action-row-mobile">
-                    <a href="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran" class="btn-kelola-action">
+                    <button type="button" onclick="bukaModalTambahPengeluaran()" class="btn-kelola-action">
                         <span class="icon-kelola-white"><i class="fa-solid fa-plus"></i></span>
                         Tambah Pengeluaran
-                    </a>
-                    <a href="/?page=<?= urlencode($current_page); ?>&modal=set_nominal_iuran" class="btn-set-iuran">
+                    </button>
+                    <button type="button" onclick="bukaModalSetIuran()" class="btn-set-iuran">
                         <i class="fa-solid fa-gear"></i> Set Nominal Iuran
-                    </a>
+                    </button>
                     <div class="box-kelola-saldo">
                         <span class="icon-kelola-white"><i class="fa-solid fa-wallet"></i></span>
                         Rp. <?= number_format((float)$saldo_kas_iuran, 0, ',', '.'); ?>
@@ -330,7 +330,8 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                     <?php foreach ($daftar_penghuni as $p): ?>
                     <div class="kelola-penghuni-card penghuni-filter-item"
                          data-lunas="<?= $p['is_lunas'] ? '1' : '0'; ?>"
-                         data-verifikasi="<?= $p['is_verifikasi'] ? '1' : '0'; ?>">
+                         data-verifikasi="<?= $p['is_verifikasi'] ? '1' : '0'; ?>"
+                         data-belum-wajib="<?= !empty($p['belum_wajib']) ? '1' : '0'; ?>">
                         <div class="kelola-penghuni-info">
                             <div class="kelola-penghuni-top">
                                 <h4 class="kelola-penghuni-name"><?= htmlspecialchars($p['nama']); ?></h4>
@@ -345,7 +346,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                             </a>
                             <?php endif; ?>
 
-                            <?php if (!$p['is_lunas'] && !empty($p['sudah_diingatkan'])): ?>
+                            <?php if (empty($p['belum_wajib']) && !$p['is_lunas'] && !empty($p['sudah_diingatkan'])): ?>
                             <span class="badge-kamar-putih" title="Sudah diwakilkan pada fase <?= htmlspecialchars($fase_reminder_sekarang); ?>">
                                 <i class="fa-solid fa-check-double"></i> Diingatkan <?= htmlspecialchars($p['reminder_sent_by']); ?> (<?= $p['reminder_jam']; ?>)
                             </span>
@@ -353,7 +354,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
 
                             <a href="<?= htmlspecialchars(buatLinkWaIuran($p, $nama_iuran_saat_ini, $tgl_selesai_iuran, $selisih_hari, $tgl_batas_freeze_iuran, $pengirim_tag)); ?>"
                                target="_blank"
-                               onclick="catatKlikWaIuran(<?= (int)$p['penghuni_kamar_id']; ?>, this)"
+                               <?php if (empty($p['belum_wajib']) && !$p['is_lunas']): ?>onclick="catatKlikWaIuran(<?= (int)$p['penghuni_kamar_id']; ?>, this)"<?php endif; ?>
                                class="btn-chat-wa">
                                 <i class="fa-brands fa-whatsapp"></i> <?= !empty($p['sudah_diingatkan']) ? 'Chat Ulang' : 'Chat'; ?>
                             </a>
@@ -384,7 +385,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                 </div>
                 <div class="desktop-kelola-stat-card">
                     <span class="desktop-kelola-stat-label">Sudah Bayar</span>
-                    <span class="desktop-kelola-stat-val"><?= $sudah_bayar . '/' . $total_penghuni; ?></span>
+                    <span class="desktop-kelola-stat-val"><?= $sudah_bayar . '/' . ($total_wajib_bayar ?? $total_penghuni); ?></span>
                 </div>
                 <div class="desktop-kelola-stat-card">
                     <span class="desktop-kelola-stat-label"><?= htmlspecialchars($nama_iuran_saat_ini ?? 'Iuran Aktif'); ?></span>
@@ -533,12 +534,12 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
 
             <!-- Baris Aksi Desktop Pengurus (Pemilik / PJ) -->
             <div class="iuran-desktop-action-bar">
-                <a href="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran" class="iuran-btn-pill-action iuran-nowrap">
+                <button type="button" onclick="bukaModalTambahPengeluaran()" class="iuran-btn-pill-action iuran-nowrap">
                     <i class="fa-solid fa-plus"></i> Tambah Pengeluaran
-                </a>
-                <a href="/?page=<?= urlencode($current_page); ?>&modal=set_nominal_iuran" class="btn-set-iuran iuran-nowrap">
+                </button>
+                <button type="button" onclick="bukaModalSetIuran()" class="btn-set-iuran iuran-nowrap">
                     <i class="fa-solid fa-gear"></i> Set Nominal Iuran
-                </a>
+                </button>
                 <div class="iuran-box-pill-saldo iuran-nowrap">
                     <i class="fa-solid fa-wallet"></i> Rp. <?= number_format((float)$saldo_kas_iuran, 0, ',', '.'); ?>
                 </div>
@@ -612,7 +613,8 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                 <?php foreach ($daftar_penghuni as $p): ?>
                 <div class="desktop-penghuni-card penghuni-filter-item"
                      data-lunas="<?= $p['is_lunas'] ? '1' : '0'; ?>"
-                     data-verifikasi="<?= $p['is_verifikasi'] ? '1' : '0'; ?>">
+                     data-verifikasi="<?= $p['is_verifikasi'] ? '1' : '0'; ?>"
+                     data-belum-wajib="<?= !empty($p['belum_wajib']) ? '1' : '0'; ?>">
                     <div class="desktop-penghuni-info">
                         <div class="desktop-penghuni-top">
                             <h4><?= htmlspecialchars($p['nama']); ?></h4>
@@ -627,7 +629,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                         </a>
                         <?php endif; ?>
 
-                        <?php if (!$p['is_lunas'] && !empty($p['sudah_diingatkan'])): ?>
+                        <?php if (empty($p['belum_wajib']) && !$p['is_lunas'] && !empty($p['sudah_diingatkan'])): ?>
                         <span class="badge-kamar-putih" title="Sudah diwakilkan pada fase <?= htmlspecialchars($fase_reminder_sekarang); ?>">
                             <i class="fa-solid fa-check-double"></i> Diingatkan <?= htmlspecialchars($p['reminder_sent_by']); ?> (<?= $p['reminder_jam']; ?>)
                         </span>
@@ -635,7 +637,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
 
                         <a href="<?= htmlspecialchars(buatLinkWaIuran($p, $nama_iuran_saat_ini, $tgl_selesai_iuran, $selisih_hari, $tgl_batas_freeze_iuran, $pengirim_tag)); ?>"
                            target="_blank"
-                           onclick="catatKlikWaIuran(<?= (int)$p['penghuni_kamar_id']; ?>, this)"
+                           <?php if (empty($p['belum_wajib']) && !$p['is_lunas']): ?>onclick="catatKlikWaIuran(<?= (int)$p['penghuni_kamar_id']; ?>, this)"<?php endif; ?>
                            class="iuran-btn-chat-pill">
                             <i class="fa-brands fa-whatsapp"></i> <?= !empty($p['sudah_diingatkan']) ? 'Chat Ulang' : 'Chat'; ?>
                         </a>
@@ -704,15 +706,15 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
         </main>
     </div>
 
+    <?php if ($can_manage): ?>
     <!-- MODAL 1: TAMBAH PENGELUARAN -->
-    <?php if ($can_manage && $show_modal_pengeluaran): ?>
-    <div class="modal-overlay active">
-        <div class="modal-card">
+    <div id="modalTambahPengeluaran" class="modal-overlay <?= $show_modal_pengeluaran ? 'active' : ''; ?>" onclick="tutupModalTambahPengeluaran()">
+        <div class="modal-card" onclick="event.stopPropagation()">
             <h3 class="modal-title">Tambah Pengeluaran</h3>
-            <?php if (!empty($error_modal)): ?>
+            <?php if ($show_modal_pengeluaran && !empty($error_modal)): ?>
             <p class="modal-error-text"><?= htmlspecialchars($error_modal); ?></p>
             <?php endif; ?>
-            <form action="/?page=<?= urlencode($current_page); ?>&modal=tambah_pengeluaran" method="POST" class="modal-form">
+<form action="<?= htmlspecialchars(urlIuran($current_page)); ?>" method="POST" class="modal-form" onsubmit="setBtnLoadingIuran(this)">
                 <input type="hidden" name="simpan_pengeluaran" value="1">
                 <div class="modal-field">
                     <label class="modal-label" for="keterangan">Keterangan</label>
@@ -725,24 +727,22 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                         placeholder="Contoh: 150.000" inputmode="numeric" required>
                 </div>
                 <div class="modal-actions">
-                    <a href="/?page=<?= urlencode($current_page); ?>" class="btn-modal-cancel">Batal</a>
+                    <button type="button" class="btn-modal-cancel" onclick="tutupModalTambahPengeluaran()">Batal</button>
                     <button type="submit" class="btn-modal-submit">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
-    <?php endif; ?>
 
     <!-- MODAL 2: SET NOMINAL, NAMA & PERIODE IURAN -->
-    <?php if ($can_manage && $show_modal_set_iuran): ?>
-    <div class="modal-overlay active">
-        <div class="modal-card">
+    <div id="modalSetIuran" class="modal-overlay <?= $show_modal_set_iuran ? 'active' : ''; ?>" onclick="tutupModalSetIuran()">
+        <div class="modal-card" onclick="event.stopPropagation()">
             <h3 class="modal-title">Atur Nominal &amp; Periode Iuran</h3>
             <p class="modal-subtitle-text">Tentukan nama iuran, besaran nominal, dan rentang tanggal berlakunya.</p>
-            <?php if (!empty($error_modal)): ?>
+            <?php if ($show_modal_set_iuran && !empty($error_modal)): ?>
             <p class="modal-error-text"><?= htmlspecialchars($error_modal); ?></p>
             <?php endif; ?>
-            <form action="/?page=<?= urlencode($current_page); ?>&modal=set_nominal_iuran" method="POST" class="modal-form">
+<form action="<?= htmlspecialchars(urlIuran($current_page)); ?>" method="POST" class="modal-form" onsubmit="setBtnLoadingIuran(this)">
                 <input type="hidden" name="simpan_nominal_iuran" value="1">
                 <div class="modal-field">
                     <label class="modal-label" for="nama_iuran">Keterangan / Nama Iuran</label>
@@ -767,7 +767,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <a href="/?page=<?= urlencode($current_page); ?>" class="btn-modal-cancel">Batal</a>
+                    <button type="button" class="btn-modal-cancel" onclick="tutupModalSetIuran()">Batal</button>
                     <button type="submit" class="btn-modal-submit btn-submit-blue">Simpan Perubahan</button>
                 </div>
             </form>
@@ -775,7 +775,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
     </div>
     <?php endif; ?>
 
-<!-- MODAL 3: PILIH PERIODE CETAK BUKU KAS IURAN (SEMUA ROLE) -->
+    <!-- MODAL 3: PILIH PERIODE CETAK BUKU KAS IURAN (SEMUA ROLE) -->
     <div id="modalFilterCetakIuran" class="modal-overlay" onclick="tutupModalCetakIuran()">
         <div class="modal-card modal-cetak-kas-card" onclick="event.stopPropagation()">
             <h3 class="modal-title"><i class="fa-solid fa-file-pdf icon-pdf-red"></i> Cetak Laporan Iuran</h3>
@@ -941,12 +941,13 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
         });
 
         document.querySelectorAll('.penghuni-filter-item').forEach(function (card) {
-            const isLunas = card.getAttribute('data-lunas') === '1';
-            const isVerif = card.getAttribute('data-verifikasi') === '1';
+            const isLunas      = card.getAttribute('data-lunas') === '1';
+            const isVerif      = card.getAttribute('data-verifikasi') === '1';
+            const isBelumWajib = card.getAttribute('data-belum-wajib') === '1';
 
             let tampil = true;
             if (kategori === 'belum_bayar') {
-                tampil = !isLunas;
+                tampil = !isLunas && !isBelumWajib;
             } else if (kategori === 'verifikasi') {
                 tampil = isVerif;
             }
@@ -973,6 +974,36 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
         }
     });
 
+    function bersihkanParamModalUrl() {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('modal')) {
+            url.searchParams.delete('modal');
+            window.history.replaceState({}, '', url);
+        }
+    }
+
+    function bukaModalTambahPengeluaran() {
+        const modal = document.getElementById('modalTambahPengeluaran');
+        if (modal) modal.classList.add('active');
+    }
+
+    function tutupModalTambahPengeluaran() {
+        const modal = document.getElementById('modalTambahPengeluaran');
+        if (modal) modal.classList.remove('active');
+        bersihkanParamModalUrl();
+    }
+
+    function bukaModalSetIuran() {
+        const modal = document.getElementById('modalSetIuran');
+        if (modal) modal.classList.add('active');
+    }
+
+    function tutupModalSetIuran() {
+        const modal = document.getElementById('modalSetIuran');
+        if (modal) modal.classList.remove('active');
+        bersihkanParamModalUrl();
+    }
+
     function bukaModalCetakIuran() {
         const modal = document.getElementById('modalFilterCetakIuran');
         if (modal) modal.classList.add('active');
@@ -982,6 +1013,14 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
         const modal = document.getElementById('modalFilterCetakIuran');
         if (modal) modal.classList.remove('active');
     }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            tutupModalTambahPengeluaran();
+            tutupModalSetIuran();
+            tutupModalCetakIuran();
+        }
+    });
 
     function toggleFormCetakIuran(tipe) {
         const boxBulan = document.getElementById('boxIuranBulan');
@@ -1004,6 +1043,23 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
             boxTahun.style.display = 'none';
             if (selBulan) selBulan.disabled = true;
             if (selTahun) selTahun.disabled = true;
+        }
+    }
+
+    function setBtnLoadingIuran(form) {
+        if (!form.checkValidity()) return;
+
+        const btnSubmit = form.querySelector('button[type="submit"]');
+        const btnCancel = form.querySelector('.btn-modal-cancel');
+
+        if (btnSubmit) {
+            btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+            btnSubmit.style.opacity = '0.85';
+            btnSubmit.style.pointerEvents = 'none';
+        }
+        if (btnCancel) {
+            btnCancel.disabled = true;
+            btnCancel.style.opacity = '0.6';
         }
     }
     </script>
