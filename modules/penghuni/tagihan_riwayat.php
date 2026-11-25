@@ -31,9 +31,9 @@ if (($evalIuran['fase'] ?? '') === 'tenggang' && ($evalSewa['fase'] ?? '') !== '
 $isPeringatanIuran = (($peringatanTagihan['jenis_tunggakan'] ?? 'sewa') === 'iuran');
 $judulPeringatan   = $isPeringatanIuran ? 'Pengingat Iuran Kas' : 'Pengingat Sewa Kamar';
 
-$post_res      = function_exists('handleUploadBuktiBayar') ? handleUploadBuktiBayar($pdo) : ['sukses' => '', 'error' => ''];
-$sukses_pesan  = $post_res['sukses'] ?? ($sukses_pesan ?? ($_SESSION['pesan_sukses'] ?? ''));
-$error_pesan   = $post_res['error'] ?? ($error_pesan ?? ($_SESSION['pesan_error'] ?? ''));
+$post_res     = function_exists('handleUploadBuktiBayar') ? handleUploadBuktiBayar($pdo) : ['sukses' => '', 'error' => ''];
+$sukses_pesan = $post_res['sukses'] ?: ($_SESSION['pesan_sukses'] ?? trim((string)($_GET['notif_sukses'] ?? '')));
+$error_pesan  = $post_res['error']  ?: ($_SESSION['pesan_error']  ?? trim((string)($_GET['notif_error']  ?? '')));
 unset($_SESSION['pesan_sukses'], $_SESSION['pesan_error']);
 
 $daftar_tagihan_saya = function_exists('fetchDaftarTagihan') ? fetchDaftarTagihan($pdo, $pk_id) : ($daftar_tagihan_saya ?? []);
@@ -192,38 +192,40 @@ if (isset($_GET['invoice_id'])) {
 
 <body class="dashboard-body">
 
-    <!-- FLOATING TOAST NOTIFIKASI BERHASIL / GAGAL -->
-    <div class="toast-floating-container">
-        <?php if (!empty($sukses_pesan)): ?>
-        <div class="toast-alert toast-success" id="toastAlertBox">
-            <div class="toast-icon">
-                <i class="fa-solid fa-check"></i>
+    <!-- POP-UP MODAL BERHASIL / GAGAL TRANSFER -->
+    <?php if (!empty($sukses_pesan)): ?>
+    <div id="modalNotifTransfer" class="modal-overlay active" onclick="tutupModalNotifTransfer()" style="z-index: 99999;">
+        <div class="modal-bayar-card" onclick="event.stopPropagation()" style="max-width: 400px; text-align: center; padding: 28px 24px;">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: #dcfce7; color: #16a34a; display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 16px;">
+                <i class="fa-solid fa-circle-check"></i>
             </div>
-            <div class="toast-content">
-                <h5 class="toast-title">Berhasil Terkirim</h5>
-                <p class="toast-message"><?= htmlspecialchars($sukses_pesan); ?></p>
-            </div>
-            <button type="button" class="toast-close" onclick="closeToast()">
-                <i class="fa-solid fa-xmark"></i>
+            <h3 class="modal-bayar-title" style="margin-bottom: 8px; justify-content: center;">Pembayaran Terkirim!</h3>
+            <p style="font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 22px;">
+                <?= htmlspecialchars($sukses_pesan); ?>
+            </p>
+            <button type="button" onclick="tutupModalNotifTransfer()" class="btn-bayar-kirim" style="width: 100%; justify-content: center;">
+                Oke, Mengerti
             </button>
         </div>
-        <?php endif; ?>
+    </div>
+    <?php endif; ?>
 
-        <?php if (!empty($error_pesan)): ?>
-        <div class="toast-alert toast-error" id="toastAlertBox">
-            <div class="toast-icon">
+    <?php if (!empty($error_pesan)): ?>
+    <div id="modalNotifTransfer" class="modal-overlay active" onclick="tutupModalNotifTransfer()" style="z-index: 99999;">
+        <div class="modal-bayar-card" onclick="event.stopPropagation()" style="max-width: 400px; text-align: center; padding: 28px 24px;">
+            <div style="width: 64px; height: 64px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 30px; margin: 0 auto 16px;">
                 <i class="fa-solid fa-triangle-exclamation"></i>
             </div>
-            <div class="toast-content">
-                <h5 class="toast-title">Gagal Mengirim</h5>
-                <p class="toast-message"><?= htmlspecialchars($error_pesan); ?></p>
-            </div>
-            <button type="button" class="toast-close" onclick="closeToast()">
-                <i class="fa-solid fa-xmark"></i>
+            <h3 class="modal-bayar-title" style="margin-bottom: 8px; justify-content: center; color: #b91c1c;">Gagal Mengirim</h3>
+            <p style="font-size: 14px; color: #475569; line-height: 1.5; margin-bottom: 22px;">
+                <?= htmlspecialchars($error_pesan); ?>
+            </p>
+            <button type="button" onclick="tutupModalNotifTransfer()" class="btn-bayar-kirim" style="width: 100%; justify-content: center; background: #dc2626;">
+                Tutup
             </button>
         </div>
-        <?php endif; ?>
     </div>
+    <?php endif; ?>
 
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
@@ -912,11 +914,18 @@ if (isset($_GET['invoice_id'])) {
             }
         });
 
-        const toast = document.getElementById('toastAlertBox');
-        if (toast) {
-            setTimeout(closeToast, 5000);
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('notif_sukses') || url.searchParams.has('notif_error')) {
+            url.searchParams.delete('notif_sukses');
+            url.searchParams.delete('notif_error');
+            window.history.replaceState({}, '', url);
         }
     });
+
+    function tutupModalNotifTransfer() {
+        const modal = document.getElementById('modalNotifTransfer');
+        if (modal) modal.remove();
+    }
 
     function formatAngkaRibuan(angka) {
         return String(angka).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
@@ -1111,6 +1120,7 @@ if (isset($_GET['invoice_id'])) {
     function tutupModalTagihanInstan(e) {
         if (e) e.preventDefault();
         document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        tutupModalNotifTransfer();
 
         const url = new URL(window.location.href);
         url.searchParams.delete('bayar_id');
@@ -1271,15 +1281,6 @@ if (isset($_GET['invoice_id'])) {
         const btn = document.getElementById('btnSubmitBukti');
         if (btn) {
             btn.classList.add('btn-submit-loading');
-        }
-    }
-
-    function closeToast() {
-        const toast = document.getElementById('toastAlertBox');
-        if (toast) {
-            toast.style.opacity = '0';
-            toast.style.transform = 'translateY(-15px) scale(0.95)';
-            setTimeout(() => toast.remove(), 300);
         }
     }
     </script>
