@@ -38,14 +38,94 @@ if (!defined('SUPABASE_SERVICE_KEY')) {
 }
 
 /**
- * Helper internal header autentikasi Supabase Storage
- * @return array<int, string>
+ * Helper internal eksekusi request ke Supabase Storage
+ * @param string             $method
+ * @param string             $endpoint
+ * @param array<int, string> $extraHeaders
+ * @param string|null        $body
+ * @param int                $timeout
+ * @return array{status: int, body: string}
  */
-function getSupabaseStorageHeaders(array $extraHeaders = []): array {
-    return array_merge([
+function executeSupabaseRequest(string $method, string $endpoint, array $extraHeaders = [], ?string $body = null, int $timeout = 15): array {
+    $headers = [
         'apikey: ' . SUPABASE_SERVICE_KEY,
-        'Authorization: Bearer ' . SUPABASE_SERVICE_KEY,
-    ], $extraHeaders);
+    ];
+    // Header Authorization: Bearer hanya dikirim untuk key berformat JWT (eyJ...)
+    if (str_starts_with(SUPABASE_SERVICE_KEY, 'eyJ')) {
+        $headers[] = 'Authorization: Bearer ' . SUPABASE_SERVICE_KEY;
+    }
+    $headers = array_merge($headers, $extraHeaders);
+
+    // Deteksi PHP built-in server lokal (localhost, 127.0.0.1, atau 0.0.0.0)
+    $isLocalDev = PHP_SAPI === 'cli-server'
+        || in_array($_SERVER['SERVER_NAME'] ?? '', ['localhost', '127.0.0.1', '0.0.0.0'], true);
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init($endpoint);
+        $opts = [
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_CUSTOMREQUEST  => $method,
+            CURLOPT_TIMEOUT        => $timeout,
+            CURLOPT_HTTPHEADER     => $headers,
+            CURLOPT_SSL_VERIFYPEER => !$isLocalDev,
+            CURLOPT_SSL_VERIFYHOST => $isLocalDev ? 0 : 2,
+        ];
+        if ($body !== null) {
+            $opts[CURLOPT_POSTFIELDS] = $body;
+        }
+        curl_setopt_array($ch, $opts);
+        $response = curl_exec($ch);
+        $curlErr  = curl_error($ch);
+        $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        if ($httpCode < 200 || $httpCode >= 300) {
+            error_log("[SupabaseStorage] {$method} {$endpoint} -> HTTP {$httpCode} | cURL: {$curlErr} | Resp: " . (string)$response);
+        }
+
+        return [
+            'status' => $httpCode,
+            'body'   => is_string($response) ? $response : '',
+        ];
+    }
+
+    // Fallback stream jika cURL tidak aktif
+    $httpOpts = [
+        'method'        => $method,
+        'header'        => implode("\r\n", $headers) . "\r\n",
+        'timeout'       => $timeout,
+        'ignore_errors' => true,
+    ];
+    if ($body !== null) {
+        $httpOpts['content'] = $body;
+    }
+
+    $context = stream_context_create([
+        'http' => $httpOpts,
+        'ssl'  => [
+            'verify_peer'      => !$isLocalDev,
+            'verify_peer_name' => !$isLocalDev,
+        ],
+    ]);
+    $response = @file_get_contents($endpoint, false, $context);
+    $httpCode = 0;
+
+    if (!empty($http_response_header) && is_array($http_response_header)) {
+        foreach ($http_response_header as $hdr) {
+            if (preg_match('#^HTTP/\S+\s+(\d{3})#', $hdr, $m)) {
+                $httpCode = (int)$m[1];
+                break;
+            }
+        }
+    }
+
+    if ($httpCode < 200 || $httpCode >= 300) {
+        error_log("[SupabaseStorage Stream] {$method} {$endpoint} -> HTTP {$httpCode} | Resp: " . (string)$response);
+    }
+
+    return [
+        'status' => $httpCode,
+        'body'   => is_string($response) ? $response : '',
+    ];
 }
 
 /**
@@ -56,10 +136,12 @@ function getSupabaseStorageHeaders(array $extraHeaders = []): array {
  */
 function uploadKeSupabase(array $file, string $bucket): string|false {
     if (SUPABASE_URL === '' || SUPABASE_SERVICE_KEY === '') {
+        error_log('[SupabaseStorage] SUPABASE_URL atau SUPABASE_SERVICE_KEY kosong.');
         return false;
     }
 
     if (!isset($file['tmp_name']) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        error_log('[SupabaseStorage] File upload error code: ' . ($file['error'] ?? -1));
         return false;
     }
 
@@ -68,9 +150,19 @@ function uploadKeSupabase(array $file, string $bucket): string|false {
         'image/png'  => 'png',
         'image/webp' => 'webp',
     ];
-    $mimeType = mime_content_type((string)$file['tmp_name']);
+
+    $mimeType = false;
+    if (function_exists('mime_content_type')) {
+        $mimeType = mime_content_type((string)$file['tmp_name']);
+    } elseif (function_exists('getimagesize')) {
+        $imgInfo  = @getimagesize((string)$file['tmp_name']);
+        $mimeType = $imgInfo['mime'] ?? false;
+    } else {
+        $mimeType = $file['type'] ?? false;
+    }
 
     if ($mimeType === false || !isset($allowedMime[$mimeType])) {
+        error_log('[SupabaseStorage] MIME tidak didukung: ' . (string)$mimeType);
         return false;
     }
 
@@ -83,22 +175,12 @@ function uploadKeSupabase(array $file, string $bucket): string|false {
         return false;
     }
 
-    $ch = curl_init($endpoint);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => $fileData,
-        CURLOPT_TIMEOUT        => 20,
-        CURLOPT_HTTPHEADER     => getSupabaseStorageHeaders([
-            'Content-Type: ' . $mimeType,
-            'x-upsert: true',
-        ]),
-    ]);
+    $res = executeSupabaseRequest('POST', $endpoint, [
+        'Content-Type: ' . $mimeType,
+        'x-upsert: true',
+    ], $fileData, 20);
 
-    curl_exec($ch);
-    $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-    return ($httpCode >= 200 && $httpCode < 300) ? $namaFile : false;
+    return ($res['status'] >= 200 && $res['status'] < 300) ? $namaFile : false;
 }
 
 /**
@@ -110,23 +192,12 @@ function getSignedUrlSupabase(string $bucket, ?string $namaFile, int $expiresIn 
     }
 
     $endpoint = SUPABASE_URL . '/storage/v1/object/sign/' . rawurlencode($bucket) . '/' . rawurlencode($namaFile);
+    $res      = executeSupabaseRequest('POST', $endpoint, [
+        'Content-Type: application/json',
+    ], json_encode(['expiresIn' => $expiresIn]) ?: '{}', 15);
 
-    $ch = curl_init($endpoint);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => json_encode(['expiresIn' => $expiresIn]),
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_HTTPHEADER     => getSupabaseStorageHeaders([
-            'Content-Type: application/json',
-        ]),
-    ]);
-
-    $response = curl_exec($ch);
-    $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-    if ($httpCode >= 200 && $httpCode < 300 && is_string($response)) {
-        $data = json_decode($response, true);
+    if ($res['status'] >= 200 && $res['status'] < 300 && $res['body'] !== '') {
+        $data = json_decode($res['body'], true);
         if (!empty($data['signedURL'])) {
             return SUPABASE_URL . '/storage/v1' . $data['signedURL'];
         }
@@ -149,27 +220,18 @@ function getBatchSignedUrlsSupabase(string $bucket, array $listFiles, int $expir
     }
 
     $endpoint = SUPABASE_URL . '/storage/v1/object/sign/' . rawurlencode($bucket);
+    $payload  = json_encode([
+        'expiresIn' => $expiresIn,
+        'paths'     => $paths,
+    ]) ?: '{}';
 
-    $ch = curl_init($endpoint);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST           => true,
-        CURLOPT_POSTFIELDS     => json_encode([
-            'expiresIn' => $expiresIn,
-            'paths'     => $paths,
-        ]),
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_HTTPHEADER     => getSupabaseStorageHeaders([
-            'Content-Type: application/json',
-        ]),
-    ]);
-
-    $response = curl_exec($ch);
-    $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $res = executeSupabaseRequest('POST', $endpoint, [
+        'Content-Type: application/json',
+    ], $payload, 15);
 
     $resultMap = [];
-    if ($httpCode >= 200 && $httpCode < 300 && is_string($response)) {
-        $items = json_decode($response, true);
+    if ($res['status'] >= 200 && $res['status'] < 300 && $res['body'] !== '') {
+        $items = json_decode($res['body'], true);
         if (is_array($items)) {
             foreach ($items as $item) {
                 if (!empty($item['path']) && !empty($item['signedURL'])) {
@@ -191,17 +253,7 @@ function hapusDariSupabase(string $bucket, ?string $namaFile): bool {
     }
 
     $endpoint = SUPABASE_URL . '/storage/v1/object/' . rawurlencode($bucket) . '/' . rawurlencode($namaFile);
+    $res      = executeSupabaseRequest('DELETE', $endpoint, [], null, 15);
 
-    $ch = curl_init($endpoint);
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_CUSTOMREQUEST  => 'DELETE',
-        CURLOPT_TIMEOUT        => 15,
-        CURLOPT_HTTPHEADER     => getSupabaseStorageHeaders(),
-    ]);
-
-    curl_exec($ch);
-    $httpCode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-
-    return ($httpCode >= 200 && $httpCode < 300);
+    return ($res['status'] >= 200 && $res['status'] < 300);
 }
