@@ -4,6 +4,9 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 $role  = $_GET['role'] ?? 'penghuni';
+if (!in_array($role, ['pemilik', 'penghuni'], true)) {
+    $role = 'penghuni';
+}
 $error = '';
 
 if (isset($_SESSION['user']) && !empty($_SESSION['user']['role'])) {
@@ -28,8 +31,8 @@ if (isset($_SESSION['login_error'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Masuk</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 
 <body class="login-body">
@@ -38,7 +41,7 @@ if (isset($_SESSION['login_error'])) {
 
     <div class="login-card">
         <h1 class="brand-title">SITEMAN - KOS</h1>
-        <p class="brand-subtitle">
+        <p class="brand-subtitle" id="brandSubtitleLogin">
             <?= $role === 'pemilik' ? 'Masuk sebagai Pemilik Kos' : 'Masuk menggunakan Nomor Kamar'; ?>
         </p>
 
@@ -50,30 +53,38 @@ if (isset($_SESSION['login_error'])) {
 
         <div class="role-selection">
             <a href="/?page=login&role=pemilik"
+                id="btnRolePemilik"
+                onclick="pilihRoleLoginInstan(event, 'pemilik')"
                 class="btn-role <?= $role === 'pemilik' ? 'active' : ''; ?>">Pemilik Kos</a>
             <a href="/?page=login&role=penghuni"
+                id="btnRolePenghuni"
+                onclick="pilihRoleLoginInstan(event, 'penghuni')"
                 class="btn-role <?= $role === 'penghuni' ? 'active' : ''; ?>">Penghuni Kos</a>
         </div>
 
         <form action="/api/auth.php" method="POST" id="loginForm">
-            <input type="hidden" name="role" value="<?= htmlspecialchars($role); ?>">
+            <input type="hidden" name="role" id="inputRoleLogin" value="<?= htmlspecialchars($role); ?>">
 
-            <?php if ($role === 'penghuni'): ?>
-                <div class="input-wrapper">
-                    <i class="fa-solid fa-house input-icon"></i>
-                    <input type="text" inputmode="numeric" pattern="[0-9]+" name="number"
-                        class="input-field" placeholder="Nomor Kamar" required autocomplete="off">
-                </div>
-            <?php endif; ?>
+            <div class="input-wrapper" id="wrapperNomorKamar" style="<?= $role === 'pemilik' ? 'display: none;' : ''; ?>">
+                <i class="fa-solid fa-house input-icon"></i>
+                <input type="text" inputmode="numeric" pattern="[0-9]+" name="number" id="inputNumber"
+                    class="input-field" placeholder="Nomor Kamar"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                    <?= $role === 'penghuni' ? 'required' : ''; ?> autocomplete="off">
+            </div>
 
-            <div class="input-wrapper">
+            <div class="input-wrapper reset-pin-container">
                 <i class="fa-solid fa-key input-icon"></i>
                 <input type="password" pattern="[0-9]{6}" inputmode="numeric"
-                    minlength="6" maxlength="6" autocomplete="off" required
-                    name="pin" class="input-field" placeholder="PIN (6 Digit)">
+                    minlength="6" maxlength="6" autocomplete="off" data-lpignore="true" required
+                    name="pin" id="inputPinLogin" class="input-field reset-pin-field" placeholder="PIN (6 Digit)"
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6)">
+                <button type="button" class="reset-eye-button" onclick="togglePinLogin(event)" title="Lihat PIN">
+                    <i id="iconMataLogin" class="fa-solid fa-eye-slash"></i>
+                </button>
             </div>
             
-            <a href="/?page=reset" class="link-lupa">Lupa kata sandi?</a>
+            <a href="/?page=reset" class="link-lupa">Lupa PIN?</a>
 
             <button type="submit" class="btn-submit" id="submitBtn">
                 <span class="btn-text">Login</span>
@@ -87,6 +98,79 @@ if (isset($_SESSION['login_error'])) {
     <?php require_once __DIR__ . '/../components/footer.php'; ?>
 
     <script>
+        function pilihRoleLoginInstan(e, targetRole) {
+            if (e) e.preventDefault();
+
+            const inputRole    = document.getElementById('inputRoleLogin');
+            const subtitle     = document.getElementById('brandSubtitleLogin');
+            const wrapperKamar = document.getElementById('wrapperNomorKamar');
+            const inputNumber  = document.getElementById('inputNumber');
+            const btnPemilik   = document.getElementById('btnRolePemilik');
+            const btnPenghuni  = document.getElementById('btnRolePenghuni');
+
+            if (inputRole) inputRole.value = targetRole;
+
+            if (targetRole === 'pemilik') {
+                if (subtitle) subtitle.textContent = 'Masuk sebagai Pemilik Kos';
+                if (wrapperKamar) wrapperKamar.style.display = 'none';
+                if (inputNumber) {
+                    inputNumber.required = false;
+                    inputNumber.value = '';
+                }
+                if (btnPemilik) btnPemilik.classList.add('active');
+                if (btnPenghuni) btnPenghuni.classList.remove('active');
+            } else {
+                if (subtitle) subtitle.textContent = 'Masuk menggunakan Nomor Kamar';
+                if (wrapperKamar) wrapperKamar.style.display = '';
+                if (inputNumber) inputNumber.required = true;
+                if (btnPenghuni) btnPenghuni.classList.add('active');
+                if (btnPemilik) btnPemilik.classList.remove('active');
+            }
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('role', targetRole);
+            window.history.replaceState({}, '', url);
+        }
+
+        function togglePinLogin(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            const input = document.getElementById('inputPinLogin');
+            const icon  = document.getElementById('iconMataLogin');
+            if (!input || !icon) return;
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = 'fa-solid fa-eye';
+            } else {
+                input.type = 'password';
+                icon.className = 'fa-solid fa-eye-slash';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const pinInput = document.getElementById('inputPinLogin');
+            const numInput = document.getElementById('inputNumber');
+
+            if (pinInput) {
+                pinInput.addEventListener('paste', function () {
+                    setTimeout(() => {
+                        this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
+                    }, 10);
+                });
+            }
+
+            if (numInput) {
+                numInput.addEventListener('paste', function () {
+                    setTimeout(() => {
+                        this.value = this.value.replace(/[^0-9]/g, '');
+                    }, 10);
+                });
+            }
+        });
+
         document.getElementById('loginForm').addEventListener('submit', function() {
             const btn = document.getElementById('submitBtn');
             btn.querySelector('.btn-text').textContent = 'Memproses...';

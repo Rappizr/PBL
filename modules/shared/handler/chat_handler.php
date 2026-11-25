@@ -1,52 +1,58 @@
 <?php
 // modules/pemilik/handler/chat_handlers.php
+require_once __DIR__ . '/../../../config/init.php';
+/** @var PDO $pdo */
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// 1. Pastikan koneksi $pdo dimuat menggunakan pencarian path absolut/fleksibel
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_paths = [
-        __DIR__ . '/../../../config/database.php',
-        __DIR__ . '/../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php',
-        dirname(__DIR__, 2) . '/config/database.php',
-        dirname(__DIR__, 3) . '/config/database.php'
-    ];
-    foreach ($possible_paths as $path) {
-        if (file_exists($path)) {
-            require_once $path;
-            break;
+if (!function_exists('buatLinkWaSapaan')) {
+    function buatLinkWaSapaan(array $p, string $role_pengirim = 'pemilik'): string
+    {
+        $nomor = preg_replace('/\D/', '', (string)($p['no_wa'] ?? ''));
+        if ($nomor === '' || $nomor === '-') {
+            return '#';
         }
+        if (str_starts_with($nomor, '0')) {
+            $nomor = '62' . substr($nomor, 1);
+        }
+
+        $nama     = $p['nama'] ?? 'Penghuni';
+        $kamar    = $p['kamar'] ?? '-';
+        $pengirim = ($role_pengirim === 'pemilik') ? 'Pemilik SITEMAN - KOS' : 'Penghuni / Pengurus SITEMAN - KOS';
+
+        $pesan = "Halo *{$nama}* (Kamar {$kamar}), salam dari {$pengirim}. \u{1F64F}";
+        return "https://api.whatsapp.com/send?phone={$nomor}&text=" . rawurlencode($pesan);
     }
 }
 
 $penghuniKos = [];
 
-if (isset($pdo) && $pdo instanceof PDO) {
+if (isset($pdo) && ($pdo instanceof PDO)) {
     try {
-        // Query mengambil seluruh penghuni aktif dan nomor kamarnya jika ada
+        $sql = "
+            SELECT 
+                p.id,
+                p.nama,
+                p.is_ketua_kos,
+                COALESCE(k.no_kamar, '-') AS kamar,
+                COALESCE(p.no_wa, '-') AS no_wa
+            FROM penghuni p
+            LEFT JOIN LATERAL (
+                SELECT pk.kamar_id
+                FROM penghuni_kamar pk
+                JOIN kamar km ON km.id = pk.kamar_id
+                WHERE pk.penghuni_id = p.id
+                  AND LOWER(TRIM(COALESCE(km.status_kamar, 'kosong'))) = 'terisi'
+                ORDER BY pk.id DESC
+                LIMIT 1
+            ) pk_aktif ON true
+            LEFT JOIN kamar k ON pk_aktif.kamar_id = k.id
+            WHERE LOWER(COALESCE(p.status_akun, 'aktif')) IN ('aktif', 'freeze')
+            ORDER BY 
+                NULLIF(regexp_replace(COALESCE(k.no_kamar, '0'), '\D', '', 'g'), '')::INTEGER ASC NULLS LAST,
+                p.nama ASC
+        ";
 
-$sql = "
-    SELECT
-        p.id,
-        p.nama,
-        COALESCE(k.no_kamar, '-') AS kamar,
-        COALESCE(p.no_wa, '-') AS no_wa
-    FROM penghuni p
-    LEFT JOIN penghuni_kamar pk
-        ON p.id = pk.penghuni_id
-    LEFT JOIN kamar k
-        ON pk.kamar_id = k.id
-        AND k.status_kamar = 'terisi'
-    WHERE LOWER(p.status_akun) = 'aktif'
-    ORDER BY k.no_kamar ASC, p.nama ASC
-";
-
-$stmt = $pdo->query($sql);
-$penghuniKos = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
+        $stmt = $pdo->query($sql);
+        $penghuniKos = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {
         $penghuniKos = [];
     }

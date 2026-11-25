@@ -3,30 +3,30 @@
  * LAPORAN ARUS KAS SEWA (KHUSUS PEMILIK)
  * Lokasi: modules/pemilik/cetak_kas.php
  */
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
 // Proteksi Ganda Hak Akses Pemilik
-$currentUser =$_SESSION['user'] ?? [];
+$currentUser = $_SESSION['user'] ?? [];
 if (($currentUser['role'] ?? '') !== 'pemilik') {
     http_response_code(403);
     die("Akses ditolak: Halaman laporan kas sewa hanya milik Pemilik Kos.");
 }
 
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {$possible_paths = [
-        __DIR__ . '/../../config/database.php',
-        __DIR__ . '/../../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
-    ];
-    foreach ($possible_paths as$p) {
-        if (file_exists($p)) {
-            require_once $p;
-            if (isset($pdo) && ($pdo instanceof PDO)) break;
-        }
+// Ambil Info Rekening Pemilik dari Database
+$rekening_pemilik_str = '-';
+try {
+    $stmtPem = $pdo->prepare("SELECT nama, nama_bank, no_rekening FROM pemilik WHERE id = :id LIMIT 1");
+    $stmtPem->execute([':id' => (int)($currentUser['id'] ?? 1)]);
+    $pemRow = $stmtPem->fetch(PDO::FETCH_ASSOC);
+
+    if ($pemRow && !empty(trim((string)($pemRow['no_rekening'] ?? '')))) {
+        $bankPem = trim((string)($pemRow['nama_bank'] ?: 'Bank'));
+        $rekPem  = trim((string)$pemRow['no_rekening']);
+        $anPem   = trim((string)$pemRow['nama']);
+        $rekening_pemilik_str = "{$bankPem} {$rekPem} a.n. {$anPem}";
     }
-}
+} catch (PDOException $e) {}
 
 // Parameter Filter
 $periode = trim($_GET['periode'] ?? 'semua');
@@ -39,9 +39,10 @@ $nama_bulan_arr = [
     9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
 ];
 
-if ($periode === 'bulanan') {$label_periode = ($nama_bulan_arr[$bulan] ?? 'Bulan ' . $bulan) . ' ' .$tahun;
+if ($periode === 'bulanan') {
+    $label_periode = ($nama_bulan_arr[$bulan] ?? 'Bulan ' . $bulan) . ' ' . $tahun;
 } elseif ($periode === 'tahunan') {
-    $label_periode = 'Tahun ' .$tahun;
+    $label_periode = 'Tahun ' . $tahun;
 } else {
     $label_periode = 'Semua Periode (Seluruh Tahun)';
 }
@@ -65,18 +66,20 @@ $sql = "
 ";
 
 $params = [];
-if ($periode === 'bulanan') {$sql .= " AND EXTRACT(MONTH FROM p.tanggal_bayar) = :bulan AND EXTRACT(YEAR FROM p.tanggal_bayar) = :tahun ";
-    $params[':bulan'] =$bulan;
-    $params[':tahun'] =$tahun;
-} elseif ($periode === 'tahunan') {$sql .= " AND EXTRACT(YEAR FROM p.tanggal_bayar) = :tahun ";
-    $params[':tahun'] =$tahun;
+if ($periode === 'bulanan') {
+    $sql .= " AND EXTRACT(MONTH FROM p.tanggal_bayar) = :bulan AND EXTRACT(YEAR FROM p.tanggal_bayar) = :tahun ";
+    $params[':bulan'] = $bulan;
+    $params[':tahun'] = $tahun;
+} elseif ($periode === 'tahunan') {
+    $sql .= " AND EXTRACT(YEAR FROM p.tanggal_bayar) = :tahun ";
+    $params[':tahun'] = $tahun;
 }
 
 $sql .= " ORDER BY p.tanggal_bayar DESC";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
-$data_transaksi =$stmt->fetchAll(PDO::FETCH_ASSOC);
+$data_transaksi = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -84,8 +87,8 @@ $data_transaksi =$stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <title>Laporan Arus Kas Sewa - <?= htmlspecialchars($label_periode); ?></title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=<?= time(); ?>">
-    <link rel="stylesheet" href="/css/modules.css?v=<?= time(); ?>">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 <body class="laporan-print-body">
 
@@ -115,8 +118,9 @@ $data_transaksi =$stmt->fetchAll(PDO::FETCH_ASSOC);
             <div class="laporan-meta-col">
                 <span><strong>Periode Laporan:</strong> <?= htmlspecialchars($label_periode); ?></span>
                 <span><strong>Total Transaksi:</strong> <?= count($data_transaksi); ?> baris data</span>
+                <span><strong>Rekening Sewa:</strong> <?= htmlspecialchars($rekening_pemilik_str); ?></span>
             </div>
-            <div class="laporan-meta-col" style="text-align: right;">
+            <div class="laporan-meta-col laporan-meta-col-right">
                 <span><strong>Dicetak Oleh:</strong> <?= htmlspecialchars($currentUser['nama'] ?? 'Pemilik'); ?> (Pemilik Kos)</span>
                 <span><strong>Waktu Cetak:</strong> <?= date('d/m/Y H:i'); ?> WIB</span>
             </div>
@@ -126,13 +130,13 @@ $data_transaksi =$stmt->fetchAll(PDO::FETCH_ASSOC);
         <table class="laporan-data-table">
             <thead>
                 <tr>
-                    <th class="text-center" style="width: 40px;">No</th>
-                    <th style="width: 140px;">No Kwitansi</th>
+                    <th class="text-center col-lap-no">No</th>
+                    <th class="col-lap-kwitansi">No Kwitansi</th>
                     <th>Nama Penghuni</th>
-                    <th class="text-center" style="width: 70px;">Kamar</th>
-                    <th style="width: 130px;">Waktu Bayar</th>
-                    <th class="text-center" style="width: 80px;">Metode</th>
-                    <th class="text-right" style="width: 130px;">Nominal</th>
+                    <th class="text-center col-lap-kamar">Kamar</th>
+                    <th class="col-lap-waktu">Waktu Bayar</th>
+                    <th class="text-center col-lap-metode">Metode</th>
+                    <th class="text-right col-lap-nominal">Nominal</th>
                 </tr>
             </thead>
             <tbody>
@@ -146,9 +150,9 @@ $data_transaksi =$stmt->fetchAll(PDO::FETCH_ASSOC);
                     <?php 
                     $no = 1;
                     $grand_total = 0;
-                    foreach ($data_transaksi as$row): 
+                    foreach ($data_transaksi as $row): 
                         $nominal = (float)($row['nominal'] ?? 0);
-                        $grand_total +=$nominal;
+                        $grand_total += $nominal;
                     ?>
                         <tr>
                             <td class="text-center"><?= $no++; ?></td>

@@ -1,23 +1,6 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Hubungkan file koneksi database PDO
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_paths = [
-        __DIR__ . '/../../config/database.php',
-        __DIR__ . '/../../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
-    ];
-    foreach ($possible_paths as $p) {
-        if (file_exists($p)) {
-            require_once $p;
-            if (isset($pdo) && ($pdo instanceof PDO)) break;
-        }
-    }
-}
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
 $role_user = $_SESSION['user']['role'] ?? 'pemilik';
 $user_id   = (int)($_SESSION['user']['id'] ?? 1);
@@ -30,47 +13,76 @@ $pesan_sukses = $_SESSION['pesan_sukses'] ?? '';
 $pesan_error  = $_SESSION['pesan_error'] ?? '';
 unset($_SESSION['pesan_sukses'], $_SESSION['pesan_error']);
 
-// 2. Pengambilan Data Profil
+// 2. Pengambilan Data Profil (1x query saja untuk page & modals)
 $nama_user   = 'Pengguna';
 $email_user  = null;
 $no_wa       = null;
 $kontak_wali = null;
+$nama_bank   = null;
 $no_rekening = null;
 $no_kamar    = null;
 $is_pj       = false;
 $pin_aktif   = '';
 
 if ($role_user === 'pemilik') {
-    $stmt = $pdo->prepare("SELECT id, pin, nama, no_wa, no_rekening, email FROM pemilik WHERE id = :id LIMIT 1");
-    $stmt->execute([':id' => $user_id]);
-    $dataPemilik = $stmt->fetch(PDO::FETCH_ASSOC);
+    try {
+        $stmt = $pdo->prepare("SELECT id, pin, nama, no_wa, nama_bank, no_rekening, email FROM pemilik WHERE id = :id LIMIT 1");
+        $stmt->execute([':id' => $user_id]);
+        $dataPemilik = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $stmt = $pdo->prepare("SELECT id, pin, nama, no_wa, no_rekening, email FROM pemilik WHERE id = :id LIMIT 1");
+        $stmt->execute([':id' => $user_id]);
+        $dataPemilik = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($dataPemilik) $dataPemilik['nama_bank'] = null;
+    }
 
     if ($dataPemilik) {
         $user_id     = (int)$dataPemilik['id'];
         $nama_user   = $dataPemilik['nama'];
         $email_user  = $dataPemilik['email'];
         $no_wa       = $dataPemilik['no_wa'];
-        $no_rekening = $dataPemilik['no_rekening'];
+        $nama_bank   = $dataPemilik['nama_bank'] ?? null;
+        $no_rekening = $dataPemilik['no_rekening'] ?? null;
         $pin_aktif   = trim((string)$dataPemilik['pin']);
 
-        $_SESSION['user']['id']    = $user_id;
-        $_SESSION['user']['nama']  = $nama_user;
-        $_SESSION['user']['email'] = $email_user;
-        $_SESSION['user']['pin']   = $pin_aktif;
+        $_SESSION['user']['id']          = $user_id;
+        $_SESSION['user']['nama']        = $nama_user;
+        $_SESSION['user']['email']       = $email_user;
+        $_SESSION['user']['no_wa']       = $no_wa;
+        $_SESSION['user']['nama_bank']   = $nama_bank;
+        $_SESSION['user']['no_rekening'] = $no_rekening;
+        $_SESSION['user']['pin']         = $pin_aktif;
     }
 } else {
-    // Data Penghuni & PJ (Ambil no_wa dan kontak_wali)
-    $stmt = $pdo->prepare("
-        SELECT p.id, p.pin, p.nama, p.no_wa, p.kontak_wali, p.email, p.is_ketua_kos, COALESCE(k.no_kamar, '-') AS no_kamar
-        FROM penghuni p
-        LEFT JOIN penghuni_kamar pk ON p.id = pk.penghuni_id
-        LEFT JOIN kamar k ON pk.kamar_id = k.id
-        WHERE p.id = :id
-        ORDER BY pk.id DESC
-        LIMIT 1
-    ");
-    $stmt->execute([':id' => $user_id]);
-    $dataPenghuni = $stmt->fetch(PDO::FETCH_ASSOC);
+    try {
+        $stmt = $pdo->prepare("
+            SELECT p.id, p.pin, p.nama, p.no_wa, p.kontak_wali, p.email, p.is_ketua_kos, p.nama_bank, p.no_rekening, COALESCE(k.no_kamar, '-') AS no_kamar
+            FROM penghuni p
+            LEFT JOIN penghuni_kamar pk ON p.id = pk.penghuni_id
+            LEFT JOIN kamar k ON pk.kamar_id = k.id
+            WHERE p.id = :id
+            ORDER BY pk.id DESC
+            LIMIT 1
+        ");
+        $stmt->execute([':id' => $user_id]);
+        $dataPenghuni = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $stmt = $pdo->prepare("
+            SELECT p.id, p.pin, p.nama, p.no_wa, p.kontak_wali, p.email, p.is_ketua_kos, COALESCE(k.no_kamar, '-') AS no_kamar
+            FROM penghuni p
+            LEFT JOIN penghuni_kamar pk ON p.id = pk.penghuni_id
+            LEFT JOIN kamar k ON pk.kamar_id = k.id
+            WHERE p.id = :id
+            ORDER BY pk.id DESC
+            LIMIT 1
+        ");
+        $stmt->execute([':id' => $user_id]);
+        $dataPenghuni = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($dataPenghuni) {
+            $dataPenghuni['nama_bank']   = null;
+            $dataPenghuni['no_rekening'] = null;
+        }
+    }
 
     if ($dataPenghuni) {
         $user_id     = (int)$dataPenghuni['id'];
@@ -80,6 +92,8 @@ if ($role_user === 'pemilik') {
         $kontak_wali = $dataPenghuni['kontak_wali'];
         $no_kamar    = $dataPenghuni['no_kamar'];
         $is_pj       = !empty($dataPenghuni['is_ketua_kos']) || $role_user === 'pj';
+        $nama_bank   = $is_pj ? ($dataPenghuni['nama_bank'] ?? null) : null;
+        $no_rekening = $is_pj ? ($dataPenghuni['no_rekening'] ?? null) : null;
         $pin_aktif   = trim((string)$dataPenghuni['pin']);
 
         $_SESSION['user']['id']           = $user_id;
@@ -90,8 +104,16 @@ if ($role_user === 'pemilik') {
         $_SESSION['user']['no_kamar']     = $no_kamar;
         $_SESSION['user']['is_pj']        = $is_pj;
         $_SESSION['user']['is_ketua_kos'] = $is_pj;
+        $_SESSION['user']['nama_bank']    = $nama_bank;
+        $_SESSION['user']['no_rekening']  = $no_rekening;
+        $_SESSION['user']['pin']          = $pin_aktif;
     }
 }
+
+$tampil_rekening   = ($role_user === 'pemilik' || $is_pj);
+$rekening_tampilan = (!empty($no_rekening))
+    ? trim(($nama_bank ? $nama_bank . ' - ' : '') . $no_rekening)
+    : 'Belum diatur';
 
 $link_kembali = ($role_user === 'pemilik')
     ? '/?page=dashboard_pemilik'
@@ -102,7 +124,7 @@ $show_modal   = $_GET['modal'] ?? null;
 
 $role_label = match (true) {
     $role_user === 'pemilik' => 'Pemilik Kos',
-    $is_pj                   => 'Penanggung Jawab (PJ)',
+    $is_pj                   => 'Ketua Kos (PJ)',
     default                  => 'Penghuni Kos',
 };
 
@@ -119,10 +141,43 @@ $role_icon = match (true) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SITEMAN - KOS | Profil Akun</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="/css/global.css?v=1.0">
-    <link rel="stylesheet" href="/css/modules.css?v=1.0">
+    <link rel="stylesheet" href="/css/global.css?v=<?= filemtime(__DIR__ . '/../../public/css/global.css'); ?>">
+    <link rel="stylesheet" href="/css/modules.css?v=<?= filemtime(__DIR__ . '/../../public/css/modules.css'); ?>">
 </head>
 <body class="dashboard-body">
+
+    <!-- FLOATING TOAST NOTIFIKASI BERHASIL / GAGAL -->
+    <div class="toast-floating-container">
+        <?php if (!empty($pesan_sukses)): ?>
+        <div class="toast-alert toast-success" id="toastAlertBoxProfile">
+            <div class="toast-icon">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <div class="toast-content">
+                <h5 class="toast-title">Berhasil</h5>
+                <p class="toast-message"><?= htmlspecialchars($pesan_sukses); ?></p>
+            </div>
+            <button type="button" class="toast-close" onclick="closeToastProfile()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <?php endif; ?>
+
+        <?php if (!empty($pesan_error)): ?>
+        <div class="toast-alert toast-error" id="toastAlertBoxProfile">
+            <div class="toast-icon">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div class="toast-content">
+                <h5 class="toast-title">Perhatian</h5>
+                <p class="toast-message"><?= htmlspecialchars($pesan_error); ?></p>
+            </div>
+            <button type="button" class="toast-close" onclick="closeToastProfile()">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <?php endif; ?>
+    </div>
 
     <!-- LAYOUT MOBILE -->
     <div class="mobile-container mobile-dashboard-view">
@@ -137,11 +192,16 @@ $role_icon = match (true) {
                     </a>
                 </div>
 
-                <?php if ($pesan_sukses): ?>
-                    <div class="alert-success" style="margin-bottom: 14px;"><?= htmlspecialchars($pesan_sukses); ?></div>
-                <?php endif; ?>
-                <?php if ($pesan_error): ?>
-                    <div class="alert-error" style="margin-bottom: 14px;"><?= htmlspecialchars($pesan_error); ?></div>
+                <?php if ($is_pj && (empty($nama_bank) || empty($no_rekening))): ?>
+                <div class="iuran-notif-banner notif-warning banner-wajib-rek banner-wajib-rek-profile">
+                    <div class="iuran-notif-icon">
+                        <i class="fa-solid fa-building-columns"></i>
+                    </div>
+                    <div class="iuran-notif-body">
+                        <strong>Wajib Lengkapi Rekening Kas Iuran</strong>
+                        <p>Anda menjabat sebagai Ketua Kos. Silakan klik <b>Edit Data Profil</b> untuk mengisi <b>Nama Bank</b> dan <b>No. Rekening</b> penerima transfer iuran.</p>
+                    </div>
+                </div>
                 <?php endif; ?>
 
                 <div class="profile-card">
@@ -186,26 +246,27 @@ $role_icon = match (true) {
                         </div>
                         <?php endif; ?>
 
-                        <?php if ($role_user === 'pemilik'): ?>
+                        <?php if ($tampil_rekening): ?>
                         <div class="profile-info-row">
-                            <span class="profile-info-label"><i class="fa-solid fa-credit-card"></i> No. Rekening</span>
-                            <span class="profile-info-value"><?= htmlspecialchars($no_rekening ?? '-'); ?></span>
+                            <span class="profile-info-label"><i class="fa-solid fa-credit-card"></i> Rekening</span>
+                            <span class="profile-info-value <?= !empty($no_rekening) ? '' : 'profile-muted'; ?>">
+                                <?= htmlspecialchars($rekening_tampilan); ?>
+                            </span>
                         </div>
                         <?php endif; ?>
-
                     </div>
                 </div>
 
                 <div class="profile-actions">
-                    <a href="/?page=profile&modal=ubah_profil" class="profile-action-btn">
+                    <a href="/?page=profile&modal=ubah_profil" onclick="bukaModalProfileInstan(event, 'modalUbahProfil', 'ubah_profil')" class="profile-action-btn">
                         <span class="profile-action-icon"><i class="fa-solid fa-user-pen"></i></span>
                         <span>Edit Data Profil</span>
                     </a>
-                    <a href="/?page=profile&modal=ubah_password" class="profile-action-btn">
+                    <a href="/?page=profile&modal=ubah_password" onclick="bukaModalProfileInstan(event, 'modalUbahPassword', 'ubah_password')" class="profile-action-btn">
                         <span class="profile-action-icon"><i class="fa-solid fa-key"></i></span>
                         <span>Ubah Pin</span>
                     </a>
-                    <a href="/?page=profile&modal=ubah_email" class="profile-action-btn">
+                    <a href="/?page=profile&modal=ubah_email" onclick="bukaModalProfileInstan(event, 'modalUbahEmail', 'ubah_email')" class="profile-action-btn">
                         <span class="profile-action-icon"><i class="fa-solid fa-envelope-open-text"></i></span>
                         <span>Ubah Email</span>
                     </a>
@@ -224,11 +285,16 @@ $role_icon = match (true) {
             <h2 class="desktop-header-title">Profil Akun</h2>
             <p class="desktop-header-subtitle">Informasi akun dan pengaturan keamanan</p>
 
-            <?php if ($pesan_sukses): ?>
-                <div class="alert-success" style="max-width: 780px; margin-bottom: 16px;"><?= htmlspecialchars($pesan_sukses); ?></div>
-            <?php endif; ?>
-            <?php if ($pesan_error): ?>
-                <div class="alert-error" style="max-width: 780px; margin-bottom: 16px;"><?= htmlspecialchars($pesan_error); ?></div>
+            <?php if ($is_pj && (empty($nama_bank) || empty($no_rekening))): ?>
+            <div class="iuran-notif-banner notif-warning banner-wajib-rek banner-wajib-rek-profile">
+                <div class="iuran-notif-icon">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <div class="iuran-notif-body">
+                    <strong>Wajib Lengkapi Rekening Kas Iuran</strong>
+                    <p>Anda menjabat sebagai Ketua Kos. Silakan klik <b>Edit Data Profil</b> untuk mengisi <b>Nama Bank</b> dan <b>No. Rekening</b> penerima transfer iuran.</p>
+                </div>
+            </div>
             <?php endif; ?>
 
             <div class="profile-desktop-grid">
@@ -274,26 +340,27 @@ $role_icon = match (true) {
                         </div>
                         <?php endif; ?>
 
-                        <?php if ($role_user === 'pemilik'): ?>
+                        <?php if ($tampil_rekening): ?>
                         <div class="profile-info-row">
-                            <span class="profile-info-label"><i class="fa-solid fa-credit-card"></i> No. Rekening</span>
-                            <span class="profile-info-value"><?= htmlspecialchars($no_rekening ?? '-'); ?></span>
+                            <span class="profile-info-label"><i class="fa-solid fa-credit-card"></i> Rekening</span>
+                            <span class="profile-info-value <?= !empty($no_rekening) ? '' : 'profile-muted'; ?>">
+                                <?= htmlspecialchars($rekening_tampilan); ?>
+                            </span>
                         </div>
                         <?php endif; ?>
-
                     </div>
                 </div>
 
                 <div class="profile-actions profile-actions-desktop">
-                    <a href="/?page=profile&modal=ubah_profil" class="profile-action-btn">
+                    <a href="/?page=profile&modal=ubah_profil" onclick="bukaModalProfileInstan(event, 'modalUbahProfil', 'ubah_profil')" class="profile-action-btn">
                         <span class="profile-action-icon"><i class="fa-solid fa-user-pen"></i></span>
                         <span>Edit Data Profil</span>
                     </a>
-                    <a href="/?page=profile&modal=ubah_password" class="profile-action-btn">
+                    <a href="/?page=profile&modal=ubah_password" onclick="bukaModalProfileInstan(event, 'modalUbahPassword', 'ubah_password')" class="profile-action-btn">
                         <span class="profile-action-icon"><i class="fa-solid fa-key"></i></span>
                         <span>Ubah Pin</span>
                     </a>
-                    <a href="/?page=profile&modal=ubah_email" class="profile-action-btn">
+                    <a href="/?page=profile&modal=ubah_email" onclick="bukaModalProfileInstan(event, 'modalUbahEmail', 'ubah_email')" class="profile-action-btn">
                         <span class="profile-action-icon"><i class="fa-solid fa-envelope-open-text"></i></span>
                         <span>Ubah Email</span>
                     </a>

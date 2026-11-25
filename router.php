@@ -35,6 +35,12 @@ if ($uri === '/api/auth') {
     return true;
 }
 
+// API Notifikasi Sidebar Real-Time
+if ($uri === '/api/notif_sidebar' || $uri === '/api/notif_sidebar.php') {
+    require __DIR__ . '/api/notif_sidebar.php';
+    return true;
+}
+
 // Pretty URLs → front controller
 $map = [
     '/login'               => 'login',

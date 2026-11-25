@@ -7,20 +7,49 @@ require_once __DIR__ . '/../misc/loadenv.php';
 
 function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode_otp): bool
 {
-    // KUNCI: Kunci zona waktu ke WIB (Asia/Jakarta)
     date_default_timezone_set('Asia/Jakarta');
+
+    // Pastikan .env terbaca jika belum dimuat ke $_ENV / getenv
+    $envPath = __DIR__ . '/../.env';
+    if (file_exists($envPath) && empty($_ENV['EMAIL_PASSWORD']) && !getenv('EMAIL_PASSWORD')) {
+        $lines = file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if ($line === '' || str_starts_with($line, '#') || !str_contains($line, '=')) {
+                continue;
+            }
+            [$k, $v] = explode('=', $line, 2);
+            $k = trim($k);
+            $v = trim($v, " \t\n\r\0\x0B\"'");
+            $_ENV[$k]    = $v;
+            $_SERVER[$k] = $v;
+            putenv("{$k}={$v}");
+        }
+    }
+
+    $smtpUser = getenv('EMAIL_USERNAME') ?: ($_ENV['EMAIL_USERNAME'] ?? ($_SERVER['EMAIL_USERNAME'] ?? 'sitemankos@gmail.com'));
+    $smtpPass = getenv('EMAIL_PASSWORD') ?: ($_ENV['EMAIL_PASSWORD'] ?? ($_SERVER['EMAIL_PASSWORD'] ?? ''));
+
+    if ($smtpPass === '') {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        $_SESSION['debug_mail_error'] = 'Konfigurasi EMAIL_PASSWORD belum diatur pada file .env.';
+        return false;
+    }
 
     $mail = new PHPMailer(true);
 
     try {
-        // Konfigurasi SMTP Gmail
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = getenv('EMAIL_USERNAME') ?: ($_ENV['EMAIL_USERNAME'] ?? null);
-        $mail->Password   = getenv('EMAIL_PASSWORD') ?: ($_ENV['EMAIL_PASSWORD'] ?? null);
+        $mail->Username   = $smtpUser;
+        $mail->Password   = $smtpPass;
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
         $mail->Port       = 465;
+        $mail->Timeout    = 10;
+        $mail->CharSet    = 'UTF-8';
 
         $mail->SMTPOptions = [
             'ssl' => [
@@ -30,17 +59,15 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
             ]
         ];
 
-        // Pengirim & Penerima
-        $mail->setFrom('sitemankos@gmail.com', 'SITEMAN - KOS');
+        $mail->setFrom($smtpUser, 'SITEMAN - KOS');
         $mail->addAddress($email_tujuan, $nama_tujuan);
 
-        // Nomor Referensi Surat & Tanggal Realtime WIB
         $no_surat  = 'SK/OTP/' . date('Ymd') . '/' . strtoupper(bin2hex(random_bytes(3)));
         $tgl_surat = date('d F Y, H:i') . ' WIB';
 
-        // Konten Email Berbentuk Surat Resmi
         $mail->isHTML(true);
         $mail->Subject = 'SURAT PEMBERITAHUAN: Kode Autentikasi Reset PIN (' . $kode_otp . ')';
+        $mail->AltBody = "Halo {$nama_tujuan},\n\nKode OTP Reset PIN SITEMAN - KOS Anda adalah: {$kode_otp}\nKode ini berlaku selama 5 menit. Jangan berikan kode ini kepada siapa pun.\n\nPengelola SITEMAN - KOS";
         $mail->Body    = "
         <!DOCTYPE html>
         <html>
@@ -50,8 +77,6 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
         </head>
         <body style='margin: 0; padding: 30px 10px; background-color: #f1f5f9; font-family: \"Georgia\", serif; -webkit-font-smoothing: antialiased;'>
             <table role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%' style='max-width: 560px; margin: 0 auto; background-color: #ffffff; border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.08); border: 1px solid #e2e8f0;'>
-                
-                <!-- KOP SURAT RESMI -->
                 <tr>
                     <td style='padding: 30px 36px 16px 36px; border-bottom: 3px double #4ca5b0;'>
                         <table width='100%' border='0' cellpadding='0' cellspacing='0'>
@@ -69,11 +94,8 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
                         </table>
                     </td>
                 </tr>
-
-                <!-- BADAN SURAT -->
                 <tr>
                     <td style='padding: 28px 36px;'>
-                        <!-- Header Tanggal & Nomor -->
                         <table width='100%' border='0' cellpadding='0' cellspacing='0' style='font-family: \"Arial\", sans-serif; font-size: 12px; color: #475569; margin-bottom: 24px;'>
                             <tr>
                                 <td><strong>No:</strong> {$no_surat}</td>
@@ -84,7 +106,6 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
                             </tr>
                         </table>
 
-                        <!-- Teks Pembuka -->
                         <p style='margin: 0 0 14px 0; font-size: 15px; color: #1e293b; line-height: 1.6;'>
                             Kepada Yth.<br>
                             <strong>Sdr/i. " . htmlspecialchars($nama_tujuan) . "</strong><br>
@@ -95,13 +116,11 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
                             Sehubungan dengan adanya permohonan pengaturan ulang PIN akun Anda pada sistem <strong>SITEMAN-KOS</strong>, melalui surat elektronik ini kami sampaikan kode verifikasi (OTP) resmi untuk melanjutkan proses autentikasi keamanan:
                         </p>
 
-                        <!-- KOTAK SEGEL KODE OTP -->
                         <div style='margin: 24px 0; padding: 18px; background-color: #f8fafc; border: 1.5px dashed #4ca5b0; border-radius: 8px; text-align: center;'>
                             <span style='display: block; font-family: \"Arial\", sans-serif; font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 6px;'>KODE VERIFIKASI (OTP)</span>
                             <span style='display: inline-block; font-family: \"Courier New\", monospace; font-size: 34px; font-weight: 900; letter-spacing: 8px; color: #164e63; padding: 6px 16px; background-color: #ffffff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);'>{$kode_otp}</span>
                         </div>
 
-                        <!-- PERINGATAN KETENTUAN SURAT -->
                         <div style='background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 14px; margin-bottom: 24px;'>
                             <p style='margin: 0; font-family: \"Arial\", sans-serif; font-size: 12px; color: #92400e; line-height: 1.5;'>
                                 <strong>PENTING:</strong> Kode ini berlaku selama <strong>5 (lima) menit</strong> sejak surat ini diterbitkan. Mohon untuk tidak menyebarkan atau memberitahukan kode verifikasi ini kepada pihak mana pun demi menjaga keamanan hak akses akun Anda.
@@ -112,7 +131,6 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
                             Apabila Anda tidak merasa melakukan permintaan ini, abaikan pesan ini dan segera lakukan pemeriksaan berkala pada akun Anda.
                         </p>
 
-                        <!-- TANDA TANGAN ELEKTRONIK -->
                         <table width='100%' border='0' cellpadding='0' cellspacing='0' style='font-family: \"Arial\", sans-serif;'>
                             <tr>
                                 <td width='55%'></td>
@@ -125,8 +143,6 @@ function kirim_email_otp(string $email_tujuan, string $nama_tujuan, string $kode
                         </table>
                     </td>
                 </tr>
-
-                <!-- FOOTER RESMI -->
                 <tr>
                     <td style='padding: 16px 36px; background-color: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; border-radius: 0 0 4px 4px;'>
                         <p style='margin: 0; font-family: \"Arial\", sans-serif; font-size: 11px; color: #94a3b8;'>

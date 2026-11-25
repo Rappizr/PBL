@@ -5,6 +5,6 @@
     "license": "MIT",
     "require": {
         "vlucas/phpdotenv": "^5.5",
-        "phpmailer/phpmailer": "^7.1"
+        "phpmailer/phpmailer": "^7.2"
     }
 }

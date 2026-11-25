@@ -1,46 +1,47 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../../config/init.php';
+/** @var PDO $pdo */
 
 // Helper untuk mengambil nama depan saja
-function getNamaDepan(string $fullName): string {
-    $parts = explode(' ', trim($fullName));
-    return $parts[0] ?? $fullName;
-}
-
-// Sinkronisasi Real-Time Nama & Status dari Database
-global $pdo;
-if (!isset($pdo) || !($pdo instanceof PDO)) {
-    $possible_db = [
-        __DIR__ . '/../../config/database.php',
-        __DIR__ . '/../../../config/database.php',
-        $_SERVER['DOCUMENT_ROOT'] . '/config/database.php'
-    ];
-    foreach ($possible_db as $p) {
-        if (file_exists($p)) {
-            require_once $p;
-            break;
-        }
+if (!function_exists('getNamaDepan')) {
+    function getNamaDepan(string $fullName): string
+    {
+        $parts = explode(' ', trim($fullName));
+        return $parts[0] ?? $fullName;
     }
 }
 
-if (isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user']['id'])) {
+// Sinkronisasi Real-Time Nama & Status dari Database (maksimal 1x per request)
+if (empty($GLOBALS['siteman_user_synced']) && isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user']['id'])) {
     $uid  = (int)$_SESSION['user']['id'];
     $role = $_SESSION['user']['role'] ?? 'penghuni';
 
     try {
-        if ($role !== 'pemilik') {
-            $stmtSync = $pdo->prepare("SELECT nama, is_ketua_kos FROM penghuni WHERE id = :id LIMIT 1");
+        if ($role === 'pemilik') {
+            $stmtSync = $pdo->prepare("SELECT nama, nama_bank, no_rekening FROM pemilik WHERE id = :id LIMIT 1");
+            $stmtSync->execute([':id' => $uid]);
+            $freshPem = $stmtSync->fetch(PDO::FETCH_ASSOC);
+
+            if ($freshPem) {
+                $_SESSION['user']['nama']        = $freshPem['nama'];
+                $_SESSION['user']['nama_bank']   = $freshPem['nama_bank'] ?? null;
+                $_SESSION['user']['no_rekening'] = $freshPem['no_rekening'] ?? null;
+            }
+        } else {
+            $stmtSync = $pdo->prepare("SELECT nama, is_ketua_kos, nama_bank, no_rekening FROM penghuni WHERE id = :id LIMIT 1");
             $stmtSync->execute([':id' => $uid]);
             $freshUser = $stmtSync->fetch(PDO::FETCH_ASSOC);
 
             if ($freshUser) {
+                $isKetuaSync = (bool)$freshUser['is_ketua_kos'];
                 $_SESSION['user']['nama']         = $freshUser['nama'];
-                $_SESSION['user']['is_ketua_kos'] = (bool)$freshUser['is_ketua_kos'];
-                $_SESSION['user']['is_pj']        = (bool)$freshUser['is_ketua_kos'];
+                $_SESSION['user']['is_ketua_kos'] = $isKetuaSync;
+                $_SESSION['user']['is_pj']        = $isKetuaSync;
+                $_SESSION['user']['nama_bank']    = $isKetuaSync ? ($freshUser['nama_bank'] ?? null) : null;
+                $_SESSION['user']['no_rekening']  = $isKetuaSync ? ($freshUser['no_rekening'] ?? null) : null;
             }
         }
+        $GLOBALS['siteman_user_synced'] = true;
     } catch (Exception $e) {}
 }
 
@@ -54,6 +55,13 @@ $currentUser = $_SESSION['user'] ?? [
 
 $is_pemilik = ($currentUser['role'] ?? '') === 'pemilik';
 $is_pj      = !$is_pemilik && (!empty($currentUser['is_pj']) || !empty($currentUser['is_ketua_kos']) || ($currentUser['role'] ?? '') === 'pj');
+
+// Cek apakah Ketua Kos wajib melengkapi Nama Bank & Nomor Rekening
+$rawQueryHeader = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_QUERY) ?? '';
+parse_str($rawQueryHeader, $parsedQueryHeader);
+$currentPageHeader = trim((string)($_GET['page'] ?? ($parsedQueryHeader['page'] ?? 'dashboard')));
+$ketuaWajibIsiRek  = ($is_pj && $currentPageHeader !== 'profile')
+    && (empty(trim((string)($_SESSION['user']['nama_bank'] ?? ''))) || empty(trim((string)($_SESSION['user']['no_rekening'] ?? ''))));
 
 // Ambil Nama Depan Penghuni
 $namaDisplay = getNamaDepan($currentUser['nama'] ?? 'Penghuni');
@@ -156,4 +164,32 @@ $namaDisplay = getNamaDepan($currentUser['nama'] ?? 'Penghuni');
             if (e.key === 'Escape') tutupModalLogout();
         });
     }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        <?php if ($ketuaWajibIsiRek): ?>
+        const mobileMain = document.querySelector('.mobile-container .page-content') || document.querySelector('.mobile-container');
+        const mobileHeader = document.querySelector('.mobile-container .dashboard-header');
+
+        if (mobileMain && !document.getElementById('bannerWajibRekKetuaMobile')) {
+            const bannerMob = document.createElement('div');
+            bannerMob.id = 'bannerWajibRekKetuaMobile';
+            bannerMob.className = 'iuran-notif-banner notif-warning banner-wajib-rek-mobile';
+            bannerMob.innerHTML = `
+                <div class="iuran-notif-icon">
+                    <i class="fa-solid fa-building-columns"></i>
+                </div>
+                <div class="iuran-notif-body">
+                    <strong>Wajib Lengkapi Rekening Kas Iuran</strong>
+                    <p>Anda menjabat sebagai Ketua Kos. Silakan lengkapi <b>Nama Bank</b> dan <b>Nomor Rekening</b> di halaman <a href="/?page=profile&modal=ubah_profil" class="link-wajib-rek">Profil Akun</a> agar penghuni dapat melakukan transfer iuran.</p>
+                </div>
+            `;
+
+            if (mobileMain.classList.contains('page-content')) {
+                mobileMain.insertBefore(bannerMob, mobileMain.firstChild);
+            } else if (mobileHeader && mobileHeader.nextSibling) {
+                mobileHeader.parentNode.insertBefore(bannerMob, mobileHeader.nextSibling);
+            }
+        }
+        <?php endif; ?>
+    });
 </script>

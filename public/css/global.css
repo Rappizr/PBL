@@ -10,6 +10,12 @@
   font-family: "Inter", sans-serif;
 }
 
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
 body {
   background-color: #f3ca81;
   min-height: 100vh;
@@ -58,7 +64,7 @@ body {
   letter-spacing: 1.5px;
   text-transform: uppercase;
   margin: 0;
-  white-space: nowrap !important; /* Mencegah judul patah dua baris */
+  white-space: nowrap !important;
   flex-shrink: 0 !important;
   text-shadow:
     1px 1px 0 #4ca5b0,
@@ -102,7 +108,7 @@ body {
 }
 
 a.kotak-kapsul-pemilik {
-  max-width: 95px !important; /* Membatasi lebar teks nama depan agar header seimbang */
+  max-width: 95px !important;
   min-width: 0 !important;
   overflow: hidden !important;
   flex-shrink: 1 !important;
@@ -448,12 +454,13 @@ a.kotak-kapsul-pemilik {
 
 @media (min-width: 992px) {
   body.dashboard-body {
-    background-color: #f3ca81;
-    display: flex;
-    justify-content: flex-start;
-    align-items: stretch;
-    padding: 0;
-    margin: 0;
+    background-color: #f3ca81 !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    font-size: 0;
   }
 
   body.dashboard-body:has(.desktop-dashboard-wrapper) .mobile-container,
@@ -462,9 +469,12 @@ a.kotak-kapsul-pemilik {
   }
 
   .desktop-dashboard-wrapper {
+    font-size: 16px;
     display: flex !important;
     min-height: 100vh;
     width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
     background-color: #f3ca81;
   }
 
@@ -476,6 +486,7 @@ a.kotak-kapsul-pemilik {
     flex-direction: column;
     justify-content: space-between;
     padding: 36px 24px 28px 24px;
+    margin: 0;
     box-sizing: border-box;
   }
 
@@ -490,13 +501,6 @@ a.kotak-kapsul-pemilik {
       1px 1px 0 #3a8a94,
       2px 2px 0 #3a8a94,
       3px 3px 0 #3a8a94;
-  }
-
-  .sidebar-profile {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 36px;
   }
 
   .sidebar-avatar {
@@ -588,6 +592,7 @@ a.kotak-kapsul-pemilik {
   .desktop-content {
     flex: 1;
     padding: 42px 48px;
+    margin: 0;
     overflow-y: auto;
     box-sizing: border-box;
   }
@@ -624,8 +629,6 @@ a.kotak-kapsul-pemilik {
   background-color: rgba(255, 255, 255, 0.12);
 }
 
-/* iuran filter */
-/* Untuk baris header riwayat pada halaman Monitoring Iuran agar sejajar dengan card di atasnya */
 .iuran-desktop-header-row {
   display: flex;
   align-items: center;
@@ -633,10 +636,9 @@ a.kotak-kapsul-pemilik {
   margin-top: 24px;
   margin-bottom: 12px;
   width: 100%;
-  max-width: 520px; /* Disesuaikan dengan lebar card Saldo Bersih di atasnya */
+  max-width: 520px;
 }
 
-/* Untuk menyamakan lebar empty state card agar lurus dengan card atasnya */
 .empty-state-card {
   background-color: #ffffff;
   border-radius: 12px;
@@ -646,7 +648,7 @@ a.kotak-kapsul-pemilik {
   gap: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   width: 100%;
-  max-width: 520px; /* Disamakan juga agar ujung kanannya lurus */
+  max-width: 520px;
   color: #555555;
   font-size: 14px;
   font-weight: 600;

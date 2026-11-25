@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // 1. Kosongkan semua isi array session
-$_SESSION = array();
+$_SESSION = [];
 
 // 2. Hapus cookie PHPSESSID dari browser
 if (ini_get("session.use_cookies")) {
