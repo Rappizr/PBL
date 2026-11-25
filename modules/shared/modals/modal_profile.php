@@ -95,7 +95,7 @@ $pin_aktif    = $pin_aktif    ?? ($_SESSION['user']['pin'] ?? '');
                 <button type="button" onclick="tutupModalProfileInstan(event)" class="btn-modal-cancel">Batal</button>
                 <button type="submit" class="btn-modal-submit">
                     <i class="fa-solid fa-floppy-disk"></i>
-                    <span>Simpan</span>
+                    <span style="padding-left: 8px;">Simpan</span>
                 </button>
             </div>
         </form>
@@ -154,7 +154,7 @@ $pin_aktif    = $pin_aktif    ?? ($_SESSION['user']['pin'] ?? '');
                 <button type="button" onclick="tutupModalProfileInstan(event)" class="btn-modal-cancel">Batal</button>
                 <button type="submit" id="btnSubmitPin" class="btn-modal-submit btn-disabled" disabled>
                     <i class="fa-solid fa-floppy-disk"></i>
-                    <span>Simpan</span>
+                    <span style="padding-left: 8px;">Simpan</span>
                 </button>
             </div>
         </form>
@@ -203,7 +203,7 @@ $pin_aktif    = $pin_aktif    ?? ($_SESSION['user']['pin'] ?? '');
                 <button type="button" onclick="tutupModalProfileInstan(event)" class="btn-modal-cancel">Batal</button>
                 <button type="submit" id="btnSubmitEmail" class="btn-modal-submit btn-disabled" disabled>
                     <i class="fa-solid fa-floppy-disk"></i>
-                    <span>Simpan</span>
+                    <span style="padding-left: 8px;">Simpan</span>
                 </button>
             </div>
         </form>
