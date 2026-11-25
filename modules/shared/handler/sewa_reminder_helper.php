@@ -1,7 +1,7 @@
 <?php
 /**
  * HELPER PENGINGAT JATUH TEMPO SEWA, MASA TENGGANG (+7 HARI), & AUTO-FREEZE SEWA
- * Mendukung perhitungan sisa tunggakan setelah cicilan diterima serta cache session 30 detik.
+ * Mendukung perhitungan sisa tunggakan setelah cicilan diterima & sinkronisasi real-time setelah pelunasan.
  * Lokasi: modules/shared/handler/sewa_reminder_helper.php
  */
 
@@ -26,18 +26,19 @@ if (!function_exists('bersihkanCacheNotifSiteman')) {
 }
 
 if (!function_exists('evaluasiStatusSewaSemuaKamar')) {
-    function evaluasiStatusSewaSemuaKamar(PDO $pdo): array
+    function evaluasiStatusSewaSemuaKamar(PDO $pdo, bool $bypassCache = false): array
     {
         static $memo = null;
         $isGetRequest = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET');
 
-        if ($isGetRequest && $memo !== null) {
+        if (!$bypassCache && $isGetRequest && $memo !== null) {
             return $memo;
         }
 
-        if ($isGetRequest
+        if (!$bypassCache
+            && $isGetRequest
             && isset($_SESSION['cache_sewa_all'], $_SESSION['cache_sewa_all_ts'])
-            && (time() - (int)$_SESSION['cache_sewa_all_ts']) < 30
+            && (time() - (int)$_SESSION['cache_sewa_all_ts']) < 15
         ) {
             $memo = $_SESSION['cache_sewa_all'];
             return $memo;
@@ -88,7 +89,8 @@ if (!function_exists('evaluasiStatusSewaSemuaKamar')) {
         }
 
         $hasil = [];
-        $stmtFreeze = $pdo->prepare("UPDATE penghuni SET status_akun = 'freeze', freeze_reason = 'sewa' WHERE id = :pid");
+        $stmtFreeze   = $pdo->prepare("UPDATE penghuni SET status_akun = 'freeze', freeze_reason = 'sewa' WHERE id = :pid");
+        $stmtUnfreeze = $pdo->prepare("UPDATE penghuni SET status_akun = 'aktif', freeze_reason = NULL WHERE id = :pid AND LOWER(TRIM(COALESCE(status_akun, ''))) = 'freeze' AND LOWER(TRIM(COALESCE(freeze_reason, ''))) = 'sewa'");
 
         foreach ($rows as $row) {
             $penghuniId     = (int)$row['penghuni_id'];
@@ -99,7 +101,13 @@ if (!function_exists('evaluasiStatusSewaSemuaKamar')) {
             $jatuhTempo     = $row['jatuh_tempo_tertua'];
             $janjiBayar     = $row['tanggal_janji_bayar'];
 
+            // Jika sudah tidak ada tunggakan sewa (sudah lunas), pastikan tidak ada notif & unfreeze otomatis
             if ($jmlNunggak <= 0 || $totalTunggakan <= 0 || empty($jatuhTempo)) {
+                if ($statusAkun === 'freeze' && $freezeReason === 'sewa') {
+                    try {
+                        $stmtUnfreeze->execute([':pid' => $penghuniId]);
+                    } catch (Throwable $e) {}
+                }
                 continue;
             }
 
@@ -179,11 +187,11 @@ if (!function_exists('evaluasiStatusSewaSemuaKamar')) {
 }
 
 if (!function_exists('evaluasiStatusSewaPenghuni')) {
-    function evaluasiStatusSewaPenghuni(PDO $pdo, int $penghuniId): ?array
+    function evaluasiStatusSewaPenghuni(PDO $pdo, int $penghuniId, bool $bypassCache = false): ?array
     {
         if ($penghuniId <= 0) return null;
 
-        $semuaSewa = evaluasiStatusSewaSemuaKamar($pdo);
+        $semuaSewa = evaluasiStatusSewaSemuaKamar($pdo, $bypassCache);
         foreach ($semuaSewa as $item) {
             if ((int)$item['penghuni_id'] === $penghuniId) {
                 return $item;

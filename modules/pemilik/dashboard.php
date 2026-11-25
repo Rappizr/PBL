@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/init.php';
+require_once __DIR__ . '/../components/notif_helper.php';
 /** @var PDO $pdo */
 
 $tahun = date('Y');
@@ -25,7 +26,7 @@ if (isset($pdo) && $pdo instanceof PDO) {
         // 2. Hitung Antrean Verifikasi & Pemasukan Sewa Tahun Ini dalam 1 Query
         $stmtStats = $pdo->prepare("
             SELECT
-                (SELECT COUNT(DISTINCT tagihan_id) FROM pembayaran WHERE LOWER(TRIM(status_verifikasi)) = 'pending') AS menunggu_verif,
+                (SELECT COUNT(*) FROM pembayaran WHERE LOWER(TRIM(COALESCE(status_verifikasi, 'pending'))) = 'pending') AS menunggu_verif,
                 COALESCE((
                     SELECT SUM(p.jumlah_bayar)
                     FROM pembayaran p
@@ -57,7 +58,10 @@ if (($_SESSION['user']['role'] ?? '') === 'pemilik' && isset($pdo) && $pdo insta
 
 $pemilikBelumIsiRek = (($_SESSION['user']['role'] ?? '') === 'pemilik')
     && (empty(trim((string)($_SESSION['user']['nama_bank'] ?? ''))) || empty(trim((string)($_SESSION['user']['no_rekening'] ?? ''))));
-    ?>
+
+// Ambil angka notifikasi identik dengan sidebar
+$notifMobile = getSitemanSidebarNotif($pdo ?? null);
+?>
 <!DOCTYPE html>
 <html lang="id">
 
@@ -93,6 +97,9 @@ $pemilikBelumIsiRek = (($_SESSION['user']['role'] ?? '') === 'pemilik')
                 <h2 class="menu-heading">Silahkan pilih menu</h2>
                 <div class="menu-grid">
                     <a href="/?page=manajemen_kamar" class="menu-item-box quick-nav-link">
+                        <span id="badge-mobile-kamar" class="menu-notif-badge badge-warning <?= $notifMobile['kamar'] > 0 ? '' : 'is-hidden'; ?>">
+                            <?= formatBadgeCount($notifMobile['kamar']); ?>
+                        </span>
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-warehouse"></i></div>
                         <span class="menu-label">Manajemen<br>Kamar &amp; Penghuni</span>
                     </a>
@@ -101,10 +108,16 @@ $pemilikBelumIsiRek = (($_SESSION['user']['role'] ?? '') === 'pemilik')
                         <span class="menu-label">Analisis Kas</span>
                     </a>
                     <a href="/?page=verifikasi_bayar" class="menu-item-box quick-nav-link">
+                        <span id="badge-mobile-verifikasi" class="menu-notif-badge <?= $notifMobile['verifikasi'] > 0 ? '' : 'is-hidden'; ?>">
+                            <?= formatBadgeCount($notifMobile['verifikasi']); ?>
+                        </span>
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
                         <span class="menu-label">Verifikasi<br>Pembayaran</span>
                     </a>
                     <a href="/?page=kelola_iuran" class="menu-item-box quick-nav-link">
+                        <span id="badge-mobile-iuran" class="menu-notif-badge badge-warning <?= $notifMobile['iuran'] > 0 ? '' : 'is-hidden'; ?>">
+                            <?= formatBadgeCount($notifMobile['iuran']); ?>
+                        </span>
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-chart-pie"></i></div>
                         <span class="menu-label">Kelola Iuran</span>
                     </a>
@@ -150,7 +163,7 @@ $pemilikBelumIsiRek = (($_SESSION['user']['role'] ?? '') === 'pemilik')
                 </a>
                 <a href="/?page=verifikasi_bayar" class="desktop-pemilik-stat-card quick-nav-link">
                     <span class="stat-box-lbl">Menunggu Verifikasi</span>
-                    <span class="stat-box-val val-danger"><?= htmlspecialchars($menunggu_verif); ?></span>
+                    <span class="stat-box-val val-danger"><?= htmlspecialchars($notifMobile['verifikasi']); ?></span>
                 </a>
                 <a href="/?page=analisis_kas" class="desktop-pemilik-stat-card stat-card-wide quick-nav-link">
                     <span class="stat-box-lbl">Pemasukan Tahun Ini</span>
@@ -216,7 +229,7 @@ $pemilikBelumIsiRek = (($_SESSION['user']['role'] ?? '') === 'pemilik')
                     </div>
                     <div class="pemilik-menu-text">
                         <h4>Verifikasi Bayar</h4>
-                        <p><?= htmlspecialchars($menunggu_verif); ?> bukti transfer menunggu diverifikasi</p>
+                        <p><?= htmlspecialchars($notifMobile['verifikasi']); ?> bukti transfer menunggu diverifikasi</p>
                     </div>
                 </a>
             </div>
@@ -224,7 +237,6 @@ $pemilikBelumIsiRek = (($_SESSION['user']['role'] ?? '') === 'pemilik')
     </div>
 
     <script>
-        // Prefetch & Progress Bar untuk Kartu Menu Dashboard
         document.addEventListener('DOMContentLoaded', function () {
             const loader = document.getElementById('topNavLoader');
 

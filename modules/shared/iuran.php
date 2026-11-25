@@ -152,10 +152,14 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                                     <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($ni['no_kamar']); ?>">
 
                                     <div class="row-input-dual">
-                                        <input type="date" name="tanggal_janji_bayar"
-                                               min="<?= date('Y-m-d'); ?>"
-                                               value="<?= htmlspecialchars($tglAj); ?>"
-                                               class="detail-freeze-date-input" required>
+                                        <div class="modal-input-icon-wrapper">
+                                            <i class="fa-regular fa-calendar modal-input-icon"></i>
+                                            <input type="text" name="tanggal_janji_bayar"
+                                                   value="<?= htmlspecialchars($tglAj); ?>"
+                                                   placeholder="Pilih tanggal janji bayar..."
+                                                   class="detail-freeze-date-input modal-input-with-icon flatpickr-single-freeze"
+                                                   readonly required>
+                                        </div>
                                         <input type="text" name="catatan_tunggakan"
                                                value="<?= htmlspecialchars($isDtlk ? '' : $catRaw); ?>"
                                                placeholder="Catatan persetujuan..."
@@ -347,7 +351,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                             <?php endif; ?>
 
                             <?php if (empty($p['belum_wajib']) && !$p['is_lunas'] && !empty($p['sudah_diingatkan'])): ?>
-                            <span class="badge-kamar-putih" title="Sudah diwakilkan pada fase <?= htmlspecialchars($fase_reminder_sekarang); ?>">
+                            <span class="badge-kamar-putih badge-reminder-sent" title="Sudah diwakilkan pada fase <?= htmlspecialchars($fase_reminder_sekarang); ?>">
                                 <i class="fa-solid fa-check-double"></i> Diingatkan <?= htmlspecialchars($p['reminder_sent_by']); ?> (<?= $p['reminder_jam']; ?>)
                             </span>
                             <?php endif; ?>
@@ -452,10 +456,14 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                                 <input type="hidden" name="nomor_kamar" value="<?= htmlspecialchars($ni['no_kamar']); ?>">
 
                                 <div class="row-input-dual">
-                                    <input type="date" name="tanggal_janji_bayar"
-                                           min="<?= date('Y-m-d'); ?>"
-                                           value="<?= htmlspecialchars($tglAj); ?>"
-                                           class="detail-freeze-date-input" required>
+                                    <div class="modal-input-icon-wrapper">
+                                        <i class="fa-regular fa-calendar modal-input-icon"></i>
+                                        <input type="text" name="tanggal_janji_bayar"
+                                               value="<?= htmlspecialchars($tglAj); ?>"
+                                               placeholder="Pilih tanggal janji bayar..."
+                                               class="detail-freeze-date-input modal-input-with-icon flatpickr-single-freeze"
+                                               readonly required>
+                                    </div>
                                     <input type="text" name="catatan_tunggakan"
                                            value="<?= htmlspecialchars($isDtlk ? '' : $catRaw); ?>"
                                            placeholder="Catatan persetujuan (opsional)..."
@@ -630,7 +638,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
                         <?php endif; ?>
 
                         <?php if (empty($p['belum_wajib']) && !$p['is_lunas'] && !empty($p['sudah_diingatkan'])): ?>
-                        <span class="badge-kamar-putih" title="Sudah diwakilkan pada fase <?= htmlspecialchars($fase_reminder_sekarang); ?>">
+                        <span class="badge-kamar-putih badge-reminder-sent" title="Sudah diwakilkan pada fase <?= htmlspecialchars($fase_reminder_sekarang); ?>">
                             <i class="fa-solid fa-check-double"></i> Diingatkan <?= htmlspecialchars($p['reminder_sent_by']); ?> (<?= $p['reminder_jam']; ?>)
                         </span>
                         <?php endif; ?>
@@ -714,7 +722,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
             <?php if ($show_modal_pengeluaran && !empty($error_modal)): ?>
             <p class="modal-error-text"><?= htmlspecialchars($error_modal); ?></p>
             <?php endif; ?>
-<form action="<?= htmlspecialchars(urlIuran($current_page)); ?>" method="POST" class="modal-form" onsubmit="setBtnLoadingIuran(this)">
+            <form action="<?= htmlspecialchars(urlIuran($current_page)); ?>" method="POST" class="modal-form" onsubmit="setBtnLoadingIuran(this)">
                 <input type="hidden" name="simpan_pengeluaran" value="1">
                 <div class="modal-field">
                     <label class="modal-label" for="keterangan">Keterangan</label>
@@ -742,7 +750,7 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
             <?php if ($show_modal_set_iuran && !empty($error_modal)): ?>
             <p class="modal-error-text"><?= htmlspecialchars($error_modal); ?></p>
             <?php endif; ?>
-<form action="<?= htmlspecialchars(urlIuran($current_page)); ?>" method="POST" class="modal-form" onsubmit="setBtnLoadingIuran(this)">
+            <form action="<?= htmlspecialchars(urlIuran($current_page)); ?>" method="POST" class="modal-form" onsubmit="setBtnLoadingIuran(this)">
                 <input type="hidden" name="simpan_nominal_iuran" value="1">
                 <div class="modal-field">
                     <label class="modal-label" for="nama_iuran">Keterangan / Nama Iuran</label>
@@ -898,6 +906,23 @@ $notif_iuran_warn = array_values(array_filter($daftar_notif_iuran, fn($n) => ($n
             altInput: true,
             altFormat: "d/m/Y",
             altInputClass: "modal-input modal-input-with-icon"
+        });
+    });
+
+    document.querySelectorAll('.flatpickr-single-freeze').forEach(function(input) {
+        flatpickr(input, {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "d/m/Y",
+            minDate: "today",
+            disableMobile: true,
+            altInputClass: "detail-freeze-date-input modal-input-with-icon",
+            onReady: function(selectedDates, dateStr, instance) {
+                if (instance.altInput) {
+                    instance.altInput.placeholder = "Pilih tanggal janji bayar...";
+                    instance.altInput.readOnly = true;
+                }
+            }
         });
     });
 

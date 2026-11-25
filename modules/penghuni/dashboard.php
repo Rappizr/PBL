@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/init.php';
+require_once __DIR__ . '/../components/notif_helper.php';
 /** @var PDO $pdo */
 
 // 1. Load Handler Tagihan & Helper Pengingat Sewa / Iuran
@@ -43,7 +44,6 @@ if (($evalSewa['status_akun'] ?? '') === 'freeze' || ($evalIuran['status_akun'] 
     exit;
 }
 
-// Prioritaskan fase paling mendesak ('tenggang' diutamakan daripada 'peringatan')
 if (($evalIuran['fase'] ?? '') === 'tenggang' && ($evalSewa['fase'] ?? '') !== 'tenggang') {
     $peringatanTagihan = $evalIuran;
 } else {
@@ -62,7 +62,6 @@ $daftar_tagihan = function_exists('fetchDaftarTagihan')
     ? fetchDaftarTagihan($pdo, $pk_id)
     : [];
 
-// Susun Ringkasan Dinamis
 $ringkasan = [
     'sewa' => [
         'id'            => null,
@@ -127,6 +126,9 @@ foreach ($daftar_tagihan as $t) {
         'is_actionable' => $is_actionable
     ];
 }
+
+// 5. Ambil angka notifikasi identik dengan sidebar
+$notifMobile = getSitemanSidebarNotif($pdo ?? null);
 
 $targetBayarIdBanner = $isPeringatanIuran ? $ringkasan['iuran']['id'] : $ringkasan['sewa']['id'];
 $labelBtnBanner      = $isPeringatanIuran ? 'Bayar Iuran' : 'Bayar Sewa';
@@ -208,17 +210,25 @@ $labelBtnBanner      = $isPeringatanIuran ? 'Bayar Iuran' : 'Bayar Sewa';
                 </div>
             </div>
 
-            <!-- Grid Menu Utama Mobile -->
+            <!-- Grid Menu Utama Mobile (100% Sinkron dengan Sidebar) -->
             <div class="menu-card-container">
                 <h2 class="menu-heading">Silahkan pilih menu</h2>
                 <div class="menu-grid">
 
                     <a href="/?page=tagihan_riwayat" class="menu-item-box quick-nav-link">
+                        <span id="badge-mobile-tagihan" class="menu-notif-badge <?= $notifMobile['tagihan'] > 0 ? '' : 'is-hidden'; ?>">
+                            <?= formatBadgeCount($notifMobile['tagihan']); ?>
+                        </span>
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-receipt"></i></div>
                         <span class="menu-label">Tagihan &amp; Riwayat</span>
                     </a>
 
-                    <a href="/?page=iuran" class="menu-item-box quick-nav-link">
+                    <a href="/?page=<?= $is_pj ? 'kelola_iuran' : 'monitoring_iuran'; ?>" class="menu-item-box quick-nav-link">
+                        <?php if ($is_pj): ?>
+                            <span id="badge-mobile-iuran" class="menu-notif-badge badge-warning <?= $notifMobile['iuran'] > 0 ? '' : 'is-hidden'; ?>">
+                                <?= formatBadgeCount($notifMobile['iuran']); ?>
+                            </span>
+                        <?php endif; ?>
                         <div class="menu-icon-wrapper">
                             <i class="fa-solid <?= $is_pj ? 'fa-wallet' : 'fa-chart-pie'; ?>"></i>
                         </div>
@@ -237,6 +247,9 @@ $labelBtnBanner      = $isPeringatanIuran ? 'Bayar Iuran' : 'Bayar Sewa';
 
                     <?php if ($is_pj): ?>
                     <a href="/?page=verifikasi_bayar" class="menu-item-box quick-nav-link">
+                        <span id="badge-mobile-verifikasi" class="menu-notif-badge <?= $notifMobile['verifikasi'] > 0 ? '' : 'is-hidden'; ?>">
+                            <?= formatBadgeCount($notifMobile['verifikasi']); ?>
+                        </span>
                         <div class="menu-icon-wrapper"><i class="fa-solid fa-list-check"></i></div>
                         <span class="menu-label">Verifikasi<br>Pembayaran</span>
                     </a>
@@ -345,7 +358,7 @@ $labelBtnBanner      = $isPeringatanIuran ? 'Bayar Iuran' : 'Bayar Sewa';
                     <span class="desktop-menu-label">Chat<br>Penghuni</span>
                 </a>
 
-                <a href="/?page=iuran" class="desktop-menu-card quick-nav-link">
+                <a href="/?page=<?= $is_pj ? 'kelola_iuran' : 'monitoring_iuran'; ?>" class="desktop-menu-card quick-nav-link">
                     <div class="desktop-menu-icon">
                         <i class="fa-solid <?= $is_pj ? 'fa-wallet' : 'fa-chart-pie'; ?>"></i>
                     </div>

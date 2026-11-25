@@ -514,11 +514,11 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                     { val: 'Lainnya', label: 'Alasan lainnya' }
                   ];
 
-            listOpsi.innerHTML = opsiAlasan.map((opt, idx) => `
+listOpsi.innerHTML = opsiAlasan.map((opt, idx) => `
                 <label class="alasan-option-label">
                     <input type="radio" name="alasan_penolakan" value="${opt.val}"
                         ${idx === 0 ? 'checked' : ''} onchange="toggleAlasanLain(${opt.val === 'Lainnya'})">
-                    <span>${opt.label}</span>
+                    <span class="alasan-option-text">${opt.label}</span>
                 </label>
             `).join('');
 

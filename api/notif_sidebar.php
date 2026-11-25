@@ -81,7 +81,7 @@ try {
             $response['iuran'] = (int)$stmtIuran->fetchColumn();
         }
 
-        // 4. Penghuni & Ketua Kos: Jumlah tagihan pribadi yang belum lunas
+        // 4. Penghuni & Ketua Kos: Jumlah tagihan pribadi yang belum lunas & jatuh tempo <= 7 hari ke depan (atau sudah lewat)
         if (!$isPemilik && $penghuniId > 0) {
             $stmtTagihan = $db->prepare("
                 SELECT COUNT(*)
@@ -89,6 +89,7 @@ try {
                 JOIN penghuni_kamar pk ON pk.id = t.penghuni_kamar_id
                 WHERE pk.penghuni_id = :pid
                   AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
+                  AND t.tanggal_jatuh_tempo::date <= (CURRENT_DATE + INTERVAL '7 days')
             ");
             $stmtTagihan->execute([':pid' => $penghuniId]);
             $response['tagihan'] = (int)$stmtTagihan->fetchColumn();

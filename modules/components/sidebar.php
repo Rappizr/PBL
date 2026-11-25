@@ -1,6 +1,7 @@
 <?php
 // modules/components/sidebar.php
 require_once __DIR__ . '/../../config/init.php';
+require_once __DIR__ . '/notif_helper.php';
 /** @var PDO $pdo */
 
 if (empty($GLOBALS['siteman_user_synced']) && isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user']['id'])) {
@@ -51,80 +52,8 @@ if ($currentPage === '') {
 $ketuaWajibIsiRek = ($role_user !== 'pemilik' && $is_pj && $currentPage !== 'profile')
     && (empty(trim((string)($_SESSION['user']['nama_bank'] ?? ''))) || empty(trim((string)($_SESSION['user']['no_rekening'] ?? ''))));
 
-// Hitung angka awal notifikasi sidebar dengan cache session 5 detik
-$initNotif = [
-    'verifikasi' => 0,
-    'tagihan'    => 0,
-    'kamar'      => 0,
-    'iuran'      => 0,
-];
-
-if (isset($pdo) && ($pdo instanceof PDO) && !empty($_SESSION['user'])) {
-    $cacheKey = 'sidebar_notif_' . $role_user . '_' . ((int)($_SESSION['user']['id'] ?? 0));
-    $isGet    = (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET');
-
-    if ($isGet && isset($_SESSION[$cacheKey], $_SESSION[$cacheKey . '_ts']) && (time() - (int)$_SESSION[$cacheKey . '_ts']) < 5) {
-        $initNotif = $_SESSION[$cacheKey];
-    } else {
-        $isPemilikInit  = ($role_user === 'pemilik');
-        $isKetuaInit    = $is_pj || ($role_user === 'pj');
-        $penghuniIdInit = (int)($_SESSION['user']['id'] ?? 0);
-
-        try {
-            if ($isPemilikInit || $isKetuaInit) {
-                $initNotif['verifikasi'] = (int)$pdo->query("
-                    SELECT COUNT(*) FROM pembayaran
-                    WHERE LOWER(TRIM(COALESCE(status_verifikasi, 'pending'))) = 'pending'
-                ")->fetchColumn();
-
-                $initNotif['iuran'] = (int)$pdo->query("
-                    SELECT COUNT(*) FROM tagihan t
-                    JOIN penghuni_kamar pk ON pk.id = t.penghuni_kamar_id
-                    JOIN kamar k ON k.id = pk.kamar_id
-                    WHERE t.kategori_iuran_id IS NOT NULL
-                      AND LOWER(TRIM(COALESCE(k.status_kamar, 'kosong'))) = 'terisi'
-                      AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
-                ")->fetchColumn();
-            }
-
-            if ($isPemilikInit) {
-                // Menghitung kamar terisi yang tagihan sewanya belum lunas (termasuk penghuni baru) ATAU akunnya freeze
-                $initNotif['kamar'] = (int)$pdo->query("
-                    SELECT COUNT(DISTINCT k.id)
-                    FROM kamar k
-                    JOIN penghuni_kamar pk ON pk.kamar_id = k.id
-                    JOIN penghuni p ON p.id = pk.penghuni_id
-                    LEFT JOIN tagihan t ON t.penghuni_kamar_id = pk.id
-                      AND t.kategori_iuran_id IS NULL
-                      AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
-                    WHERE LOWER(TRIM(COALESCE(k.status_kamar, 'kosong'))) = 'terisi'
-                      AND (
-                          t.id IS NOT NULL
-                          OR LOWER(TRIM(COALESCE(p.status_akun, 'aktif'))) = 'freeze'
-                      )
-                ")->fetchColumn();
-            } elseif ($penghuniIdInit > 0) {
-                $stmtInitTag = $pdo->prepare("
-                    SELECT COUNT(*) FROM tagihan t
-                    JOIN penghuni_kamar pk ON pk.id = t.penghuni_kamar_id
-                    WHERE pk.penghuni_id = :pid
-                      AND LOWER(TRIM(COALESCE(t.status_tagihan, 'belum_bayar'))) <> 'lunas'
-                ");
-                $stmtInitTag->execute([':pid' => $penghuniIdInit]);
-                $initNotif['tagihan'] = (int)$stmtInitTag->fetchColumn();
-            }
-
-            $_SESSION[$cacheKey]         = $initNotif;
-            $_SESSION[$cacheKey . '_ts'] = time();
-        } catch (Throwable $e) {}
-    }
-}
-
-if (!function_exists('formatBadgeCount')) {
-    function formatBadgeCount(int $n): string {
-        return $n > 99 ? '99+' : (string)$n;
-    }
-}
+// Ambil angka notifikasi terpusat
+$initNotif = getSitemanSidebarNotif($pdo ?? null);
 ?>
 <aside class="desktop-sidebar">
     <div>
@@ -260,27 +189,30 @@ if (!function_exists('formatBadgeCount')) {
         if (e.key === 'Escape') tutupModalLogoutSidebar();
     });
 
-    // Real-Time Notification Polling (tiap 5 detik)
+    // Real-Time Notification Polling (Sinkron Desktop Sidebar & Mobile Grid)
     window.refreshSidebarNotif = async function () {
-        function applyBadge(elId, count) {
-            const el = document.getElementById(elId);
-            if (!el) return;
+        function applyBadge(elIds, count) {
             const num = parseInt(count, 10) || 0;
-            const prevText = el.textContent.trim();
             const nextText = num > 99 ? '99+' : String(num);
 
-            if (num > 0) {
-                el.classList.remove('is-hidden');
-                if (prevText !== nextText) {
-                    el.textContent = nextText;
-                    el.classList.remove('badge-pop');
-                    void el.offsetWidth;
-                    el.classList.add('badge-pop');
+            elIds.forEach(function (elId) {
+                const el = document.getElementById(elId);
+                if (!el) return;
+                const prevText = el.textContent.trim();
+
+                if (num > 0) {
+                    el.classList.remove('is-hidden');
+                    if (prevText !== nextText) {
+                        el.textContent = nextText;
+                        el.classList.remove('badge-pop');
+                        void el.offsetWidth;
+                        el.classList.add('badge-pop');
+                    }
+                } else {
+                    el.textContent = '0';
+                    el.classList.add('is-hidden');
                 }
-            } else {
-                el.textContent = '0';
-                el.classList.add('is-hidden');
-            }
+            });
         }
 
         try {
@@ -290,10 +222,10 @@ if (!function_exists('formatBadgeCount')) {
             });
             if (!res.ok) return;
             const data = await res.json();
-            applyBadge('badge-sidebar-verifikasi', data.verifikasi);
-            applyBadge('badge-sidebar-tagihan', data.tagihan);
-            applyBadge('badge-sidebar-kamar', data.kamar);
-            applyBadge('badge-sidebar-iuran', data.iuran);
+            applyBadge(['badge-sidebar-verifikasi', 'badge-mobile-verifikasi'], data.verifikasi);
+            applyBadge(['badge-sidebar-tagihan', 'badge-mobile-tagihan'], data.tagihan);
+            applyBadge(['badge-sidebar-kamar', 'badge-mobile-kamar'], data.kamar);
+            applyBadge(['badge-sidebar-iuran', 'badge-mobile-iuran'], data.iuran);
         } catch (err) {
             // Abaikan error jaringan sementara
         }

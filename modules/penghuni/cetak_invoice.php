@@ -38,8 +38,10 @@ if (!$invoice) {
     exit;
 }
 
-$is_sewa       = (stripos($invoice['judul'], 'sewa') !== false);
-$judul_dokumen = $is_sewa ? 'KWITANSI / INVOICE SEWA KAMAR' : 'KWITANSI / INVOICE IURAN KOS';
+$is_sewa        = (stripos($invoice['judul'], 'sewa') !== false);
+$judul_dokumen  = $is_sewa ? 'KWITANSI / INVOICE SEWA KAMAR' : 'KWITANSI / INVOICE IURAN KOS';
+$rincian_cicil  = $invoice['rincian_cicilan'] ?? [];
+$status_inv_lbl = $invoice['status_label'] ?? 'Lunas';
 
 // 3. Ambil Nama Pengesah Dokumen (Pemilik untuk Sewa, Ketua Kos untuk Iuran dengan fallback Pemilik)
 $nama_pengesah    = 'Pengelola SITEMAN - KOS';
@@ -130,7 +132,7 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
                 <span><strong>Waktu Pembayaran:</strong> <?= htmlspecialchars($invoice['tanggal_bayar']); ?></span>
                 <span class="invoice-status-wrap">
                     <span class="badge-invoice-lunas-pill">
-                        <i class="fa-solid fa-circle-check"></i> STATUS: LUNAS
+                        <i class="fa-solid fa-circle-check"></i> STATUS: <?= strtoupper(htmlspecialchars($status_inv_lbl)); ?>
                     </span>
                 </span>
             </div>
@@ -142,17 +144,28 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
                 <tr>
                     <th class="invoice-col-no">No</th>
                     <th>Deskripsi Pembayaran</th>
-                    <th>Keterangan &amp; Masa Berlaku</th>
+                    <th>Keterangan &amp; Tanggal Bayar</th>
                     <th class="invoice-col-nominal">Nominal</th>
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td class="invoice-cell-center">1</td>
-                    <td><strong><?= htmlspecialchars($invoice['judul']); ?></strong></td>
-                    <td><?= htmlspecialchars($invoice['periode_sewa']); ?> (Berlaku s/d <?= htmlspecialchars($invoice['berlaku_sampai'] ?? '-'); ?>)</td>
-                    <td class="invoice-cell-nominal">Rp <?= number_format($invoice['nominal'], 0, ',', '.'); ?></td>
-                </tr>
+                <?php if (count($rincian_cicil) > 1): ?>
+                    <?php foreach ($rincian_cicil as $idxC => $cicil): ?>
+                    <tr>
+                        <td class="invoice-cell-center"><?= $idxC + 1; ?></td>
+                        <td><strong><?= htmlspecialchars($invoice['judul']); ?> — Cicilan <?= $idxC + 1; ?></strong></td>
+                        <td>Dibayar tgl <?= htmlspecialchars($cicil['tanggal']); ?><?= !empty($cicil['jam']) ? ' (' . htmlspecialchars($cicil['jam']) . ' WIB)' : ''; ?> &bull; <?= htmlspecialchars($cicil['metode']); ?></td>
+                        <td class="invoice-cell-nominal"><?= htmlspecialchars($cicil['nominal_fmt']); ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr>
+                        <td class="invoice-cell-center">1</td>
+                        <td><strong><?= htmlspecialchars($invoice['judul']); ?></strong></td>
+                        <td><?= htmlspecialchars($invoice['periode_sewa']); ?> (Berlaku s/d <?= htmlspecialchars($invoice['berlaku_sampai'] ?? '-'); ?>)</td>
+                        <td class="invoice-cell-nominal">Rp <?= number_format($invoice['nominal'], 0, ',', '.'); ?></td>
+                    </tr>
+                <?php endif; ?>
                 <tr class="laporan-row-saldo-bersih">
                     <td colspan="3" class="invoice-total-label-cell">TOTAL PEMBAYARAN DITERIMA</td>
                     <td class="invoice-total-val-cell">Rp <?= number_format($invoice['nominal'], 0, ',', '.'); ?></td>
@@ -162,7 +175,7 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
 
         <!-- CATATAN RESMI -->
         <div class="invoice-footer-note">
-            <strong>Catatan:</strong> Dokumen ini merupakan bukti pembayaran sah yang diterbitkan secara elektronik oleh sistem <strong>SITEMAN - KOS</strong>, telah diverifikasi lunas, dan berlaku sampai dengan tanggal <strong><?= htmlspecialchars($invoice['berlaku_sampai'] ?? '-'); ?></strong>.
+            <strong>Catatan:</strong> Dokumen ini merupakan bukti pembayaran sah yang diterbitkan secara elektronik oleh sistem <strong>SITEMAN - KOS</strong>, telah diverifikasi, dan berlaku sampai dengan tanggal <strong><?= htmlspecialchars($invoice['berlaku_sampai'] ?? '-'); ?></strong>.
         </div>
 
         <!-- KOLOM PENGESAHAN -->

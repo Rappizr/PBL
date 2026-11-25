@@ -53,6 +53,7 @@ $defaultJanji = ($tglJanjiDiajukan !== '' && !$isJanjiDitolak)
     ? $tglJanjiDiajukan
     : '';
 
+// Ambil nomor WA Pemilik Kos sebagai default / fallback
 $noWaPemilik = '';
 try {
     $rawWa = (string)$pdo->query("SELECT no_wa FROM pemilik ORDER BY id ASC LIMIT 1")->fetchColumn();
@@ -62,6 +63,39 @@ try {
     }
 } catch (Throwable $e) {
     $noWaPemilik = '';
+}
+
+// Tentukan tujuan komunikasi (Ketua Kos jika freeze iuran & ada Ketua Kos aktif, fallback ke Pemilik Kos)
+$noWaTujuan     = $noWaPemilik;
+$labelTujuan    = 'Pemilik Kos';
+$sapaanWaTujuan = 'Bapak/Ibu Pemilik Kos';
+
+if ($isFreezeIuran) {
+    try {
+        $stmtKetua = $pdo->prepare("
+            SELECT nama, no_wa
+            FROM penghuni
+            WHERE is_ketua_kos = true
+              AND LOWER(TRIM(COALESCE(status_akun, 'aktif'))) = 'aktif'
+              AND id != :pid
+            LIMIT 1
+        ");
+        $stmtKetua->execute([':pid' => $penghuniId]);
+        $ketuaRow = $stmtKetua->fetch(PDO::FETCH_ASSOC);
+
+        if ($ketuaRow) {
+            $waKetua = preg_replace('/\D/', '', (string)($ketuaRow['no_wa'] ?? ''));
+            if (str_starts_with($waKetua, '0')) {
+                $waKetua = '62' . substr($waKetua, 1);
+            }
+            if ($waKetua !== '') {
+                $namaKetua      = trim((string)$ketuaRow['nama']);
+                $noWaTujuan     = $waKetua;
+                $labelTujuan    = 'Ketua Kos';
+                $sapaanWaTujuan = $namaKetua !== '' ? "Kak {$namaKetua} (Ketua Kos)" : 'Kak Ketua Kos';
+            }
+        }
+    } catch (Throwable $e) {}
 }
 
 $waUrlAwal = ($defaultJanji !== '')
@@ -138,7 +172,7 @@ $waUrlAwal = ($defaultJanji !== '')
                 </div>
             <?php elseif ($tglJanjiDiajukan !== ''): ?>
                 <div class="alert-success">
-                    <i class="fa-solid fa-clock"></i> Pengajuan tanggal <strong><?= date('d/m/Y', strtotime($tglJanjiDiajukan)); ?></strong> telah terkirim dan menunggu persetujuan Pemilik Kos.
+                    <i class="fa-solid fa-clock"></i> Pengajuan tanggal <strong><?= date('d/m/Y', strtotime($tglJanjiDiajukan)); ?></strong> telah terkirim dan menunggu persetujuan <?= htmlspecialchars($labelTujuan); ?>.
                 </div>
             <?php endif; ?>
         </div>
@@ -158,7 +192,7 @@ $waUrlAwal = ($defaultJanji !== '')
                        readonly>
             </div>
             <small class="freeze-date-hint">
-                Tanggal ini akan otomatis tersimpan dan dicantumkan ke dalam pesan WhatsApp kepada Pemilik Kos.
+                Tanggal ini akan otomatis tersimpan dan dicantumkan ke dalam pesan WhatsApp kepada <?= htmlspecialchars($labelTujuan); ?>.
             </small>
         </div>
 
@@ -166,7 +200,7 @@ $waUrlAwal = ($defaultJanji !== '')
            onclick="return kirimPermohonanUnfreeze(event)"
            class="btn-submit btn-as-link freeze-btn-wa">
             <i class="fa-brands fa-whatsapp freeze-btn-wa-icon"></i>
-            <span><?= $isJanjiDitolak ? 'Ajukan Ulang via WA' : 'Hubungi Pemilik Kos via WA'; ?></span>
+            <span><?= $isJanjiDitolak ? 'Ajukan Ulang via WA' : 'Hubungi ' . htmlspecialchars($labelTujuan) . ' via WA'; ?></span>
         </a>
 
         <a href="/?page=logout" class="link-kembali freeze-btn-logout">
@@ -207,11 +241,12 @@ $waUrlAwal = ($defaultJanji !== '')
         });
 
         function perbaruiLinkWaFreeze() {
-            const noWaPemilik   = <?= json_encode($noWaPemilik); ?>;
-            const isFreezeIuran = <?= json_encode($isFreezeIuran); ?>;
-            const btnWa         = document.getElementById('btnWaUnfreeze');
-            const inputTgl      = document.getElementById('inputTglJanjiFreeze');
-            if (!noWaPemilik || !btnWa || !inputTgl) return;
+            const noWaTujuan     = <?= json_encode($noWaTujuan); ?>;
+            const sapaanTujuan   = <?= json_encode($sapaanWaTujuan); ?>;
+            const isFreezeIuran  = <?= json_encode($isFreezeIuran); ?>;
+            const btnWa          = document.getElementById('btnWaUnfreeze');
+            const inputTgl       = document.getElementById('inputTglJanjiFreeze');
+            if (!noWaTujuan || !btnWa || !inputTgl) return;
 
             if (!inputTgl.value) {
                 btnWa.href = '#';
@@ -232,7 +267,7 @@ $waUrlAwal = ($defaultJanji !== '')
 
             let pesan = '';
             if (isFreezeIuran) {
-                pesan = `Halo Bapak/Ibu Pemilik Kos,\n\n`
+                pesan = `Halo ${sapaanTujuan},\n\n`
                       + `Saya *${nama}* penghuni *Kamar ${kamar}*. Akun SITEMAN - KOS saya saat ini ter-freeze karena tunggakan *${namaIuran}* sebesar *${nominalFmt}*.\n\n`
                       + `Saya memohon kebijaksanaannya untuk membuka akses akun saya sementara, dan saya berjanji akan melunasi iuran tersebut pada tanggal *${tglFmt}*.\n\n`
                       + `Terima kasih banyak atas pengertiannya.`;
@@ -243,18 +278,19 @@ $waUrlAwal = ($defaultJanji !== '')
                       + `Terima kasih banyak atas pengertiannya.`;
             }
 
-            btnWa.href = `https://wa.me/${noWaPemilik}?text=${encodeURIComponent(pesan)}`;
+            btnWa.href = `https://wa.me/${noWaTujuan}?text=${encodeURIComponent(pesan)}`;
         }
 
         function kirimPermohonanUnfreeze(e) {
             const inputTgl      = document.getElementById('inputTglJanjiFreeze');
             const isFreezeIuran = <?= json_encode($isFreezeIuran); ?>;
+            const labelTujuan   = <?= json_encode($labelTujuan); ?>;
             const statusBox     = document.getElementById('boxStatusPengajuan');
 
             if (!inputTgl || !inputTgl.value) {
                 if (e) e.preventDefault();
                 if (statusBox) {
-                    statusBox.innerHTML = `<div class="alert-error"><i class="fa-solid fa-circle-exclamation"></i> Silakan pilih <strong>tanggal rencana pelunasan</strong> terlebih dahulu sebelum menghubungi Pemilik Kos.</div>`;
+                    statusBox.innerHTML = `<div class="alert-error"><i class="fa-solid fa-circle-exclamation"></i> Silakan pilih <strong>tanggal rencana pelunasan</strong> terlebih dahulu sebelum menghubungi ${labelTujuan}.</div>`;
                 }
                 if (fpJanjiFreeze) {
                     fpJanjiFreeze.open();
@@ -281,7 +317,7 @@ $waUrlAwal = ($defaultJanji !== '')
             if (statusBox) {
                 const parts = inputTgl.value.split('-');
                 const tglFmt = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : inputTgl.value;
-                statusBox.innerHTML = `<div class="alert-success"><i class="fa-solid fa-clock"></i> Pengajuan tanggal <strong>${tglFmt}</strong> telah terkirim dan menunggu persetujuan Pemilik Kos.</div>`;
+                statusBox.innerHTML = `<div class="alert-success"><i class="fa-solid fa-clock"></i> Pengajuan tanggal <strong>${tglFmt}</strong> telah terkirim dan menunggu persetujuan ${labelTujuan}.</div>`;
             }
 
             return true;

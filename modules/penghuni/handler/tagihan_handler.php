@@ -134,6 +134,9 @@ function fetchDaftarTagihan(PDO $pdo, int $pk_id): array {
                 COALESCE(bayar_ok.total_diterima, 0) AS sudah_dibayar,
                 GREATEST(0, COALESCE(ki.nominal, s.nominal, 5500000) - COALESCE(bayar_ok.total_diterima, 0)) AS nominal,
                 TO_CHAR(t.tanggal_jatuh_tempo, 'DD-MM-YY') AS jatuh_tempo,
+                TO_CHAR(t.tanggal_jatuh_tempo, 'YYYY-MM-DD') AS jatuh_tempo_ymd,
+                (t.tanggal_jatuh_tempo::date - CURRENT_DATE) AS sisa_hari,
+                ((t.tanggal_jatuh_tempo::date - CURRENT_DATE) > 7) AS is_mendatang,
                 t.status_tagihan,
                 CASE
                     WHEN COALESCE(pend.total_pending, 0) > 0 THEN 'pending'
@@ -148,7 +151,7 @@ function fetchDaftarTagihan(PDO $pdo, int $pk_id): array {
             LEFT JOIN (
                 SELECT tagihan_id, SUM(jumlah_bayar) AS total_diterima
                 FROM pembayaran
-                WHERE LOWER(TRIM(status_verifikasi)) = 'diterima'
+                WHERE LOWER(TRIM(status_verifikasi)) IN ('diterima', 'terverifikasi', 'lunas')
                 GROUP BY tagihan_id
             ) bayar_ok ON bayar_ok.tagihan_id = t.id
             LEFT JOIN (
@@ -184,29 +187,68 @@ function fetchRiwayatTransaksi(PDO $pdo, int $pk_id): array {
         $penghuniId = (int)$stmtPid->fetchColumn();
 
         $whereUser = ($penghuniId > 0) ? "pk.penghuni_id = :uid" : "pk.id = :uid";
+        $uidParam  = ($penghuniId > 0 ? $penghuniId : $pk_id);
 
+        // Ambil rincian tiap cicilan per tagihan_id
+        $sqlCicilan = "
+            SELECT 
+                p.id,
+                p.tagihan_id,
+                p.jumlah_bayar,
+                COALESCE(p.metode_bayar, 'transfer') AS metode_bayar,
+                COALESCE(p.no_kwitansi, 'KW-' || p.id) AS no_kwitansi,
+                TO_CHAR(COALESCE(p.tanggal_bayar, NOW()), 'YYYY-MM-DD') AS tgl_ymd,
+                TO_CHAR(COALESCE(p.tanggal_bayar, NOW()), 'HH24:MI') AS jam_bayar
+            FROM pembayaran p
+            JOIN tagihan t ON p.tagihan_id = t.id
+            JOIN penghuni_kamar pk ON t.penghuni_kamar_id = pk.id
+            WHERE {$whereUser}
+              AND LOWER(TRIM(p.status_verifikasi)) IN ('diterima', 'terverifikasi', 'lunas')
+            ORDER BY COALESCE(p.tanggal_bayar, NOW()) ASC, p.id ASC
+        ";
+        $stmtCicil = $pdo->prepare($sqlCicilan);
+        $stmtCicil->execute([':uid' => $uidParam]);
+        $cicilanByTagihan = [];
+        foreach ($stmtCicil->fetchAll(PDO::FETCH_ASSOC) as $c) {
+            $tid = (int)$c['tagihan_id'];
+            $cicilanByTagihan[$tid][] = [
+                'id'          => (int)$c['id'],
+                'nominal'     => (float)$c['jumlah_bayar'],
+                'nominal_fmt' => 'Rp ' . number_format((float)$c['jumlah_bayar'], 0, ',', '.'),
+                'metode'      => ucfirst(strtolower((string)$c['metode_bayar'])),
+                'no_kwitansi' => $c['no_kwitansi'],
+                'tanggal'     => formatTanggalIndonesia((string)$c['tgl_ymd']),
+                'jam'         => trim((string)$c['jam_bayar'])
+            ];
+        }
+
+        // Gabungkan riwayat menjadi 1 kartu & 1 invoice per tagihan_id
         $sqlRiwayat = "
             SELECT * FROM (
-                -- 1. Riwayat dari tabel pembayaran (upload bukti / tunai yang diterima)
+                -- 1. Tagihan dengan pembayaran terverifikasi (digabung per tagihan_id)
                 SELECT 
-                    p.id AS id,
+                    t.id AS id,
+                    t.id AS tagihan_id,
                     (ki.id IS NOT NULL) AS is_iuran,
                     CASE 
                         WHEN ki.nama_iuran IS NOT NULL THEN ki.nama_iuran
                         ELSE 'Sewa ' || COALESCE(s.nama_skema, 'Bulanan')
                     END AS judul,
-                    TO_CHAR(COALESCE(p.tanggal_bayar, NOW()), 'YYYY-MM-DD') AS tanggal_ymd,
-                    TO_CHAR(COALESCE(p.tanggal_bayar, NOW()), 'YYYY-MM-DD') AS tanggal_filter,
-                    p.jumlah_bayar AS nominal,
-                    COALESCE(p.no_kwitansi, 'INV-' || p.id) AS nomor_invoice,
+                    TO_CHAR(MAX(COALESCE(p.tanggal_bayar, NOW())), 'YYYY-MM-DD') AS tanggal_ymd,
+                    TO_CHAR(MAX(COALESCE(p.tanggal_bayar, NOW())), 'YYYY-MM-DD') AS tanggal_filter,
+                    SUM(p.jumlah_bayar) AS nominal,
+                    COALESCE(ki.nominal, s.nominal, SUM(p.jumlah_bayar)) AS total_tagihan,
+                    LOWER(TRIM(COALESCE(t.status_tagihan, 'lunas'))) AS status_tagihan,
+                    COUNT(p.id) AS jumlah_cicilan,
+                    'INV-' || TO_CHAR(MAX(COALESCE(p.tanggal_bayar, NOW())), 'YYYYMM') || '-' || LPAD(t.id::text, 4, '0') AS nomor_invoice,
                     TO_CHAR(pk.tanggal_masuk, 'YYYY-MM-DD') AS tanggal_masuk_ymd,
-                    TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, p.tanggal_bayar, NOW()), 'YYYY-MM-DD') AS tanggal_terbit_ymd,
-                    TO_CHAR(COALESCE(t.tanggal_jatuh_tempo, p.tanggal_bayar, NOW()), 'YYYY-MM-DD') AS jatuh_tempo_ymd,
-                    TO_CHAR(COALESCE(p.tanggal_bayar, NOW()), 'YYYY-MM-DD') AS tanggal_bayar_ymd,
-                    TO_CHAR(COALESCE(p.tanggal_bayar, NOW()), 'HH24:MI') AS jam_bayar,
+                    TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, MIN(p.tanggal_bayar), NOW()), 'YYYY-MM-DD') AS tanggal_terbit_ymd,
+                    TO_CHAR(COALESCE(t.tanggal_jatuh_tempo, MAX(p.tanggal_bayar), NOW()), 'YYYY-MM-DD') AS jatuh_tempo_ymd,
+                    TO_CHAR(MAX(COALESCE(p.tanggal_bayar, NOW())), 'YYYY-MM-DD') AS tanggal_bayar_ymd,
+                    TO_CHAR(MAX(COALESCE(p.tanggal_bayar, NOW())), 'HH24:MI') AS jam_bayar,
                     COALESCE(s.nama_skema, 'Bulanan') AS periode_sewa,
                     COALESCE(k.no_kamar, '-') AS no_kamar,
-                    COALESCE(p.tanggal_bayar, NOW()) AS sort_date,
+                    MAX(COALESCE(p.tanggal_bayar, NOW())) AS sort_date,
                     FALSE AS is_lunas_langsung
                 FROM pembayaran p
                 JOIN tagihan t ON p.tagihan_id = t.id
@@ -216,12 +258,17 @@ function fetchRiwayatTransaksi(PDO $pdo, int $pk_id): array {
                 LEFT JOIN kamar k ON pk.kamar_id = k.id
                 WHERE {$whereUser}
                   AND LOWER(TRIM(p.status_verifikasi)) IN ('diterima', 'terverifikasi', 'lunas')
+                GROUP BY 
+                    t.id, ki.id, ki.nama_iuran, ki.nominal, s.nama_skema, s.nominal,
+                    t.status_tagihan, pk.tanggal_masuk, t.tanggal_awal_tagihan,
+                    t.tanggal_jatuh_tempo, k.no_kamar
 
                 UNION ALL
 
-                -- 2. Riwayat dari tagihan yang langsung dilunasi pemilik kos (tanpa record pembayaran diterima)
+                -- 2. Tagihan yang langsung dilunasi pemilik kos tanpa record pembayaran
                 SELECT 
-                    (t.id + 1000000) AS id,
+                    t.id AS id,
+                    t.id AS tagihan_id,
                     (ki.id IS NOT NULL) AS is_iuran,
                     CASE 
                         WHEN ki.nama_iuran IS NOT NULL THEN ki.nama_iuran
@@ -230,7 +277,10 @@ function fetchRiwayatTransaksi(PDO $pdo, int $pk_id): array {
                     TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, CURRENT_DATE), 'YYYY-MM-DD') AS tanggal_ymd,
                     TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, CURRENT_DATE), 'YYYY-MM-DD') AS tanggal_filter,
                     COALESCE(ki.nominal, s.nominal, 0) AS nominal,
-                    'INV-SYS-' || t.id AS nomor_invoice,
+                    COALESCE(ki.nominal, s.nominal, 0) AS total_tagihan,
+                    'lunas' AS status_tagihan,
+                    1 AS jumlah_cicilan,
+                    'INV-SYS-' || LPAD(t.id::text, 4, '0') AS nomor_invoice,
                     TO_CHAR(pk.tanggal_masuk, 'YYYY-MM-DD') AS tanggal_masuk_ymd,
                     TO_CHAR(COALESCE(t.tanggal_awal_tagihan, pk.tanggal_masuk, CURRENT_DATE), 'YYYY-MM-DD') AS tanggal_terbit_ymd,
                     TO_CHAR(COALESCE(t.tanggal_jatuh_tempo, CURRENT_DATE), 'YYYY-MM-DD') AS jatuh_tempo_ymd,
@@ -257,27 +307,42 @@ function fetchRiwayatTransaksi(PDO $pdo, int $pk_id): array {
         ";
 
         $stmt = $pdo->prepare($sqlRiwayat);
-        $stmt->execute([':uid' => ($penghuniId > 0 ? $penghuniId : $pk_id)]);
+        $stmt->execute([':uid' => $uidParam]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($rows as &$row) {
-            $isIuran        = (bool)($row['is_iuran'] ?? false);
-            $tglMasukYmd    = $row['tanggal_masuk_ymd'] ?? '';
-            $tglTerbitYmd   = $row['tanggal_terbit_ymd'] ?? '';
-            $jatuhTempoYmd  = $row['jatuh_tempo_ymd'] ?? '';
-            $tglBayarYmd    = $row['tanggal_bayar_ymd'] ?? '';
-            $tglYmd         = $row['tanggal_ymd'] ?? '';
-            $jamBayar       = trim((string)($row['jam_bayar'] ?? ''));
-            $lunasLangsung  = (bool)($row['is_lunas_langsung'] ?? false);
+            $tid           = (int)$row['tagihan_id'];
+            $isIuran       = (bool)($row['is_iuran'] ?? false);
+            $tglMasukYmd   = $row['tanggal_masuk_ymd'] ?? '';
+            $tglTerbitYmd  = $row['tanggal_terbit_ymd'] ?? '';
+            $jatuhTempoYmd = $row['jatuh_tempo_ymd'] ?? '';
+            $tglBayarYmd   = $row['tanggal_bayar_ymd'] ?? '';
+            $tglYmd        = $row['tanggal_ymd'] ?? '';
+            $jamBayar      = trim((string)($row['jam_bayar'] ?? ''));
+            $lunasLangsung = (bool)($row['is_lunas_langsung'] ?? false);
+            $rincianCicil  = $cicilanByTagihan[$tid] ?? [];
+            $jmlCicil      = count($rincianCicil);
+            $totalTagihan  = (float)($row['total_tagihan'] ?? $row['nominal']);
+            $nominalMasuk  = (float)($row['nominal'] ?? 0);
+            $isSudahLunas  = (($row['status_tagihan'] ?? '') === 'lunas' || $nominalMasuk >= $totalTagihan);
 
-            $row['tanggal']        = formatTanggalIndonesia($tglYmd);
-            $row['tanggal_masuk']  = !empty($tglMasukYmd) ? formatTanggalIndonesia($tglMasukYmd) : '-';
-            $row['tanggal_terbit'] = formatTanggalIndonesia($tglTerbitYmd);
-            $row['jatuh_tempo']    = formatTanggalIndonesia($jatuhTempoYmd);
-            $row['berlaku_sampai'] = hitungBerlakuSampai($tglTerbitYmd, $jatuhTempoYmd, (string)($row['periode_sewa'] ?? 'Bulanan'), $isIuran);
-            $row['tanggal_bayar']  = $lunasLangsung
-                ? formatTanggalIndonesia($tglBayarYmd) . ' (Lunas Langsung)'
-                : formatTanggalIndonesia($tglBayarYmd) . ($jamBayar !== '' ? ', ' . $jamBayar . ' WIB' : '');
+            $row['rincian_cicilan'] = $rincianCicil;
+            $row['jumlah_cicilan']  = max(1, $jmlCicil);
+            $row['is_lunas']        = $isSudahLunas;
+            $row['status_label']    = $isSudahLunas ? 'Lunas' : 'Cicilan (' . $jmlCicil . 'x)';
+            $row['tanggal']         = formatTanggalIndonesia($tglYmd);
+            $row['tanggal_masuk']   = !empty($tglMasukYmd) ? formatTanggalIndonesia($tglMasukYmd) : '-';
+            $row['tanggal_terbit']  = formatTanggalIndonesia($tglTerbitYmd);
+            $row['jatuh_tempo']     = formatTanggalIndonesia($jatuhTempoYmd);
+            $row['berlaku_sampai']  = hitungBerlakuSampai($tglTerbitYmd, $jatuhTempoYmd, (string)($row['periode_sewa'] ?? 'Bulanan'), $isIuran);
+
+            if ($lunasLangsung) {
+                $row['tanggal_bayar'] = formatTanggalIndonesia($tglBayarYmd) . ' (Lunas Langsung)';
+            } elseif ($jmlCicil > 1) {
+                $row['tanggal_bayar'] = 'Terakhir ' . formatTanggalIndonesia($tglBayarYmd);
+            } else {
+                $row['tanggal_bayar'] = formatTanggalIndonesia($tglBayarYmd) . ($jamBayar !== '' ? ', ' . $jamBayar . ' WIB' : '');
+            }
         }
         unset($row);
 
