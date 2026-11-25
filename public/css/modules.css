@@ -768,6 +768,39 @@ body.login-body {
   font-weight: 700;
 }
 
+.kas-empty-penghuni-mobile,
+.kas-transaksi-list .empty-state-card {
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 24px 18px;
+  box-shadow: 4px 5px 0px #c8924b;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 2px;
+}
+
+.kas-empty-penghuni-mobile i,
+.kas-transaksi-list .empty-state-card i {
+  font-size: 28px;
+  color: #4ca5b0;
+  margin: 0;
+}
+
+.kas-empty-penghuni-mobile p,
+.kas-transaksi-list .empty-state-card p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #4a5568;
+  line-height: 1.4;
+}
+
 .kelola-stats-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1076,7 +1109,7 @@ body.login-body {
 }
 
 /* ==========================================================================
-   6. CHAT PENGHUNI (MOBILE)
+6. CHAT PENGHUNI (MOBILE)
    ========================================================================== */
 .chat-container {
   display: flex;
@@ -1106,26 +1139,32 @@ body.login-body {
   padding: 12px 18px 12px 42px;
   font-size: 13px;
   font-weight: 600;
+  color: #1a4d55;
   outline: none;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  box-shadow: 2px 3px 0px #c8924b;
   box-sizing: border-box;
 }
 
+/* Pakai !important agar tidak tertimpa .empty-state-card { display: flex; } */
 .empty-search-mobile {
-  display: none;
+  display: none !important;
   width: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   padding: 20px;
   background-color: #ffffff;
-  border-radius: 12px;
-  margin-top: 10px;
-  box-shadow: 2px 3px 0px #c8924b;
+  border-radius: 16px;
+  margin-top: 4px;
+  box-shadow: 4px 5px 0px #c8924b;
+  box-sizing: border-box;
 }
 
 .empty-search-mobile i {
   font-size: 24px;
   color: #4ca5b0;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .empty-search-mobile p {
@@ -1149,6 +1188,7 @@ body.login-body {
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
+  gap: 12px !important;
   box-shadow: 4px 5px 0px #c8924b;
   box-sizing: border-box;
   margin: 0 !important;
@@ -1164,18 +1204,24 @@ body.login-body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
 
 .chat-header-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
 
 .chat-nama {
   color: #ffffff;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chat-wa {
@@ -1188,11 +1234,13 @@ body.login-body {
 .desktop-badge-kamar {
   background-color: #ffffff !important;
   color: #4ca5b0 !important;
-  font-size: 11.5px !important;
+  font-size: 11px !important;
   font-weight: 800 !important;
-  padding: 3px 12px !important;
+  padding: 3px 10px !important;
   border-radius: 9999px !important;
   display: inline-block !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
@@ -7672,6 +7720,69 @@ body.laporan-print-body {
   text-align: left;
   opacity: 1 !important;
   visibility: visible !important;
+}
+
+/* ==========================================================================
+   PERBAIKAN RESPONSIF MOBILE KELOLA IURAN & ACCORDION FREEZE
+   ========================================================================== */
+@media (max-width: 767px) {
+  .mobile-container .kamar-notif-accordion-body {
+    max-height: none;
+    overflow-y: visible;
+  }
+
+  .mobile-container .detail-freeze-form .row-input-dual {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mobile-container .detail-freeze-form .modal-input-icon-wrapper,
+  .mobile-container .detail-freeze-form .detail-freeze-date-input,
+  .mobile-container .detail-freeze-form .detail-freeze-text-input {
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .mobile-container .kelola-penghuni-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .mobile-container .kelola-penghuni-top {
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .mobile-container .kelola-penghuni-name {
+    font-size: 15px;
+    word-break: break-word;
+  }
+
+  .mobile-container .iuran-penghuni-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.3);
+  }
+
+  .mobile-container .iuran-penghuni-actions .badge-kamar-putih {
+    margin-right: auto;
+    font-size: 10.5px !important;
+    padding: 4px 10px !important;
+    white-space: normal !important;
+    line-height: 1.3;
+    text-align: left;
+  }
+
+  .mobile-container .iuran-penghuni-actions .btn-chat-wa {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
 }
 
 /* ==========================================================================

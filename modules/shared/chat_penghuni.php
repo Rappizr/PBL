@@ -133,39 +133,44 @@ $link_kembali = ($role_user === 'pemilik') ? '/?page=dashboard_pemilik' : '/?pag
     </div>
 
     <!-- Script Filter Live Search -->
-    <script>
-    function cariPenghuni(idInput, idList, idPesanKosong, namaClassKartu) {
-        const kotakCari = document.getElementById(idInput);
-        const wadahList = document.getElementById(idList);
-        const pesanKosong = document.getElementById(idPesanKosong);
-        if (!kotakCari || !wadahList) return;
+<script>
+function cariPenghuni(idInput, idList, idPesanKosong, namaClassKartu) {
+    const kotakCari = document.getElementById(idInput);
+    const wadahList = document.getElementById(idList);
+    const pesanKosong = document.getElementById(idPesanKosong);
+    if (!kotakCari || !wadahList) return;
 
-        kotakCari.addEventListener('input', function() {
-            const kataKunci = kotakCari.value.toLowerCase().trim();
-            const semuaKartu = wadahList.getElementsByClassName(namaClassKartu);
-            let jumlahTampil = 0;
+    kotakCari.addEventListener('input', function() {
+        const kataKunci = kotakCari.value.toLowerCase().trim();
+        const semuaKartu = wadahList.getElementsByClassName(namaClassKartu);
+        let jumlahTampil = 0;
 
-            for (let i = 0; i < semuaKartu.length; i++) {
-                const kartu = semuaKartu[i];
-                const nama = kartu.getAttribute('data-nama') || '';
-                const kamar = kartu.getAttribute('data-kamar') || '';
+        for (let i = 0; i < semuaKartu.length; i++) {
+            const kartu = semuaKartu[i];
+            const nama = kartu.getAttribute('data-nama') || '';
+            const kamar = kartu.getAttribute('data-kamar') || '';
+            const infoKamar = 'kamar ' + kamar;
 
-                if (nama.includes(kataKunci) || kamar.includes(kataKunci)) {
-                    kartu.style.display = 'flex';
-                    jumlahTampil++;
-                } else {
-                    kartu.style.display = 'none';
-                }
+            if (nama.includes(kataKunci) || kamar.includes(kataKunci) || infoKamar.includes(kataKunci)) {
+                kartu.style.removeProperty('display');
+                jumlahTampil++;
+            } else {
+                kartu.style.setProperty('display', 'none', 'important');
             }
+        }
 
-            if (pesanKosong) {
-                pesanKosong.style.display = (semuaKartu.length > 0 && jumlahTampil === 0) ? 'block' : 'none';
+        if (pesanKosong) {
+            if (semuaKartu.length > 0 && jumlahTampil === 0) {
+                pesanKosong.style.setProperty('display', 'flex', 'important');
+            } else {
+                pesanKosong.style.setProperty('display', 'none', 'important');
             }
-        });
-    }
-    cariPenghuni('searchInputMobile', 'chatListMobile', 'emptySearchMobile', 'chat-card');
-    cariPenghuni('searchInputDesktop', 'chatListDesktop', 'emptySearchDesktop', 'desktop-chat-card');
-    </script>
+        }
+    });
+}
+cariPenghuni('searchInputMobile', 'chatListMobile', 'emptySearchMobile', 'chat-card');
+cariPenghuni('searchInputDesktop', 'chatListDesktop', 'emptySearchDesktop', 'desktop-chat-card');
+</script>
 </body>
 
 </html>

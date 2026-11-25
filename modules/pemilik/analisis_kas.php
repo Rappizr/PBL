@@ -399,11 +399,11 @@ if (!$is_filtered && !empty($daftar_transaksi)) {
             emptyDesktop.style.display = (jumlahTampilDesktop === 0) ? 'block' : 'none';
         }
 
-        const emptyMobile = document.getElementById('emptyKasFilterMobile');
+const emptyMobile = document.getElementById('emptyKasFilterMobile');
         const textMobile  = document.getElementById('emptyKasFilterTextMobile');
         if (emptyMobile && textMobile) {
             textMobile.textContent = pesanKosong;
-            emptyMobile.style.display = (jumlahTampilMobile === 0) ? 'block' : 'none';
+            emptyMobile.style.display = (jumlahTampilMobile === 0) ? 'flex' : 'none';
         }
 
         const url = new URL(window.location.href);
