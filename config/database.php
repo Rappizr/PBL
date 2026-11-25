@@ -19,7 +19,7 @@ $host     = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? null);
 $port     = getenv('DB_PORT') ?: ($_ENV['DB_PORT'] ?? '6543');
 $dbname   = getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? 'postgres');
 $username = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? null);
-$password = getenv('DB_PASSWORD') ?: ($_ENV['DB_PASSWORD'] ?? null);
+$password = getenv('DB_PASSWORD') ?: ($_ENV['DB_PASSWORD'] ?? (getenv('DB_PASS') ?: ($_ENV['DB_PASS'] ?? null)));
 
 if (!$host || !$dbname || !$username) {
     http_response_code(500);
@@ -36,8 +36,8 @@ try {
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES   => true,
-            PDO::ATTR_PERSISTENT         => true,
-            PDO::ATTR_TIMEOUT            => 5,
+            PDO::ATTR_PERSISTENT         => false,
+            PDO::ATTR_TIMEOUT            => 8,
         ]
     );
 

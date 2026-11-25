@@ -14,6 +14,9 @@ if ($uriPath === '/favicon.ico') {
     exit;
 }
 
+require_once __DIR__ . '/../config/init.php';
+/** @var PDO $pdo */
+
 // Endpoint API Internal (Kompatibel Vercel & Apache Front-Controller)
 if ($uriPath === '/api/notif_sidebar' || $uriPath === '/api/notif_sidebar.php') {
     if (ob_get_length()) ob_clean();
@@ -25,10 +28,6 @@ if ($uriPath === '/api/ajukan_janji_bayar' || $uriPath === '/api/ajukan_janji_ba
     if (ob_get_length()) ob_clean();
     require_once __DIR__ . '/ajukan_janji_bayar.php';
     exit;
-}
-
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
 }
 
 $page = trim((string)($_GET['page'] ?? 'login'));
@@ -58,8 +57,6 @@ if (!empty($_SESSION['user']) && $userRole !== 'pemilik') {
     $perluSyncDb  = $isPost || ($page === 'akun_freeze') || ((time() - $lastSync) >= 30);
 
     if ($penghuniId > 0 && $perluSyncDb) {
-        require_once __DIR__ . '/../config/database.php';
-
         if (isset($pdo) && ($pdo instanceof PDO)) {
             $stmtSt = $pdo->prepare("SELECT LOWER(TRIM(COALESCE(status_akun, 'aktif'))) FROM penghuni WHERE id = :id LIMIT 1");
             $stmtSt->execute([':id' => $penghuniId]);

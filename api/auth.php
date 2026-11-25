@@ -1,9 +1,7 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../config/init.php';
+/** @var PDO $pdo */
 
-require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../modules/shared/handler/sewa_reminder_helper.php';
 require_once __DIR__ . '/../modules/shared/handler/iuran_reminder_helper.php';
 
@@ -50,6 +48,7 @@ if ($selected_role === 'pemilik') {
                     'kamar'       => null,
                     'is_pj'       => false
                 ];
+                session_write_close();
                 header('Location: /?page=dashboard_pemilik');
                 exit;
             }
@@ -133,6 +132,7 @@ if ($selected_role === 'pemilik') {
                         'penghuni_kamar_id' => (int)$penghuni['penghuni_kamar_id'],
                     ];
 
+                    session_write_close();
                     if ($statusAkun === 'freeze') {
                         header('Location: /?page=akun_freeze');
                     } else {
@@ -148,5 +148,6 @@ if ($selected_role === 'pemilik') {
     }
 }
 
+session_write_close();
 header('Location: /?page=login&role=' . urlencode($selected_role));
 exit;
