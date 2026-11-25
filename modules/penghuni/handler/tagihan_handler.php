@@ -1,5 +1,6 @@
 <?php
 // modules/penghuni/handler/tagihan_handler.php
+require_once __DIR__ . '/../../../config/supabase_storage.php';
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -377,6 +378,9 @@ function handleUploadBuktiBayar(PDO $pdo): array {
     $nominal_raw   = preg_replace('/[^0-9]/', '', (string)($_POST['nominal_bayar'] ?? ''));
     $nominal_input = (float)$nominal_raw;
 
+    $new_filename     = null;
+    $oldBuktiToDelete = '';
+
     try {
         // Cegah pengiriman baru jika masih ada transaksi yang sedang menunggu verifikasi pada tagihan ini
         $stmtCekPending = $pdo->prepare("
@@ -424,41 +428,42 @@ function handleUploadBuktiBayar(PDO $pdo): array {
             redirectTagihanRiwayat('', 'Nominal bayar tidak boleh melebihi sisa tagihan (Rp ' . number_format($sisa_tagihan, 0, ',', '.') . ').');
         }
 
-        $new_filename = null;
         if ($metode_bayar === 'transfer') {
-            if (!isset($_FILES['bukti_transfer']) || $_FILES['bukti_transfer']['error'] !== UPLOAD_ERR_OK) {
+            if (!isset($_FILES['bukti_transfer']) || ($_FILES['bukti_transfer']['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
                 redirectTagihanRiwayat('', 'Harap lampirkan file foto bukti transfer.');
             }
 
-            $file_tmp  = $_FILES['bukti_transfer']['tmp_name'];
-            $file_name = $_FILES['bukti_transfer']['name'];
-            $ext       = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
-
-            $new_filename = 'bukti_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
-            $upload_dir   = __DIR__ . '/../../../public/uploads/bukti/';
-
-            if (!is_dir($upload_dir)) {
-                mkdir($upload_dir, 0777, true);
+            $ext = strtolower(pathinfo($_FILES['bukti_transfer']['name'], PATHINFO_EXTENSION));
+            if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+                redirectTagihanRiwayat('', 'Format foto bukti transfer harus JPG, PNG, atau WEBP.');
             }
 
-            if (!move_uploaded_file($file_tmp, $upload_dir . $new_filename)) {
-                redirectTagihanRiwayat('', 'Gagal mengunggah file foto bukti transfer.');
+            // Unggah langsung ke Supabase Storage bucket 'bukti_tf'
+            $uploadedBukti = uploadKeSupabase($_FILES['bukti_transfer'], 'bukti_tf');
+            if ($uploadedBukti === false) {
+                redirectTagihanRiwayat('', 'Gagal mengunggah file foto bukti transfer ke penyimpanan cloud.');
             }
+            $new_filename = $uploadedBukti;
         }
 
         $pdo->beginTransaction();
 
         $stmtCek = $pdo->prepare("
-            SELECT id 
+            SELECT id, bukti_pembayaran
             FROM pembayaran 
             WHERE tagihan_id = :tid 
               AND LOWER(TRIM(status_verifikasi)) = 'ditolak'
             ORDER BY id DESC LIMIT 1
         ");
         $stmtCek->execute([':tid' => $tagihan_id]);
-        $existingId = $stmtCek->fetchColumn();
+        $existingRejected = $stmtCek->fetch(PDO::FETCH_ASSOC);
 
-        if ($existingId) {
+        if ($existingRejected) {
+            $oldFoto = basename(trim((string)($existingRejected['bukti_pembayaran'] ?? '')));
+            if ($oldFoto !== '' && strtolower($oldFoto) !== 'null') {
+                $oldBuktiToDelete = $oldFoto;
+            }
+
             $stmtUpd = $pdo->prepare("
                 UPDATE pembayaran 
                 SET bukti_pembayaran = :foto,
@@ -473,7 +478,7 @@ function handleUploadBuktiBayar(PDO $pdo): array {
                 ':foto'    => ($metode_bayar === 'tunai') ? null : $new_filename,
                 ':nominal' => $jumlah_bayar,
                 ':metode'  => $metode_bayar,
-                ':id'      => $existingId
+                ':id'      => (int)$existingRejected['id']
             ]);
         } else {
             $no_kwitansi = 'KW/' . date('Ym') . '/' . strtoupper(bin2hex(random_bytes(2)));
@@ -492,6 +497,11 @@ function handleUploadBuktiBayar(PDO $pdo): array {
 
         $pdo->commit();
 
+        // Hapus bukti transfer lama dari bucket 'bukti_tf' setelah upload ulang sukses
+        if ($oldBuktiToDelete !== '') {
+            hapusDariSupabase('bukti_tf', $oldBuktiToDelete);
+        }
+
         if (function_exists('bersihkanCacheNotifSiteman')) {
             bersihkanCacheNotifSiteman();
         }
@@ -505,6 +515,9 @@ function handleUploadBuktiBayar(PDO $pdo): array {
         redirectTagihanRiwayat($pesan, '');
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
+        if ($new_filename !== null) {
+            hapusDariSupabase('bukti_tf', $new_filename);
+        }
         redirectTagihanRiwayat('', 'Gagal memproses pembayaran: ' . $e->getMessage());
     }
 

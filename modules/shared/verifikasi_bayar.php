@@ -1,7 +1,7 @@
 <?php
 /**
- * VIEW VERIFIKASI PEMBAYARAN
- * Lokasi: modules/shared/verifikasi_bayar.php
+- VIEW VERIFIKASI PEMBAYARAN
+- Lokasi: modules/shared/verifikasi_bayar.php
  */
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
@@ -132,6 +132,10 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                         $metode_raw = strtolower($item['metode_bayar'] ?? 'transfer');
                         $is_tunai   = ($metode_raw === 'tunai' || empty($item['foto']));
                         $page_m     = (int)floor($idx / $limit_mobile) + 1;
+                        $srcEsc     = htmlspecialchars((string)$item['src_foto'], ENT_QUOTES, 'UTF-8');
+                        $namaJsEsc  = htmlspecialchars(json_encode((string)$item['nama']), ENT_QUOTES, 'UTF-8');
+                        $kamarJsEsc = htmlspecialchars(json_encode((string)$item['kamar']), ENT_QUOTES, 'UTF-8');
+                        $srcJsEsc   = htmlspecialchars(json_encode((string)$item['src_foto']), ENT_QUOTES, 'UTF-8');
                     ?>
                     <div class="verifikasi-card verif-item-mobile <?= $page_m !== $page_mobile ? 'verif-hidden-item' : ''; ?>"
                          data-page-m="<?= $page_m; ?>">
@@ -141,14 +145,19 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                                 <i class="fa-solid fa-hand-holding-dollar verif-tunai-icon-mob"></i>
                                 <span class="verif-tunai-label">Tunai</span>
                             </div>
-                            <?php else: ?>
+                            <?php elseif ($srcEsc !== ''): ?>
                             <div class="bukti-wrapper">
-                                <img src="<?= $item['src_foto']; ?>" alt="Bukti Transfer" class="bukti-img" loading="lazy"
-                                    onclick="bukaPopupBukti('<?= $item['src_foto']; ?>', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= htmlspecialchars(addslashes($item['kamar'])); ?>')">
+                                <img src="<?= $srcEsc; ?>" alt="Bukti Transfer" class="bukti-img" loading="lazy"
+                                    onclick="bukaPopupBukti(<?= $srcJsEsc; ?>, <?= $namaJsEsc; ?>, <?= $kamarJsEsc; ?>)">
                                 <button type="button" class="btn-zoom" title="Perbesar Bukti"
-                                    onclick="bukaPopupBukti('<?= $item['src_foto']; ?>', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= htmlspecialchars(addslashes($item['kamar'])); ?>')">
+                                    onclick="bukaPopupBukti(<?= $srcJsEsc; ?>, <?= $namaJsEsc; ?>, <?= $kamarJsEsc; ?>)">
                                     <i class="fa-solid fa-magnifying-glass-plus"></i>
                                 </button>
+                            </div>
+                            <?php else: ?>
+                            <div class="bukti-wrapper verif-tunai-box" title="File bukti tidak ditemukan di server">
+                                <i class="fa-solid fa-image-slash verif-tunai-icon-mob"></i>
+                                <span class="verif-tunai-label">Tanpa Foto</span>
                             </div>
                             <?php endif; ?>
                             <div class="detail-wrapper">
@@ -168,11 +177,11 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                                 <i class="fa-brands fa-whatsapp"></i> Chat
                             </a>
                             <button type="button" class="btn-action btn-decline btn-action-full"
-                                onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'tolak', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= $item['tipe_tagihan']; ?>', '<?= $is_tunai ? 'tunai' : 'transfer'; ?>')">
+                                onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'tolak', <?= $namaJsEsc; ?>, '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= htmlspecialchars($item['tipe_tagihan'], ENT_QUOTES); ?>', '<?= $is_tunai ? 'tunai' : 'transfer'; ?>')">
                                 <i class="fa-solid fa-circle-xmark"></i> Tolak
                             </button>
                             <button type="button" class="btn-action btn-approve btn-action-full"
-                                onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'terima', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= $item['tipe_tagihan']; ?>', '<?= $is_tunai ? 'tunai' : 'transfer'; ?>')">
+                                onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'terima', <?= $namaJsEsc; ?>, '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= htmlspecialchars($item['tipe_tagihan'], ENT_QUOTES); ?>', '<?= $is_tunai ? 'tunai' : 'transfer'; ?>')">
                                 <i class="fa-solid fa-circle-check"></i> Terima
                             </button>
                         </div>
@@ -242,6 +251,10 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                     $metode_raw = strtolower($item['metode_bayar'] ?? 'transfer');
                     $is_tunai   = ($metode_raw === 'tunai' || empty($item['foto']));
                     $page_d     = (int)floor($idx / $limit_desktop) + 1;
+                    $srcEsc     = htmlspecialchars((string)$item['src_foto'], ENT_QUOTES, 'UTF-8');
+                    $namaJsEsc  = htmlspecialchars(json_encode((string)$item['nama']), ENT_QUOTES, 'UTF-8');
+                    $kamarJsEsc = htmlspecialchars(json_encode((string)$item['kamar']), ENT_QUOTES, 'UTF-8');
+                    $srcJsEsc   = htmlspecialchars(json_encode((string)$item['src_foto']), ENT_QUOTES, 'UTF-8');
                 ?>
                 <div class="verifikasi-card verif-item-desktop <?= $page_d !== $page_desktop ? 'verif-hidden-item' : ''; ?>"
                      data-page-d="<?= $page_d; ?>">
@@ -251,14 +264,19 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                             <i class="fa-solid fa-hand-holding-dollar verif-tunai-icon-desk"></i>
                             <span class="verif-tunai-label">Tunai</span>
                         </div>
-                        <?php else: ?>
+                        <?php elseif ($srcEsc !== ''): ?>
                         <div class="bukti-wrapper">
-                            <img src="<?= $item['src_foto']; ?>" alt="Bukti Transfer" class="bukti-img" loading="lazy"
-                                onclick="bukaPopupBukti('<?= $item['src_foto']; ?>', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= htmlspecialchars(addslashes($item['kamar'])); ?>')">
+                            <img src="<?= $srcEsc; ?>" alt="Bukti Transfer" class="bukti-img" loading="lazy"
+                                onclick="bukaPopupBukti(<?= $srcJsEsc; ?>, <?= $namaJsEsc; ?>, <?= $kamarJsEsc; ?>)">
                             <button type="button" class="btn-zoom" title="Perbesar Bukti"
-                                onclick="bukaPopupBukti('<?= $item['src_foto']; ?>', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= htmlspecialchars(addslashes($item['kamar'])); ?>')">
+                                onclick="bukaPopupBukti(<?= $srcJsEsc; ?>, <?= $namaJsEsc; ?>, <?= $kamarJsEsc; ?>)">
                                 <i class="fa-solid fa-magnifying-glass-plus"></i>
                             </button>
+                        </div>
+                        <?php else: ?>
+                        <div class="bukti-wrapper verif-tunai-box" title="File bukti tidak ditemukan di server">
+                            <i class="fa-solid fa-image-slash verif-tunai-icon-desk"></i>
+                            <span class="verif-tunai-label">Tanpa Foto</span>
                         </div>
                         <?php endif; ?>
 
@@ -279,11 +297,11 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                             <i class="fa-brands fa-whatsapp"></i> Chat
                         </a>
                         <button type="button" class="btn-action btn-decline btn-action-full"
-                            onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'tolak', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= $item['tipe_tagihan']; ?>', '<?= $is_tunai ? 'tunai' : 'transfer'; ?>')">
+                            onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'tolak', <?= $namaJsEsc; ?>, '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= htmlspecialchars($item['tipe_tagihan'], ENT_QUOTES); ?>', '<?= $is_tunai ? 'tunai' : 'transfer'; ?>')">
                             <i class="fa-solid fa-circle-xmark"></i> Tolak
                         </button>
                         <button type="button" class="btn-action btn-approve btn-action-full"
-                            onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'terima', '<?= htmlspecialchars(addslashes($item['nama'])); ?>', '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= $item['tipe_tagihan']; ?>', '<?= $is_tunai ? 'tunai' : 'transfer'; ?>')">
+                            onclick="konfirmasiAksi(<?= $item['pembayaran_id']; ?>, 'terima', <?= $namaJsEsc; ?>, '<?= number_format($item['jumlah_bayar'], 0, ',', '.'); ?>', '<?= htmlspecialchars($item['tipe_tagihan'], ENT_QUOTES); ?>', '<?= $is_tunai ? 'tunai' : 'transfer'; ?>')">
                             <i class="fa-solid fa-circle-check"></i> Terima
                         </button>
                     </div>
@@ -514,7 +532,7 @@ if ($page_mobile > $total_hal_mob) $page_mobile = $total_hal_mob;
                     { val: 'Lainnya', label: 'Alasan lainnya' }
                   ];
 
-listOpsi.innerHTML = opsiAlasan.map((opt, idx) => `
+            listOpsi.innerHTML = opsiAlasan.map((opt, idx) => `
                 <label class="alasan-option-label">
                     <input type="radio" name="alasan_penolakan" value="${opt.val}"
                         ${idx === 0 ? 'checked' : ''} onchange="toggleAlasanLain(${opt.val === 'Lainnya'})">
@@ -574,7 +592,7 @@ listOpsi.innerHTML = opsiAlasan.map((opt, idx) => `
         const img = document.getElementById('imgBuktiFull');
         const title = document.getElementById('lightboxTitle');
 
-        if (modal && img) {
+        if (modal && img && src) {
             img.src = src;
             if (title && nama) {
                 title.innerHTML = '<i class="fa-solid fa-receipt"></i> Bukti Transfer - ' + nama + ' (Kamar ' + kamar + ')';

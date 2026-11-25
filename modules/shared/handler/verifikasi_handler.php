@@ -1,11 +1,12 @@
 <?php
 /**
- * HANDLER LOGIK & DATABASE VERIFIKASI PEMBAYARAN
- * Mendukung verifikasi pelunasan penuh maupun cicilan bertahap.
- * Lokasi: modules/shared/handler/verifikasi_handler.php
+- HANDLER LOGIK & DATABASE VERIFIKASI PEMBAYARAN
+- Mendukung verifikasi pelunasan penuh maupun cicilan bertahap.
+- Lokasi: modules/shared/handler/verifikasi_handler.php
  */
 
 require_once __DIR__ . '/../../../config/init.php';
+require_once __DIR__ . '/../../../config/supabase_storage.php';
 /** @var PDO $pdo */
 
 require_once __DIR__ . '/sewa_reminder_helper.php';
@@ -341,20 +342,23 @@ if (isset($pdo) && ($pdo instanceof PDO)) {
         $stmt->execute($params);
         $raw_data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-        $upload_dir = realpath(__DIR__ . '/../../../public/uploads/bukti');
+        // Kumpulkan semua nama file bukti transfer lalu minta Signed URL dalam 1 batch ke Supabase bucket 'bukti_tf'
+        $listFileBukti = [];
+        foreach ($raw_data as $row) {
+            $fotoRaw  = trim((string)($row['foto'] ?? ''));
+            $fotoNama = $fotoRaw !== '' ? basename($fotoRaw) : '';
+            if ($fotoNama !== '' && strtolower($fotoNama) !== 'null') {
+                $listFileBukti[] = $fotoNama;
+            }
+        }
+        $signedBuktiMap = getBatchSignedUrlsSupabase('bukti_tf', $listFileBukti, 900);
 
         foreach ($raw_data as $row) {
-            $foto_nama = basename(trim((string)($row['foto'] ?? '')));
-            $src_final = '';
-
-            if ($foto_nama !== '' && $upload_dir && file_exists($upload_dir . DIRECTORY_SEPARATOR . $foto_nama)) {
-                $path_fisik = $upload_dir . DIRECTORY_SEPARATOR . $foto_nama;
-                $ext = strtolower(pathinfo($path_fisik, PATHINFO_EXTENSION));
-                $mime = ($ext === 'png') ? 'image/png' : (($ext === 'webp') ? 'image/webp' : 'image/jpeg');
-                $src_final = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($path_fisik));
-            } else {
-                $src_final = !empty($row['foto']) ? '/uploads/bukti/' . $foto_nama : '/uploads/bukti/bukti_001.jpg';
-            }
+            $fotoRaw   = trim((string)($row['foto'] ?? ''));
+            $fotoNama  = $fotoRaw !== '' ? basename($fotoRaw) : '';
+            $src_final = ($fotoNama !== '' && isset($signedBuktiMap[$fotoNama]))
+                ? $signedBuktiMap[$fotoNama]
+                : '';
 
             $row['src_foto']     = $src_final;
             $daftar_verifikasi[] = $row;

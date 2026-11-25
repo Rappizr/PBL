@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/init.php';
+require_once __DIR__ . '/../../config/supabase_storage.php';
 /** @var PDO $pdo */
 
 $current_page = 'manajemen_kamar';
@@ -91,6 +92,17 @@ if (isset($pdo) && $pdo instanceof PDO) {
 
         $rows = $pdo->query($sqlKamar)->fetchAll(PDO::FETCH_ASSOC);
 
+        // Kumpulkan seluruh nama file KTP lalu minta Signed URL dalam 1 batch ke Supabase
+        $listFileKtp = [];
+        foreach ($rows as $r) {
+            $fotoRaw  = trim((string)($r['foto_ktp'] ?? ''));
+            $fotoFile = $fotoRaw !== '' ? basename($fotoRaw) : '';
+            if ($fotoFile !== '' && $fotoFile !== 'ktp_default.jpg' && strtolower($fotoFile) !== 'null') {
+                $listFileKtp[] = $fotoFile;
+            }
+        }
+        $signedKtpMap = getBatchSignedUrlsSupabase('ktp', $listFileKtp, 900);
+
         foreach ($rows as $r) {
             $noKamar  = trim((string)$r['no_kamar']);
             $isKosong = ($r['status_kamar'] === 'kosong' || empty($r['nama']));
@@ -103,18 +115,9 @@ if (isset($pdo) && $pdo instanceof PDO) {
 
             $fotoKtpRaw  = trim((string)($r['foto_ktp'] ?? ''));
             $fotoKtpFile = $fotoKtpRaw !== '' ? basename($fotoKtpRaw) : '';
-            $ktpUrl      = '';
-            if ($fotoKtpFile !== '' && $fotoKtpFile !== 'ktp_default.jpg' && strtolower($fotoKtpFile) !== 'null') {
-                $lokasiFileKtp = __DIR__ . '/../../public/uploads/ktp/' . $fotoKtpFile;
-                if (is_file($lokasiFileKtp)) {
-                    $extKtp      = strtolower(pathinfo($lokasiFileKtp, PATHINFO_EXTENSION));
-                    $mimeKtp     = ($extKtp === 'png') ? 'image/png' : (($extKtp === 'webp') ? 'image/webp' : 'image/jpeg');
-                    $ktpContent  = file_get_contents($lokasiFileKtp);
-                    if ($ktpContent !== false) {
-                        $ktpUrl = 'data:' . $mimeKtp . ';base64,' . base64_encode($ktpContent);
-                    }
-                }
-            }
+            $ktpUrl      = ($fotoKtpFile !== '' && isset($signedKtpMap[$fotoKtpFile]))
+                ? $signedKtpMap[$fotoKtpFile]
+                : '';
 
             $item = [
                 'kamar_id'            => $r['kamar_id'],

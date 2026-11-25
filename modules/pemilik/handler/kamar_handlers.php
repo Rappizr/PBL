@@ -1,4 +1,6 @@
 <?php
+require_once __DIR__ . '/../../../config/supabase_storage.php';
+
 /** @var PDO $pdo */
 $current_page = $current_page ?? ($_GET['page'] ?? 'manajemen_kamar');
 $error_simpan = $error_simpan ?? '';
@@ -194,13 +196,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
         $tgl_selesai = date('Y-m-d', strtotime("+{$durasi_nilai} months", strtotime($tgl_mulai)));
     }
 
-    $upload_dir = __DIR__ . '/../../../public/uploads/ktp/';
-    if (!is_dir($upload_dir)) {
-        mkdir($upload_dir, 0777, true);
-    }
-    $nama_foto = 'ktp_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext_ktp;
-    if (!move_uploaded_file($_FILES['foto_ktp']['tmp_name'], $upload_dir . $nama_foto)) {
-        $responseError("Gagal menyimpan file Foto KTP ke server.");
+    // Upload langsung ke Supabase Storage bucket 'ktp'
+    $nama_foto = uploadKeSupabase($_FILES['foto_ktp'], 'ktp');
+    if ($nama_foto === false) {
+        $responseError("Gagal mengunggah Foto KTP ke penyimpanan cloud. Pastikan format gambar valid.");
     }
 
     try {
@@ -298,9 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_penghuni'])) {
         exit;
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
-        if (is_file($upload_dir . $nama_foto)) {
-            @unlink($upload_dir . $nama_foto);
-        }
+        hapusDariSupabase('ktp', $nama_foto);
         $responseError("Gagal menambah penghuni: " . $e->getMessage());
     }
 }
@@ -333,6 +330,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
         $tgl_selesai = date('Y-m-d', strtotime("+{$durasi} months", strtotime($tgl_mulai)));
     }
 
+    $nama_foto_baru = null;
+    $oldKtpToDelete = '';
+
     try {
         $pdo->beginTransaction();
 
@@ -361,24 +361,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
                 $stmtCopot->execute([':id' => $penghuni_id]);
             }
 
-            $nama_foto_baru = null;
             if (!empty($_FILES['foto_ktp_baru']['name']) && ($_FILES['foto_ktp_baru']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
                 $ext = strtolower(pathinfo($_FILES['foto_ktp_baru']['name'], PATHINFO_EXTENSION));
                 if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
-                    $upload_dir = __DIR__ . '/../../../public/uploads/ktp/';
-                    if (!is_dir($upload_dir)) {
-                        mkdir($upload_dir, 0777, true);
-                    }
-                    $nama_foto_baru = 'ktp_' . time() . '_' . bin2hex(random_bytes(3)) . '.' . $ext;
-                    if (move_uploaded_file($_FILES['foto_ktp_baru']['tmp_name'], $upload_dir . $nama_foto_baru)) {
+                    $uploadedName = uploadKeSupabase($_FILES['foto_ktp_baru'], 'ktp');
+                    if ($uploadedName !== false) {
+                        $nama_foto_baru = $uploadedName;
+
                         $stmtOldKtp = $pdo->prepare("SELECT foto_ktp FROM penghuni WHERE id = :id LIMIT 1");
                         $stmtOldKtp->execute([':id' => $penghuni_id]);
                         $oldKtp = basename((string)$stmtOldKtp->fetchColumn());
-                        if ($oldKtp !== '' && $oldKtp !== 'ktp_default.jpg' && is_file($upload_dir . $oldKtp)) {
-                            @unlink($upload_dir . $oldKtp);
+                        if ($oldKtp !== '' && $oldKtp !== 'ktp_default.jpg' && strtolower($oldKtp) !== 'null') {
+                            $oldKtpToDelete = $oldKtp;
                         }
-                    } else {
-                        $nama_foto_baru = null;
                     }
                 }
             }
@@ -473,6 +468,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
         }
 
         $pdo->commit();
+
+        // Hapus KTP lama di Supabase setelah transaksi berhasil
+        if ($oldKtpToDelete !== '') {
+            hapusDariSupabase('ktp', $oldKtpToDelete);
+        }
+
         if (function_exists('bersihkanCacheNotifSiteman')) {
             bersihkanCacheNotifSiteman();
         }
@@ -481,6 +482,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['simpan_detail'])) {
         exit;
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
+        if ($nama_foto_baru !== null) {
+            hapusDariSupabase('ktp', $nama_foto_baru);
+        }
         $error_simpan = "Gagal memperbarui data: " . $e->getMessage();
     }
 }
@@ -598,19 +602,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_penghuni'])) {
             $pdo->beginTransaction();
             
             $stmtCari = $pdo->prepare("
-                SELECT k.id AS kamar_id, pk.id AS pk_id, pk.penghuni_id 
+                SELECT k.id AS kamar_id, pk.id AS pk_id, pk.penghuni_id, p.foto_ktp
                 FROM kamar k
                 JOIN penghuni_kamar pk ON k.id = pk.kamar_id
+                JOIN penghuni p ON p.id = pk.penghuni_id
                 WHERE k.no_kamar = :no
                 LIMIT 1
             ");
             $stmtCari->execute([':no' => $nomor_kamar]);
             $row = $stmtCari->fetch(PDO::FETCH_ASSOC);
 
+            $fotoKtpHapus = '';
             if ($row) {
-                $penghuni_id = (int)$row['penghuni_id'];
-                $kamar_id    = (int)$row['kamar_id'];
-                $pk_id       = (int)$row['pk_id'];
+                $penghuni_id  = (int)$row['penghuni_id'];
+                $kamar_id     = (int)$row['kamar_id'];
+                $pk_id        = (int)$row['pk_id'];
+                $fotoKtpHapus = basename((string)($row['foto_ktp'] ?? ''));
 
                 $pdo->prepare("
                     UPDATE buku_kas
@@ -638,6 +645,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['hapus_penghuni'])) {
             }
 
             $pdo->commit();
+
+            if ($fotoKtpHapus !== '' && $fotoKtpHapus !== 'ktp_default.jpg' && strtolower($fotoKtpHapus) !== 'null') {
+                hapusDariSupabase('ktp', $fotoKtpHapus);
+            }
+
             if (function_exists('bersihkanCacheNotifSiteman')) {
                 bersihkanCacheNotifSiteman();
             }
