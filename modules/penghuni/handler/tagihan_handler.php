@@ -354,13 +354,16 @@ function fetchRiwayatTransaksi(PDO $pdo, int $pk_id): array {
 }
 
 function redirectTagihanRiwayat(string $pesanSukses = '', string $pesanError = ''): never {
+    $params = ['page' => 'tagihan_riwayat'];
     if ($pesanSukses !== '') {
         $_SESSION['pesan_sukses'] = $pesanSukses;
+        $params['notif_sukses']   = $pesanSukses;
     }
     if ($pesanError !== '') {
         $_SESSION['pesan_error'] = $pesanError;
+        $params['notif_error']   = $pesanError;
     }
-    header('Location: /?page=tagihan_riwayat');
+    header('Location: /?' . http_build_query($params));
     exit;
 }
 
