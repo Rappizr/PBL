@@ -16,33 +16,30 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
 
 ### 👤 Pemilik Kos
 
-- [ ] Manajemen & monitoring status kamar (kosong/terisi)
-- [ ] Pendaftaran penghuni baru & pencatatan kontrak sewa
-- [ ] Verifikasi pembayaran sewa
-- [ ] Chat penghuni
-- [ ] Penagihan sewa otomatis via WhatsApp
-- [ ] Buku kas sewa digital
-- [ ] Monitoring iuran kamar
-- [ ] Penagihan iuran otomatis via WhatsApp
-- [ ] Buku kas iuran digital operasional bersama
+- [x] Manajemen & monitoring status kamar (kosong/terisi)
+- [x] Pendaftaran penghuni baru & pencatatan kontrak sewa
+- [x] Verifikasi pembayaran sewa
+- [x] Chat penghuni
+- [x] Buku kas sewa digital
+- [x] Monitoring iuran kamar
+- [x] Buku kas iuran digital operasional bersama
 
 ### 🏠 Penanggung Jawab (PJ) Kos
 
-- [ ] Monitoring iuran kamar
-- [ ] Penagihan iuran otomatis via WhatsApp
-- [ ] Kartu rincian tagihan & jatuh tempo mandiri
-- [ ] Pembayaran sewa kamar & unggah bukti transfer
-- [ ] Pembayaran iuran bersama & unggah bukti transfer iuran
-- [ ] Riwayat transaksi & unduh kwitansi digital
-- [ ] Buku kas iuran digital operasional bersama
+- [x] Monitoring iuran kamar
+- [x] Kartu rincian tagihan & jatuh tempo mandiri
+- [x] Pembayaran sewa kamar & unggah bukti transfer
+- [x] Pembayaran iuran bersama & unggah bukti transfer iuran
+- [x] Riwayat transaksi & unduh kwitansi digital
+- [x] Buku kas iuran digital operasional bersama
 
 ### 🧑‍🎓 Penghuni Kos
 
-- [ ] Kartu rincian tagihan & jatuh tempo mandiri
-- [ ] Pembayaran sewa kamar & unggah bukti transfer
-- [ ] Pembayaran iuran bersama & unggah bukti transfer iuran
-- [ ] Riwayat transaksi & unduh kwitansi digital
-- [ ] Buku kas iuran digital operasional bersama
+- [x] Kartu rincian tagihan & jatuh tempo mandiri
+- [x] Pembayaran sewa kamar & unggah bukti transfer
+- [x] Pembayaran iuran bersama & unggah bukti transfer iuran
+- [x] Riwayat transaksi & unduh kwitansi digital
+- [x] Buku kas iuran digital operasional bersama
 
 ---
 
@@ -50,58 +47,58 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
 
 ### 1. Autentikasi & Peran
 
-- [ ] Sistem login multi-role (Pemilik, PJ, Penghuni)
-- [ ] Sistem login khusus Pemilik
-- [ ] Sistem login khusus PJ dan Penghuni
-- [ ] Middleware/pengecekan hak akses per role
+- [x] Sistem login multi-role (Pemilik, PJ, Penghuni)
+- [x] Sistem login khusus Pemilik
+- [x] Sistem login khusus PJ dan Penghuni
+- [x] Middleware/pengecekan hak akses per role
 
 ### 2. Basis Data
 
-- [ ] Membuat skema tabel sesuai ERD (Pemilik, Kamar, Penghuni, Penghuni_kamar, Pembayaran, Tagihan, Kategori_iuran, Buku_kas)
-- [ ] Menyusun relasi antar tabel (foreign key)
-- [ ] Uji query relasi (sewa, iuran, pembayaran)
+- [x] Membuat skema tabel sesuai ERD (Pemilik, Kamar, Penghuni, Penghuni_kamar, Pembayaran, Tagihan, Kategori_iuran, Buku_kas)
+- [x] Menyusun relasi antar tabel (foreign key)
+- [x] Uji query relasi (sewa, iuran, pembayaran)
 
 ### 3. Modul Kamar & Penghuni
 
-- [ ] CRUD data kamar
-- [ ] Pendaftaran penghuni & kontrak sewa
-- [ ] Status ketersediaan kamar real-time
+- [x] CRUD data kamar
+- [x] Pendaftaran penghuni & kontrak sewa
+- [x] Status ketersediaan kamar real-time
 
 ### 4. Modul Pembayaran & Tagihan
 
-- [ ] Tagihan otomatis (sewa & iuran)
-- [ ] Upload bukti pembayaran/transfer
-- [ ] Verifikasi pembayaran oleh Pemilik/PJ
-- [ ] Cetak kwitansi digital
+- [x] Tagihan otomatis (sewa & iuran)
+- [x] Upload bukti pembayaran/transfer
+- [x] Verifikasi pembayaran oleh Pemilik/PJ
+- [x] Cetak kwitansi digital
 
 ### 5. Modul Buku Kas
 
-- [ ] Pencatatan pemasukan/pengeluaran kas bersama
-- [ ] Rekap transaksi keseluruhan
-- [ ] Riwayat transaksi per penghuni
+- [x] Pencatatan pemasukan/pengeluaran kas bersama
+- [x] Rekap transaksi keseluruhan
+- [x] Riwayat transaksi per penghuni
 
 ### 6. Notifikasi
 
-- [ ] Integrasi pengingat/penagihan otomatis via WhatsApp
+- Dibatalkan
 
 ### 7. Frontend
 
 - [x] Tampilan mobile-friendly Pemilik
 - [x] Tampilan mobile-friendly Penghuni
 - [x] Tampilan mobile-friendly PJ
-- [ ] Tampilan dashboard desktop Pemilik
+- [x] Tampilan dashboard desktop Pemilik
 - [x] Tampilan dashboard desktop Penghuni
 - [x] Tampilan dashboard desktop PJ
-- [ ] Halaman Manajemen Kamar & Penghuni
-- [ ] Halaman Chat penghuni
-- [ ] Halaman verifikasi pembayaran
-- [ ] Halaman analisis keuangan
-- [ ] Halaman Login
+- [x] Halaman Manajemen Kamar & Penghuni
+- [x] Halaman Chat penghuni
+- [x] Halaman verifikasi pembayaran
+- [x] Halaman analisis keuangan
+- [x] Halaman Login
 
 ### 8. Pengujian & Deployment
 
-- [ ] Pengujian fungsional tiap modul
-- [ ] Perbaikan bug
+- [x] Pengujian fungsional tiap modul
+- [x] Perbaikan bug
 - [x] Deployment ke server/hosting untuk uji coba
 
 ---
@@ -110,14 +107,14 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
 
 ### Prasyarat
 
-- [XAMPP](https://www.apachefriends.org/) / Laragon / server lokal lain dengan **PHP** dan **MySQL**
+- [xAMPP](https://www.apachefriends.org/) / Laragon / server lokal lain dengan **PHP** dan **MySQL**
 - PHP versi 8.0 ke atas (disarankan)
 - Browser web
 - Composer
 
 ### Langkah-langkah
 
-1. **Clone / salin project** ke dalam folder `htdocs` (XAMPP) atau `www` (Laragon):
+1. **Clone / salin project** ke dalam folder `htdocs` (xAMPP) atau `www` (Laragon):
 
    ```bash
    git clone https://github.com/Rappizr/PBL siteman-kos
@@ -134,7 +131,7 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
    DB_USER=<You Database Username>
    DB_PASSWORD=<You Database Password>
    EMAIL_USERNAME=
-   EMAIL_PASSWORD
+   EMAIL_PASSWORD=
    ```
 
 3. **Memulai aplikasi** melalui CLI:
@@ -147,7 +144,7 @@ Selama ini pencatatan sewa, iuran, dan komunikasi penagihan di kos masih dilakuk
 
    ```
    PRODUCTION : https://pbl-blond.vercel.app/
-   DEVELOPMENT : https://pbl-git-dev-rappizrs-projects.vercel.app/
+   DEVELOPMENT : https://pbl-git-dev-rappizrs-projects.vercel.app/ (Hanya pemilik vercel yang bisa mengakses)
    ```
 
 5. Login sesuai role masing-masing (Pemilik, PJ, atau Penghuni) untuk mulai menggunakan sistem.

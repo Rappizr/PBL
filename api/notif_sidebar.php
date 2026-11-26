@@ -1,7 +1,6 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
+require_once __DIR__ . '/../config/init.php';
+/** @var PDO $pdo */
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -14,6 +13,7 @@ $response = [
 ];
 
 if (empty($_SESSION['user'])) {
+    session_write_close();
     echo json_encode($response);
     exit;
 }
@@ -24,14 +24,14 @@ $isPemilik  = ($role === 'pemilik');
 $isKetua    = !empty($user['is_ketua_kos']) || !empty($user['is_pj']) || ($role === 'pj');
 $penghuniId = (int)($user['id'] ?? 0);
 
-// Pakai cache session yang sama (5 detik) agar tidak menembak DB ganda saat baru pindah halaman
+// Pakai cache session 5 detik agar tidak menembak DB ganda saat baru pindah halaman
 $cacheKey = 'sidebar_notif_' . ($user['role'] ?? 'penghuni') . '_' . $penghuniId;
 if (isset($_SESSION[$cacheKey], $_SESSION[$cacheKey . '_ts']) && (time() - (int)$_SESSION[$cacheKey . '_ts']) < 5) {
-    echo json_encode($_SESSION[$cacheKey]);
+    $cached = $_SESSION[$cacheKey];
+    session_write_close();
+    echo json_encode($cached);
     exit;
 }
-
-require_once __DIR__ . '/../config/database.php';
 
 global $pdo;
 $db = ($pdo instanceof PDO) ? $pdo : ($conn ?? null);
@@ -48,7 +48,7 @@ try {
             $response['verifikasi'] = (int)$stmtVerif->fetchColumn();
         }
 
-        // 2. Pemilik Kos: Jumlah kamar terisi yang tagihan sewanya belum lunas (termasuk penghuni baru) ATAU akunnya freeze
+        // 2. Pemilik Kos: Jumlah kamar terisi yang tagihan sewanya belum lunas ATAU akunnya freeze
         if ($isPemilik) {
             $stmtKamar = $db->query("
                 SELECT COUNT(DISTINCT k.id)
@@ -81,7 +81,7 @@ try {
             $response['iuran'] = (int)$stmtIuran->fetchColumn();
         }
 
-        // 4. Penghuni & Ketua Kos: Jumlah tagihan pribadi yang belum lunas & jatuh tempo <= 7 hari ke depan (atau sudah lewat)
+        // 4. Penghuni & Ketua Kos: Jumlah tagihan pribadi yang belum lunas & jatuh tempo <= 7 hari ke depan
         if (!$isPemilik && $penghuniId > 0) {
             $stmtTagihan = $db->prepare("
                 SELECT COUNT(*)
@@ -102,4 +102,5 @@ try {
     // Kembalikan 0 jika koneksi terganggu sesaat
 }
 
+session_write_close();
 echo json_encode($response);

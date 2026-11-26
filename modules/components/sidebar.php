@@ -311,7 +311,7 @@ $initNotif = getSitemanSidebarNotif($pdo ?? null);
             window.refreshSidebarNotif();
         });
 
-        setInterval(window.refreshSidebarNotif, 5000);
+        setInterval(window.refreshSidebarNotif, 2000);
         document.addEventListener('visibilitychange', function () {
             if (!document.hidden) {
                 window.refreshSidebarNotif();
