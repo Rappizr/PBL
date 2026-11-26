@@ -11,12 +11,8 @@
       "dest": "/public/css/$1"
     },
     {
-      "src": "/api/auth",
-      "dest": "/api/auth.php"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
+      "src": "/api/([a-zA-Z0-9_-]+)(?:\\.php)?",
+      "dest": "/api/$1.php"
     },
     {
       "src": "/logout",
